@@ -278,6 +278,9 @@ def api_buy():
         elif item["id"] == "life_crystal":
             player["max_health"] += 20
             player["health"] += 20
+        elif item["id"] == "gravity_well":
+            player["attack"] += 10
+            player["defense"] += 10
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", "0"), session["user_id"], player)

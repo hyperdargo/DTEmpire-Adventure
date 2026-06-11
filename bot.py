@@ -80,7 +80,18 @@ CHANGELOG = [
             "🔒 Server-locked, no DMs allowed",
             "📝 >purge, >poll, >remind, >say, >avatar commands",
         ]
-    }
+    },
+    {
+        "version": "v2.1",
+        "date": "2026-06-12",
+        "changes": [
+            "🌊 New location: Sunken Depths (Lv.8+) — underwater dungeon with 4 monsters + boss",
+            "🌲 Dark Forest expanded: +2 new monsters (Bandit & Mushroom Sprite)",
+            "🗡️ New shop items: Obsidian Katana, Titanium Armor, Mega Elixir, Gravity Well",
+            "🎣 New >fish command — fishing mini-game with 15+ catches (common to legendary)",
+            "🌐 Web dashboard: new Daily Heal button, improved inventory UX",
+        ]
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -731,6 +742,7 @@ async def help_cmd(ctx, category: str = None):
         embed.add_field(name="`>trivia`", value="Answer a trivia question", inline=False)
         embed.add_field(name="`>guess`", value="Guess a number 1-100", inline=False)
         embed.add_field(name="`>hack [@user]`", value="Fake hack (just for fun)", inline=False)
+        embed.add_field(name="`>fish`", value="Go fishing! Catch fish, treasure, and legendary items (60s cooldown)", inline=False)
         embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
         return await ctx.send(embed=embed)
 
@@ -785,7 +797,7 @@ async def help_cmd(ctx, category: str = None):
         value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo` `>avatar` `>latestnews`",
         inline=False)
     embed.add_field(name="🎮 Games",
-        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack`",
+        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish`",
         inline=False)
     embed.add_field(name="⚔️ Adventure & RPG",
         value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard`\n`>adventurehelp` — Full RPG guide",
@@ -1153,6 +1165,113 @@ async def hack(ctx, member: discord.Member = None):
         await asyncio.sleep(1.5)
         await msg.edit(content=s)
 
+@bot.command(name="fish", aliases=["fishing", "cast"])
+async def fish(ctx):
+    """Go fishing! Catch fish, treasure, and rare items. 60s cooldown."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+
+    # Cooldown check
+    now = time.time()
+    last_fish = player.get("last_fish", 0)
+    if now - last_fish < 60:
+        remaining = int(60 - (now - last_fish))
+        return await ctx.send(f"🎣 Your line is still out! Wait **{remaining}s** before casting again.")
+
+    # Fishing table: (name, emoji, rarity, min_value, max_value, weight)
+    catches = [
+        # Common (60%)
+        ("Sardine", "🐟", "common", 5, 15, 20),
+        ("Mackerel", "🐠", "common", 8, 20, 18),
+        ("Bass", "🐡", "common", 10, 25, 15),
+        ("Boot", "👢", "common", 1, 3, 7),
+        # Uncommon (25%)
+        ("Salmon", "🍣", "uncommon", 20, 40, 10),
+        ("Swordfish", "⚔️", "uncommon", 30, 55, 8),
+        ("Lobster", "🦞", "uncommon", 25, 50, 7),
+        # Rare (10%)
+        ("Golden Fish", "✨", "rare", 50, 100, 5),
+        ("Pearl", "🫧", "rare", 60, 120, 4),
+        ("Ancient Coin", "🪙", "rare", 80, 150, 3),
+        # Epic (4%)
+        ("Trident", "🔱", "epic", 150, 300, 2),
+        ("Sea Crown", "👑", "epic", 200, 400, 1.5),
+        ("Kraken Tentacle", "🐙", "epic", 180, 350, 1.5),
+        # Legendary (1%)
+        ("Poseidon's Blessing", "🌊", "legendary", 500, 1000, 0.5),
+        ("Neptune's Trident", "🏆", "legendary", 800, 1500, 0.3),
+        ("Mermaid's Tear", "💎", "legendary", 1000, 2000, 0.2),
+    ]
+
+    # Weighted random selection
+    total_weight = sum(c[5] for c in catches)
+    roll = _rand.uniform(0, total_weight)
+    cumulative = 0
+    caught = catches[0]
+    for c in catches:
+        cumulative += c[5]
+        if roll <= cumulative:
+            caught = c
+            break
+
+    name, emoji, rarity, min_val, max_val, _ = caught
+    value = _rand.randint(min_val, max_val)
+
+    # Bonus for lucky charm
+    bonus = 1.0
+    if "lucky_charm" in player.get("inventory", []):
+        bonus = 1.5
+
+    coins_earned = int(value * bonus)
+    xp_earned = max(5, coins_earned // 3)
+
+    player["coins"] += coins_earned
+    player["xp"] += xp_earned
+    player["last_fish"] = now
+
+    # Level up check
+    xp_needed = player["level"] * 50
+    leveled_up = False
+    while player["xp"] >= xp_needed:
+        player["level"] += 1
+        player["xp"] -= xp_needed
+        player["max_health"] += 10
+        player["health"] = player["max_health"]
+        player["attack"] += 3
+        player["defense"] += 2
+        xp_needed = player["level"] * 50
+        leveled_up = True
+
+    players[key] = player
+    save_players(players)
+
+    rarity_colors = {
+        "common": discord.Color.light_grey(),
+        "uncommon": discord.Color.green(),
+        "rare": discord.Color.blue(),
+        "epic": discord.Color.purple(),
+        "legendary": discord.Color.gold(),
+    }
+    rarity_emoji = {
+        "common": "⚪", "uncommon": "🟢", "rare": "🔵", "epic": "🟣", "legendary": "🟡",
+    }
+
+    embed = discord.Embed(
+        title="🎣 Fishing Result!",
+        description=f"You cast your line into the water...",
+        color=rarity_colors.get(rarity, discord.Color.blue()),
+        timestamp=datetime.datetime.utcnow(),
+    )
+    embed.add_field(name="Catch", value=f"{emoji} **{name}** {rarity_emoji.get(rarity, '')} *{rarity.upper()}*", inline=False)
+    embed.add_field(name="Reward", value=f"🪙 +**{coins_earned}** coins | ⭐ +**{xp_earned}** XP", inline=True)
+    if bonus > 1.0:
+        embed.add_field(name="🍀 Lucky Charm Bonus", value=f"50% bonus applied!", inline=True)
+    if leveled_up:
+        embed.add_field(name="🎉 LEVEL UP!", value=f"You are now **Level {player['level']}**!", inline=False)
+    embed.set_footer(text="Cooldown: 60s | Use >fish again after cooldown!")
+    await ctx.send(embed=embed)
+
 # ═══════════════════════════════════════════════════════════════
 # ADVENTURE GAME + ECONOMY + SHOP
 # ═══════════════════════════════════════════════════════════════
@@ -1224,6 +1343,7 @@ def get_default_shop(guild_id):
                 {"id": "iron_sword", "name": "⚔️ Iron Sword", "attack": 12, "price": 150, "desc": "A sturdy iron blade. +12 ATK"},
                 {"id": "steel_sword", "name": "🔪 Steel Sword", "attack": 20, "price": 350, "desc": "Sharp steel. +20 ATK"},
                 {"id": "flame_blade", "name": "🔥 Flame Blade", "attack": 35, "price": 750, "desc": "Burns with eternal fire. +35 ATK"},
+                {"id": "obsidian_katana", "name": "🗾 Obsidian Katana", "attack": 45, "price": 1100, "desc": "A razor-sharp volcanic glass blade. +45 ATK"},
                 {"id": "dragon_slayer", "name": "🐉 Dragon Slayer", "attack": 55, "price": 1500, "desc": "Forged to slay dragons. +55 ATK"},
                 {"id": "excalibur", "name": "👑 Excalibur", "attack": 80, "price": 3000, "desc": "The legendary sword of kings. +80 ATK"},
             ],
@@ -1232,6 +1352,7 @@ def get_default_shop(guild_id):
                 {"id": "chainmail", "name": "⛓️ Chainmail", "defense": 8, "price": 120, "desc": "Linked metal rings. +8 DEF"},
                 {"id": "iron_armor", "name": "🛡️ Iron Armor", "defense": 15, "price": 300, "desc": "Solid iron plates. +15 DEF"},
                 {"id": "steel_armor", "name": "🏰 Steel Armor", "defense": 25, "price": 600, "desc": "Heavy steel protection. +25 DEF"},
+                {"id": "titanium_armor", "name": "🛡️ Titanium Armor", "defense": 32, "price": 900, "desc": "Lightweight yet nearly unbreakable. +32 DEF"},
                 {"id": "dragon_scale", "name": "🐲 Dragon Scale", "defense": 40, "price": 1200, "desc": "Made from dragon scales. +40 DEF"},
                 {"id": "divine_plate", "name": "✨ Divine Plate", "defense": 60, "price": 2500, "desc": "Blessed by the gods. +60 DEF"},
             ],
@@ -1239,6 +1360,7 @@ def get_default_shop(guild_id):
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
                 {"id": "large_potion", "name": "💖 Large Potion", "heal": 75, "price": 60, "desc": "Restores 75 HP"},
                 {"id": "elixir", "name": "🧪 Elixir", "heal": 200, "price": 150, "desc": "Fully restores HP"},
+                {"id": "mega_elixir", "name": "💫 Mega Elixir", "heal": 500, "price": 350, "desc": "Heals 500 HP instantly"},
                 {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
             ],
             "special": [
@@ -1246,6 +1368,7 @@ def get_default_shop(guild_id):
                 {"id": "shield_ring", "name": "💍 Shield Ring", "price": 350, "desc": "+5 permanent DEF"},
                 {"id": "power_ring", "name": "💎 Power Ring", "price": 350, "desc": "+5 permanent ATK"},
                 {"id": "life_crystal", "name": "💠 Life Crystal", "price": 500, "desc": "+20 permanent max HP"},
+                {"id": "gravity_well", "name": "🌀 Gravity Well", "price": 800, "desc": "+10 ATK & +10 DEF permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1262,6 +1385,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🕷️ Giant Spider", "hp": 25, "atk": 10, "def": 1, "xp": 12, "coins": (8, 20)},
             {"name": "👻 Ghost", "hp": 40, "atk": 12, "def": 3, "xp": 20, "coins": (15, 35)},
             {"name": "🧟 Zombie", "hp": 50, "atk": 7, "def": 5, "xp": 18, "coins": (12, 30)},
+            {"name": "🗡️ Bandit", "hp": 45, "atk": 14, "def": 3, "xp": 22, "coins": (18, 40)},
+            {"name": "🍄 Mushroom Sprite", "hp": 35, "atk": 11, "def": 6, "xp": 16, "coins": (10, 28)},
         ],
         "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)},
         "boss_chance": 0.15,
@@ -1278,6 +1403,19 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🐉 Frost Dragon", "hp": 300, "atk": 35, "def": 20, "xp": 150, "coins": (150, 300)},
         "boss_chance": 0.12,
+    },
+    {
+        "name": "🌊 Sunken Depths",
+        "description": "An ancient underwater city, swallowed by the sea millennia ago. Bioluminescent creatures light the way.",
+        "min_level": 8,
+        "monsters": [
+            {"name": "🐙 Kraken Spawn", "hp": 75, "atk": 22, "def": 10, "xp": 45, "coins": (35, 65)},
+            {"name": "🧜 Siren", "hp": 55, "atk": 28, "def": 6, "xp": 40, "coins": (30, 55)},
+            {"name": "🦈 Shark Warrior", "hp": 95, "atk": 25, "def": 14, "xp": 50, "coins": (40, 70)},
+            {"name": "🪼 Jelly Swarm", "hp": 65, "atk": 20, "def": 12, "xp": 38, "coins": (28, 52)},
+        ],
+        "boss": {"name": "🐋 Leviathan", "hp": 400, "atk": 42, "def": 25, "xp": 200, "coins": (200, 400)},
+        "boss_chance": 0.10,
     },
     {
         "name": "🌋 Volcanic Caverns",
@@ -1625,6 +1763,9 @@ async def buy(ctx, item_id: str):
         elif found_item["id"] == "life_crystal":
             player["max_health"] += 20
             player["health"] += 20
+        elif found_item["id"] == "gravity_well":
+            player["attack"] += 10
+            player["defense"] += 10
         players[key] = player
         save_players(players)
         await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}!**\n*{found_item['desc']}*")
@@ -1893,6 +2034,7 @@ async def adventure_help(ctx):
             "Use `>locations` to see all areas!\n"
             "• 🌲 **Dark Forest** (Lv.1) — Wolves, Spiders, Ghosts\n"
             "• 🏔️ **Frozen Mountains** (Lv.5) — Ice Elementals, Polar Bears\n"
+            "• 🌊 **Sunken Depths** (Lv.8) — Krakens, Sirens, Shark Warriors\n"
             "• 🌋 **Volcanic Caverns** (Lv.10) — Fire Imps, Magma Beasts\n"
             "• 🏰 **Abandoned Castle** (Lv.15) — Dark Knights, Vampires\n"
             "• 🌌 **The Void** (Lv.20) — Void Watchers, Chaos Entities"
