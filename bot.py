@@ -533,21 +533,95 @@ async def self_upgrade_check():
     except Exception as e:
         logger.error(f"Upgrade failed: {e}")
 
-status_messages = [
-    "Watching You!! From Hermes 🔮",
-    "Watching over the server 👁️",
-    "!help for commands 📖",
-    "Hermes is always watching 🦅",
-    "Protecting the realm ⚔️",
-    "Listening to your commands 🎧",
-    f"Serving {len(bot.guilds) if bot.guilds else 1} server(s) 🌐",
+# ═══════════════════════════════════════════════════════════════
+# DAILY STATUS — Changes each day + rotates within the day
+# ═══════════════════════════════════════════════════════════════
+
+# Day-of-week themed statuses (Monday=0 ... Sunday=6)
+WEEKDAY_STATUSES = {
+    0: [  # Monday
+        "Watching over your Monday blues 🔮",
+        "Hermes hates Mondays too 😤",
+        "Starting the week like a god ⚡",
+        "Monday mode: Activated 💪",
+    ],
+    1: [  # Tuesday
+        "Tuesdays are for conquering 🏰",
+        "Watching... and plotting 🦅",
+        "Hermes sees all on Tuesday 👁️",
+        "Grinding like it's Tuesday 🔥",
+    ],
+    2: [  # Wednesday
+        "Halfway through the week 🐪",
+        "Wednesday wisdom incoming 📜",
+        "Hump day? More like god day ⚡",
+        "Watching the realm from Mount Olympus 🏔️",
+    ],
+    3: [  # Thursday
+        "Almost Friday... almost 🌙",
+        "Thursday thoughts from Hermes 💭",
+        "Watching mortals rush to weekend 😂",
+        "One more day. Hermes is patient ⏳",
+    ],
+    4: [  # Friday
+        "FRIDAY MODE: UNLEASHED 🎉",
+        "Hermes approves this Friday 🍻",
+        "Weekend loading... 99% 📶",
+        "Watching you celebrate Friday 🎊",
+    ],
+    5: [  # Saturday
+        "Even gods rest on Saturday 😴",
+        "Watching your weekend adventures 🌴",
+        "Saturday vibes only ✌️",
+        "Hermes is off-duty (not really) 👀",
+    ],
+    6: [  # Sunday
+        "Sunday scaries? Not on my watch 🛡️",
+        "Watching the sunset over the realm 🌅",
+        "Rest day. Hermes is meditating 🧘",
+        "Preparing for Monday... already 😈",
+    ],
+}
+
+# Extra rotating messages that appear randomly
+BONUS_STATUSES = [
+    "!help to summon my power 📖",
+    "Messenger of the gods 🏛️",
+    "Speed of Hermes, wit of Athena ⚡",
+    "Your wish is my command 🪄",
+    "Watching from the shadows 👁️",
+    "Serving mere mortals since day one 😏",
+    "I run on coffee and divine power ☕⚡",
+    "The server is under my protection 🛡️",
+    "Speak, and I shall listen 🗣️",
+    "Hermes has entered the chat 💬",
+    "Delivering messages across realms 🌐",
+    "God of transitions... and Discord 🔄",
 ]
 
-@tasks.loop(minutes=3)
+@tasks.loop(minutes=5)
 async def status_rotate():
+    """Change status every 5 minutes — daily theme + random bonus."""
     import random
-    msg = random.choice(status_messages)
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=msg))
+    from datetime import datetime as dt
+
+    # Pick day-themed status
+    day = dt.utcnow().weekday()
+    day_statuses = WEEKDAY_STATUSES.get(day, WEEKDAY_STATUSES[0])
+
+    # 70% chance: day-themed, 30% chance: bonus
+    if random.random() < 0.7:
+        msg = random.choice(day_statuses)
+    else:
+        msg = random.choice(BONUS_STATUSES)
+
+    activity_type = random.choice([
+        discord.ActivityType.watching,
+        discord.ActivityType.listening,
+        discord.ActivityType.playing,
+    ])
+
+    await bot.change_presence(activity=discord.Activity(type=activity_type, name=msg))
 
 for loop_task in [watchdog_loop, self_upgrade_check, status_rotate]:
     @loop_task.before_loop
