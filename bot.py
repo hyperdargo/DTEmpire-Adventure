@@ -69,15 +69,15 @@ CHANGELOG = [
         "changes": [
             "🎵 Full music system (play, pause, skip, queue, volume, loop, shuffle)",
             "🛡️ Auto-mod (bad words, spam, caps, links, mentions)",
-            "🎫 Ticket system (!ticket, !close, !add, !remove)",
+            "🎫 Ticket system (>ticket, >close, >add, >remove)",
             "👋 Welcome/Leave messages with custom channel",
             "🎮 Games (roll, coinflip, 8ball, rps, trivia, guess, hack)",
             "📊 Centralized logging to #hermes-logs",
             "🔄 Self-upgrade via git pull + restart",
-            "📰 !latestnews command for changelog",
+            "📰 >latestnews command for changelog",
             "🖥️ System status monitoring",
             "🔒 Server-locked, no DMs allowed",
-            "📝 !purge, !poll, !remind, !say, !avatar commands",
+            "📝 >purge, >poll, >remind, >say, >avatar commands",
         ]
     }
 ]
@@ -99,7 +99,7 @@ intents.webhooks = False
 intents.invites = False
 intents.moderation = False
 
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+bot = commands.Bot(command_prefix=">", intents=intents, help_command=None)
 bot.start_time = time.time()
 bot.home_guild_id = HOME_GUILD_ID
 bot.log_channel_id = LOG_CHANNEL_ID
@@ -596,7 +596,7 @@ WEEKDAY_STATUSES = {
 
 # Extra rotating messages that appear randomly
 BONUS_STATUSES = [
-    "!help to summon my power 📖",
+    ">help to summon my power 📖",
     "Messenger of the gods 🏛️",
     "Speed of Hermes, wit of Athena ⚡",
     "Your wish is my command 🪄",
@@ -673,7 +673,7 @@ async def status_cmd(ctx):
     embed.add_field(name="Uptime", value=f"{state['uptime_hours']}h", inline=True)
     embed.add_field(name="Servers", value=str(state["guilds"]), inline=True)
     embed.add_field(name="Discord.py", value=discord.__version__, inline=True)
-    embed.add_field(name="Prefix", value="`!`", inline=True)
+    embed.add_field(name="Prefix", value="`>`", inline=True)
     await ctx.send(embed=embed)
 
 @bot.command(name="latestnews")
@@ -691,7 +691,7 @@ async def latestnews(ctx):
             value=changes,
             inline=False
         )
-    embed.set_footer(text="Use !help to see all commands")
+    embed.set_footer(text="Use >help to see all commands")
     await ctx.send(embed=embed)
 
 @bot.command(name="help")
@@ -699,30 +699,30 @@ async def help_cmd(ctx):
     """Show all available commands."""
     embed = discord.Embed(
         title="🤖 HermesBot — Command Help",
-        description="Multi-purpose Discord bot. Prefix: `!`\nLocked to this server. No DMs.",
+        description="Multi-purpose Discord bot. Prefix: `>`\nLocked to this server. No DMs.",
         color=discord.Color.blurple(),
         timestamp=datetime.datetime.utcnow()
     )
     embed.add_field(name="📋 General",
-        value="`!help` `!ping` `!uptime` `!status` `!serverinfo` `!userinfo [@user]` `!avatar [@user]` `!latestnews`",
+        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo [@user]` `>avatar [@user]` `>latestnews`",
         inline=False)
     embed.add_field(name="🎵 Music",
-        value="`!play <query>` `!pause` `!resume` `!skip` `!stop` `!queue` `!nowplaying` `!volume <0-100>` `!loop` `!shuffle`",
+        value="`>play <query>` `>pause` `>resume` `>skip` `>stop` `>queue` `>nowplaying` `>volume <0-100>` `>loop` `>shuffle`",
         inline=False)
     embed.add_field(name="🎮 Games",
-        value="`!roll [NdN]` `!coinflip` `!8ball <q>` `!rps <choice>` `!trivia` `!guess` `!hack [@user]`",
+        value="`>roll [NdN]` `>coinflip` `>8ball <q>` `>rps <choice>` `>trivia` `>guess` `>hack [@user]`",
         inline=False)
     embed.add_field(name="🎫 Tickets",
-        value="`!ticket <subject>` `!close` `!add <@user>` `!remove <@user>`",
+        value="`>ticket <subject>` `>close` `>add <@user>` `>remove <@user>`",
         inline=False)
     embed.add_field(name="🛡️ Auto-Mod",
-        value="`!automod` `!automod toggle` `!automod badwords <add|remove> <word>` `!automod caps <percent>` `!automod mentions <count>`",
+        value="`>automod` `>automod toggle` `>automod badwords <add|remove> <word>` `>automod caps <percent>` `>automod mentions <count>`",
         inline=False)
     embed.add_field(name="🔧 Utility",
-        value="`!poll <question>` `!say <msg>` `!purge <count>` `!announce <msg>` `!remind <time> <msg>`",
+        value="`>poll <question>` `>say <msg>` `>purge <count>` `>announce <msg>` `>remind <time> <msg>`",
         inline=False)
     embed.add_field(name="⚙️ Admin",
-        value="`!upgrade` `!restart` `!logs [lines]` `!setwelcome <#channel>` `!setleave <#channel>` `!eval <code>`",
+        value="`>upgrade` `>restart` `>logs [lines]` `>setwelcome <#channel>` `>setleave <#channel>` `>eval <code>`",
         inline=False)
     embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
     await ctx.send(embed=embed)
@@ -796,7 +796,7 @@ async def remind(ctx, time_str: str, *, message: str):
     multipliers = {"s": 1, "m": 60, "h": 3600, "d": 86400}
     match = re.match(r"(\d+)([smhd])", time_str.lower())
     if not match:
-        return await ctx.send("❌ Format: `!remind 10s|5m|1h|1d <message>`")
+        return await ctx.send("❌ Format: `remind 10s|5m|1h|1d <message>`")
     amount, unit = int(match.group(1)), match.group(2)
     seconds = amount * multipliers[unit]
     if seconds > 604800:
@@ -856,7 +856,7 @@ async def ticket(ctx, *, subject: str = "No subject"):
         color=discord.Color.blue(),
         timestamp=datetime.datetime.utcnow()
     )
-    embed.add_field(name="Commands", value="`!close` — Close ticket\n`!add @user` — Add user\n`!remove @user` — Remove user")
+    embed.add_field(name="Commands", value="`close` — Close ticket\n`add @user` — Add user\n`remove @user` — Remove user")
     await channel.send(f"{ctx.author.mention}", embed=embed)
     await ctx.send(f"✅ Ticket created: {channel.mention}")
 
@@ -901,7 +901,7 @@ async def remove_from_ticket(ctx, member: discord.Member):
 @bot.command(name="automod")
 @commands.has_permissions(administrator=True)
 async def automod_cmd(ctx, action: str = "status", sub: str = None, value=None):
-    """Auto-mod management. Usage: !automod [toggle|badwords|caps|mentions]"""
+    """Auto-mod management. Usage: >automod [toggle|badwords|caps|mentions]"""
     global automod_config
 
     if action == "status":
@@ -930,7 +930,7 @@ async def automod_cmd(ctx, action: str = "status", sub: str = None, value=None):
                 automod_config["bad_words"].remove(word)
             await ctx.send(f"✅ Removed `{word}` from bad words.")
         else:
-            await ctx.send("❌ Use: `!automod badwords add|remove <word>`")
+            await ctx.send("❌ Use: `automod badwords add|remove <word>`")
 
     elif action == "caps" and value:
         try:
@@ -947,7 +947,7 @@ async def automod_cmd(ctx, action: str = "status", sub: str = None, value=None):
             await ctx.send("❌ Provide a number.")
 
     else:
-        await ctx.send("❌ Usage: `!automod [toggle|status|badwords add/remove <word>|caps <n>|mentions <n>]`")
+        await ctx.send("❌ Usage: `automod [toggle|status|badwords add/remove <word>|caps <n>|mentions <n>]`")
 
 # ═══════════════════════════════════════════════════════════════
 # WELCOME/LEAVE CHANNEL SETUP
@@ -985,7 +985,7 @@ async def roll(ctx, dice: str = "1d20"):
         else:
             await ctx.send(f"🎲 **{ctx.author.display_name}** rolled **{total}** ({rolls}d{limit}): {', '.join(map(str, results))}")
     except ValueError:
-        await ctx.send("❌ Format: `!roll NdN` (e.g., `!roll 2d6`)")
+        await ctx.send("❌ Format: `roll NdN` (e.g., `roll 2d6`)")
 
 @bot.command(name="coinflip", aliases=["coin", "flip"])
 async def coinflip(ctx):
