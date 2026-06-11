@@ -696,39 +696,116 @@ async def latestnews(ctx):
     await ctx.send(embed=embed)
 
 @bot.command(name="help")
-async def help_cmd(ctx):
-    """Show all available commands."""
+async def help_cmd(ctx, category: str = None):
+    """Show all available commands. Use >help [category] for details. Categories: general, games, adventure, tickets, automod, utility, admin"""
+    
+    # If user asks for adventure help specifically
+    if category and category.lower() in ("adventure", "adv", "rpg"):
+        return await adventure_help(ctx)
+    
+    if category and category.lower() not in ("general", "games", "tickets", "automod", "utility", "admin", "all", None):
+        # Check if it's a known category
+        return await ctx.send("❌ Unknown category. Use: `general`, `games`, `adventure`, `tickets`, `automod`, `utility`, `admin`")
+
+    # Category-specific help
+    if category and category.lower() == "general":
+        embed = discord.Embed(title="📋 General Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>help [category]`", value="Show help (categories: general, games, adventure, tickets, automod, utility, admin)", inline=False)
+        embed.add_field(name="`>adventurehelp`", value="Detailed adventure & RPG help", inline=False)
+        embed.add_field(name="`>ping`", value="Check bot latency", inline=False)
+        embed.add_field(name="`>uptime`", value="Show bot uptime", inline=False)
+        embed.add_field(name="`>status`", value="Bot system status", inline=False)
+        embed.add_field(name="`>serverinfo`", value="Server information", inline=False)
+        embed.add_field(name="`>userinfo [@user]`", value="User information", inline=False)
+        embed.add_field(name="`>avatar [@user]`", value="Show user avatar", inline=False)
+        embed.add_field(name="`>latestnews`", value="Latest changelog", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    if category and category.lower() == "games":
+        embed = discord.Embed(title="🎮 Game Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>roll [NdN]`", value="Roll dice (default: 1d20)", inline=False)
+        embed.add_field(name="`>coinflip`", value="Flip a coin", inline=False)
+        embed.add_field(name="`>8ball <question>`", value="Magic 8-ball", inline=False)
+        embed.add_field(name="`>rps <rock|paper|scissors>`", value="Rock Paper Scissors", inline=False)
+        embed.add_field(name="`>trivia`", value="Answer a trivia question", inline=False)
+        embed.add_field(name="`>guess`", value="Guess a number 1-100", inline=False)
+        embed.add_field(name="`>hack [@user]`", value="Fake hack (just for fun)", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    if category and category.lower() == "tickets":
+        embed = discord.Embed(title="🎫 Ticket Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>ticket <subject>`", value="Create a support ticket", inline=False)
+        embed.add_field(name="`>close`", value="Close current ticket", inline=False)
+        embed.add_field(name="`>add <@user>`", value="Add user to ticket", inline=False)
+        embed.add_field(name="`>remove <@user>`", value="Remove user from ticket", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    if category and category.lower() == "automod":
+        embed = discord.Embed(title="🛡️ Auto-Mod Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>automod`", value="Show auto-mod status", inline=False)
+        embed.add_field(name="`>automod toggle`", value="Enable/disable auto-mod", inline=False)
+        embed.add_field(name="`>automod badwords <add|remove> <word>`", value="Manage bad words list", inline=False)
+        embed.add_field(name="`>automod caps <percent>`", value="Set max caps percentage", inline=False)
+        embed.add_field(name="`>automod mentions <count>`", value="Set max mentions per message", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    if category and category.lower() == "utility":
+        embed = discord.Embed(title="🔧 Utility Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>poll <question>`", value="Create a poll", inline=False)
+        embed.add_field(name="`>say <message>`", value="Make the bot say something", inline=False)
+        embed.add_field(name="`>purge <count>`", value="Delete messages (max 100)", inline=False)
+        embed.add_field(name="`>announce <message>`", value="Send announcement (manage_messages)", inline=False)
+        embed.add_field(name="`>remind <time> <msg>`", value="Set reminder (e.g., 10s, 5m, 1h, 1d)", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    if category and category.lower() == "admin":
+        embed = discord.Embed(title="⚙️ Admin Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
+        embed.add_field(name="`>upgrade`", value="Git pull + restart (owner only)", inline=False)
+        embed.add_field(name="`>restart`", value="Restart bot (owner only)", inline=False)
+        embed.add_field(name="`>logs [lines]`", value="View bot logs (owner only)", inline=False)
+        embed.add_field(name="`>setwelcome <#channel>`", value="Set welcome channel", inline=False)
+        embed.add_field(name="`>setleave <#channel>`", value="Set leave channel", inline=False)
+        embed.add_field(name="`>eval <code>`", value="Evaluate Python (owner only)", inline=False)
+        embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+        return await ctx.send(embed=embed)
+
+    # Default: show all commands (main help)
     embed = discord.Embed(
         title="🤖 HermesBot — Command Help",
-        description="Multi-purpose Discord bot. Prefix: `>`\nLocked to this server. No DMs.",
+        description="Multi-purpose Discord bot. Prefix: `>`\nLocked to this server. No DMs.\nUse `>help <category>` for details or `>adventurehelp` for RPG guide.",
         color=discord.Color.blurple(),
         timestamp=datetime.datetime.utcnow()
     )
     embed.add_field(name="📋 General",
-        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo [@user]` `>avatar [@user]` `>latestnews`",
-        inline=False)
-    embed.add_field(name="🎵 Music",
-        value="`>play <query>` `>pause` `>resume` `>skip` `>stop` `>queue` `>nowplaying` `>volume <0-100>` `>loop` `>shuffle`",
+        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo` `>avatar` `>latestnews`",
         inline=False)
     embed.add_field(name="🎮 Games",
-        value="`>roll [NdN]` `>coinflip` `>8ball <q>` `>rps <choice>` `>trivia` `>guess` `>hack [@user]`",
+        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack`",
         inline=False)
     embed.add_field(name="⚔️ Adventure & RPG",
-        value="`>adventure` — Fight monsters & earn rewards\n`>profile` — View your stats & equipment\n`>shop [category]` — Browse the shop\n`>buy <item_id>` — Buy items\n`>equip <item_id>` — Equip weapons/armor\n`>inventory` — View your items\n`>heal` — Restore HP (10 coins)\n`>daily` — Claim daily reward\n`>locations` — View adventure areas\n`>leaderboard [cat]` — Server rankings",
+        value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard`\n`>adventurehelp` — Full RPG guide",
         inline=False)
     embed.add_field(name="🎫 Tickets",
-        value="`>ticket <subject>` `>close` `>add <@user>` `>remove <@user>`",
+        value="`>ticket` `>close` `>add` `>remove`",
         inline=False)
     embed.add_field(name="🛡️ Auto-Mod",
-        value="`>automod` `>automod toggle` `>automod badwords <add|remove> <word>` `>automod caps <percent>` `>automod mentions <count>`",
+        value="`>automod` — Bad words, caps, spam, invites",
         inline=False)
     embed.add_field(name="🔧 Utility",
-        value="`>poll <question>` `>say <msg>` `>purge <count>` `>announce <msg>` `>remind <time> <msg>`",
+        value="`>poll` `>say` `>purge` `>announce` `>remind`",
         inline=False)
     embed.add_field(name="⚙️ Admin",
-        value="`>upgrade` `>restart` `>logs [lines]` `>setwelcome <#channel>` `>setleave <#channel>` `>eval <code>`",
+        value="`>upgrade` `>restart` `>logs` `>setwelcome` `>setleave` `>eval`",
         inline=False)
-    embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
+    embed.add_field(name="🌐 Web Dashboard",
+        value="Play in browser! Same data as Discord.\nPort **8081** — Open in your browser!",
+        inline=False)
+    embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒 | Use >help <category> for details")
     await ctx.send(embed=embed)
 
 @bot.command(name="serverinfo")
@@ -1762,6 +1839,118 @@ async def locations(ctx):
             inline=False
         )
     embed.set_footer(text=f"Your level: {player['level']} | Use >adventure to explore!")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="adventurehelp", aliases=["advhelp", "rpghelp", "howtoplay"])
+async def adventure_help(ctx):
+    """Full guide to the Adventure & RPG system."""
+    embed = discord.Embed(
+        title="⚔️ Adventure & RPG — Complete Guide",
+        description="Fight monsters, earn coins & XP, buy gear, and become the strongest!",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+
+    embed.add_field(
+        name="🎮 Getting Started",
+        value=(
+            "1. Use `>adventure` to go on an adventure (30s cooldown)\n"
+            "2. Fight monsters to earn ⭐ XP and 🪙 Coins\n"
+            "3. Level up to unlock new areas and get stronger\n"
+            "4. Use `>shop` to buy weapons, armor, and potions\n"
+            "5. Use `>equip` to gear up and fight harder enemies!"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="⚔️ Combat System",
+        value=(
+            "• Combat is automatic — you and the monster take turns\n"
+            "• Your damage = `ATK - enemy DEF` (with some randomness)\n"
+            "• Equip weapons to increase ATK, armor to increase DEF\n"
+            "• If you die, you lose 20 coins and respawn with half HP\n"
+            "• Boss fights give much better rewards but are harder!"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="📊 Leveling",
+        value=(
+            "• XP needed to level = `Level × 50`\n"
+            "• Each level: **+3 ATK, +2 DEF, +10 Max HP**\n"
+            "• Higher levels unlock tougher areas with better loot\n"
+            "• Use `>profile` to see your stats and XP progress"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🗺️ Locations",
+        value=(
+            "Use `>locations` to see all areas!\n"
+            "• 🌲 **Dark Forest** (Lv.1) — Wolves, Spiders, Ghosts\n"
+            "• 🏔️ **Frozen Mountains** (Lv.5) — Ice Elementals, Polar Bears\n"
+            "• 🌋 **Volcanic Caverns** (Lv.10) — Fire Imps, Magma Beasts\n"
+            "• 🏰 **Abandoned Castle** (Lv.15) — Dark Knights, Vampires\n"
+            "• 🌌 **The Void** (Lv.20) — Void Watchers, Chaos Entities"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🏪 Shop & Items",
+        value=(
+            "`>shop all` — View everything\n"
+            "`>shop weapons` — Browse weapons\n"
+            "`>shop armor` — Browse armor\n"
+            "`>shop potions` — Browse potions\n"
+            "`>shop special` — Browse special items\n"
+            "`>buy <item_id>` — Purchase an item\n"
+            "`>equip <item_id>` — Equip weapon/armor\n"
+            "`>inventory` — View your items"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="💰 Economy",
+        value=(
+            "• Kill monsters → earn coins\n"
+            "• `>daily` — Free daily reward (scales with level, 5% jackpot chance!)\n"
+            "• `>heal` — Restore 30 HP for 10 coins\n"
+            "• Die → lose 20 coins\n"
+            "• `>leaderboard coins` — See who's the richest!"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🏆 Leaderboards",
+        value=(
+            "`>leaderboard level` — Top levels\n"
+            "`>leaderboard coins` — Richest players\n"
+            "`>leaderboard kills` — Most monsters killed\n"
+            "`>leaderboard bosses` — Most bosses slain\n"
+            "`>leaderboard deaths` — Most deaths (oops)\n"
+            "`>leaderboard adventures` — Most adventures"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🌐 Web Dashboard",
+        value=(
+            "Play the same game in your browser with a nice UI!\n"
+            "Same data, same account — just open port **8081**!\n"
+            "Adventure, shop, equip, and more from your browser."
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text="Tip: Start with >adventure and work your way up! Good luck, adventurer! ⚔️")
     await ctx.send(embed=embed)
 
 

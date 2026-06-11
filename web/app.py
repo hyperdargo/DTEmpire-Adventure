@@ -64,14 +64,29 @@ def save_player(guild_id, user_id, player):
     players[key] = player
     save_players(players)
 
-# ── Adventure data (same as bot) ──
-ADVENTURE_LOCATIONS = [
-    {"name": "🌲 Dark Forest", "description": "A dense, mysterious forest where shadows lurk between the trees.", "min_level": 1, "monsters": [{"name": "🐺 Wolf", "hp": 30, "atk": 8, "def": 2, "xp": 15, "coins": (10, 25)}, {"name": "🕷️ Giant Spider", "hp": 25, "atk": 10, "def": 1, "xp": 12, "coins": (8, 20)}, {"name": "👻 Ghost", "hp": 40, "atk": 12, "def": 3, "xp": 20, "coins": (15, 35)}, {"name": "🧟 Zombie", "hp": 50, "atk": 7, "def": 5, "xp": 18, "coins": (12, 30)}], "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)}, "boss_chance": 0.15},
-    {"name": "🏔️ Frozen Mountains", "description": "Icy peaks where only the brave dare to tread.", "min_level": 5, "monsters": [{"name": "❄️ Ice Elemental", "hp": 60, "atk": 18, "def": 8, "xp": 35, "coins": (25, 50)}, {"name": "🐻 Polar Bear", "hp": 80, "atk": 22, "def": 6, "xp": 40, "coins": (30, 55)}, {"name": "🦅 Frost Hawk", "hp": 45, "atk": 25, "def": 4, "xp": 30, "coins": (20, 45)}, {"name": "🧊 Ice Golem", "hp": 100, "atk": 15, "def": 15, "xp": 45, "coins": (35, 60)}], "boss": {"name": "🐉 Frost Dragon", "hp": 300, "atk": 35, "def": 20, "xp": 150, "coins": (150, 300)}, "boss_chance": 0.12},
-    {"name": "🌋 Volcanic Caverns", "description": "Rivers of lava and chambers of fire.", "min_level": 10, "monsters": [{"name": "🔥 Fire Imp", "hp": 70, "atk": 30, "def": 10, "xp": 50, "coins": (40, 70)}, {"name": "🌋 Magma Beast", "hp": 120, "atk": 28, "def": 18, "xp": 60, "coins": (50, 85)}, {"name": "💀 Lava Skeleton", "hp": 90, "atk": 35, "def": 12, "xp": 55, "coins": (45, 75)}, {"name": "🦂 Fire Scorpion", "hp": 85, "atk": 32, "def": 15, "xp": 52, "coins": (42, 72)}], "boss": {"name": "👹 Inferno Lord", "hp": 500, "atk": 50, "def": 30, "xp": 250, "coins": (250, 500)}, "boss_chance": 0.10},
-    {"name": "🏰 Abandoned Castle", "description": "A once-great castle now ruled by dark forces.", "min_level": 15, "monsters": [{"name": "⚔️ Dark Knight", "hp": 150, "atk": 40, "def": 25, "xp": 80, "coins": (60, 100)}, {"name": "🧙 Dark Mage", "hp": 100, "atk": 50, "def": 15, "xp": 90, "coins": (70, 110)}, {"name": "🦇 Vampire", "hp": 130, "atk": 45, "def": 20, "xp": 85, "coins": (65, 105)}, {"name": "💀 Death Knight", "hp": 180, "atk": 38, "def": 30, "xp": 95, "coins": (75, 120)}], "boss": {"name": "👑 Shadow King", "hp": 800, "atk": 65, "def": 40, "xp": 400, "coins": (400, 800)}, "boss_chance": 0.08},
-    {"name": "🌌 The Void", "description": "The final frontier. Reality bends here.", "min_level": 20, "monsters": [{"name": "👁️ Void Watcher", "hp": 200, "atk": 55, "def": 35, "xp": 120, "coins": (100, 160)}, {"name": "🌀 Chaos Entity", "hp": 250, "atk": 60, "def": 30, "xp": 140, "coins": (120, 180)}, {"name": "💀 Reaper", "hp": 180, "atk": 70, "def": 25, "xp": 130, "coins": (110, 170)}, {"name": "🐲 Void Dragon", "hp": 350, "atk": 50, "def": 45, "xp": 160, "coins": (140, 220)}], "boss": {"name": "🌑 The Void Emperor", "hp": 1500, "atk": 90, "def": 60, "xp": 800, "coins": (800, 1500)}, "boss_chance": 0.05},
-]
+# ── Adventure data ──
+# Try to import from bot.py so data is always in sync
+import sys as _sys
+_bot_dir = str(BASE_DIR)
+if _bot_dir not in _sys.path:
+    _sys.path.insert(0, _bot_dir)
+
+ADVENTURE_LOCATIONS = []
+try:
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location("bot", str(BASE_DIR / "bot.py"))
+    _bot = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_bot)
+    ADVENTURE_LOCATIONS = _bot.ADVENTURE_LOCATIONS
+except Exception as _e:
+    # Fallback: load from JSON cache that bot writes
+    _cache_file = DATA_DIR / "adventure_locations.json"
+    try:
+        with open(_cache_file) as _f:
+            ADVENTURE_LOCATIONS = json.load(_f)
+    except:
+        # Ultimate fallback: empty list
+        ADVENTURE_LOCATIONS = []
 
 # ── Routes ──
 
