@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesBot — Leaderboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
+.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
+.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
+.nav .logout{margin-left:16px;color:#ff6666}
+.container{max-width:700px;margin:0 auto;padding:24px}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid #222}
+th{color:#a855f7;font-size:0.85em;text-transform:uppercase}
+tr:hover{background:rgba(168,85,247,0.05)}
+.medal{font-size:1.3em}
+.rank{color:#888;width:40px}
+.name{font-weight:600}
+.value{color:#fbbf24;font-weight:600;text-align:right}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">⚡ HermesBot</div>
+  <div class="nav-links nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/adventure">Adventure</a>
+    <a href="/shop">Shop</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/leaderboard" class="active">Leaderboard</a>
+    <a href="/logout" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <h2 style="margin-bottom:20px">🏆 Leaderboard</h2>
+  <table>
+    <thead><tr><th class="rank">#</th><th>Player</th><th class="value">Level</th><th class="value">Kills</th><th class="value">Bosses</th></tr></thead>
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <td class="rank">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
+        <td class="name">User#{{ p.user_id|string[-4:] }}</td>
+        <td class="value">{{ p.level }}</td>
+        <td class="value">{{ p.monsters_killed }}</td>
+        <td class="value">{{ p.bosses_killed }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not players %}
+  <p style="text-align:center;color:#666;padding:40px">No players yet. Be the first to play!</p>
+  {% endif %}
+</div>
+</body>
+</html>

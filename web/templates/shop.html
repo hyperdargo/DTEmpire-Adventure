@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesBot — Shop</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
+.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
+.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
+.nav .logout{margin-left:16px;color:#ff6666}
+.container{max-width:1000px;margin:0 auto;padding:24px}
+.coins-display{text-align:right;font-size:1.2em;margin-bottom:16px;color:#fbbf24}
+.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.tab{padding:10px 20px;border:1px solid #333;border-radius:8px;background:rgba(20,20,40,0.8);color:#aaa;cursor:pointer;transition:all 0.3s;font-size:0.9em}
+.tab:hover,.tab.active{border-color:#a855f7;color:#fff;background:rgba(168,85,247,0.2)}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.item-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;transition:all 0.3s}
+.item-card:hover{border-color:#a855f7;transform:translateY(-2px)}
+.item-card h3{font-size:1.1em;margin-bottom:6px}
+.item-card .desc{color:#888;font-size:0.85em;margin-bottom:12px}
+.item-card .price{color:#fbbf24;font-weight:600;margin-bottom:12px}
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-buy{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff;width:100%}
+.btn-buy:hover{box-shadow:0 4px 15px rgba(168,85,247,0.4)}
+.btn-buy:disabled{opacity:0.5;cursor:not-allowed}
+.toast{position:fixed;bottom:24px;right:24px;padding:16px 24px;border-radius:8px;color:#fff;font-weight:600;z-index:1000;animation:slideIn 0.3s ease}
+.toast.success{background:linear-gradient(135deg,#22c55e,#16a34a)}
+.toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">⚡ HermesBot</div>
+  <div class="nav-links nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/adventure">Adventure</a>
+    <a href="/shop" class="active">Shop</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/leaderboard">Leaderboard</a>
+    <a href="/logout" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <h2 style="margin-bottom:8px">🏪 Hermes' Shop</h2>
+  <div class="coins-display">🪙 <span id="coinsValue">{{ player.coins }}</span> coins</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('all')">All</div>
+    <div class="tab" onclick="showTab('weapons')">⚔️ Weapons</div>
+    <div class="tab" onclick="showTab('armor')">🛡️ Armor</div>
+    <div class="tab" onclick="showTab('potions')">🧪 Potions</div>
+    <div class="tab" onclick="showTab('special')">✨ Special</div>
+  </div>
+
+  <div id="itemsContainer" class="items-grid"></div>
+</div>
+
+<script>
+const shopData = {{ shop|tojson }};
+const allItems = [];
+['weapons','armor','potions','special'].forEach(cat => {
+  (shopData[cat] || []).forEach(item => {
+    allItems.push({...item, category: cat});
+  });
+});
+
+function showTab(cat) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const items = cat === 'all' ? allItems : allItems.filter(i => i.category === cat);
+  renderItems(items);
+}
+
+function renderItems(items) {
+  const container = document.getElementById('itemsContainer');
+  container.innerHTML = items.map(item => `
+    <div class="item-card">
+      <h3>${item.name}</h3>
+      <div class="desc">${item.desc}</div>
+      <div class="price">🪙 ${item.price}</div>
+      <button class="btn btn-buy" onclick="buyItem('${item.id}', ${item.price})" id="btn-${item.id}">Buy</button>
+    </div>
+  `).join('');
+}
+
+function buyItem(itemId, price) {
+  const btn = document.getElementById('btn-' + itemId);
+  btn.disabled = true;
+  btn.textContent = 'Buying...';
+
+  fetch('/api/buy', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: itemId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast(data.message, 'success');
+      document.getElementById('coinsValue').textContent = data.player.coins;
+    } else {
+      showToast(data.error, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Buy';
+    }
+  })
+  .catch(err => {
+    showToast('Error: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Buy';
+  });
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+renderItems(allItems);
+</script>
+</body>
+</html>

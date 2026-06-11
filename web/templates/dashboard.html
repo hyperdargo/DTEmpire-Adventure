@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesBot — Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
+.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
+.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
+.nav .logout{margin-left:16px;color:#ff6666}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;text-align:center;transition:transform 0.2s}
+.stat-card:hover{transform:translateY(-2px);border-color:#6c3ce0}
+.stat-card .icon{font-size:2em;margin-bottom:8px}
+.stat-card .value{font-size:1.8em;font-weight:700;color:#a855f7}
+.stat-card .label{color:#888;font-size:0.85em;margin-top:4px}
+.bar-container{background:rgba(255,255,255,0.1);border-radius:8px;height:12px;margin-top:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:8px;transition:width 0.5s}
+.bar-hp{background:linear-gradient(90deg,#ef4444,#f97316)}
+.bar-xp{background:linear-gradient(90deg,#a855f7,#3b82f6)}
+.section-title{font-size:1.3em;margin:24px 0 16px;color:#a855f7}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.action-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:24px;text-decoration:none;color:#e0e0e0;transition:all 0.3s;display:block}
+.action-card:hover{border-color:#a855f7;transform:translateY(-3px);box-shadow:0 8px 30px rgba(168,85,247,0.2)}
+.action-card .icon{font-size:2.5em;margin-bottom:12px}
+.action-card h3{margin-bottom:8px;color:#a855f7}
+.action-card p{color:#888;font-size:0.9em}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">⚡ HermesBot</div>
+  <div class="nav-links nav">
+    <a href="/dashboard" class="active">Dashboard</a>
+    <a href="/adventure">Adventure</a>
+    <a href="/shop">Shop</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/leaderboard">Leaderboard</a>
+    <a href="/logout" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <h2 style="margin-bottom:20px">Welcome, {{ username }}!</h2>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="icon">📊</div>
+      <div class="value">{{ player.level }}</div>
+      <div class="label">Level</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">🪙</div>
+      <div class="value">{{ player.coins }}</div>
+      <div class="label">Coins</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">⚔️</div>
+      <div class="value">{{ player.monsters_killed }}</div>
+      <div class="label">Monsters Killed</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">👑</div>
+      <div class="value">{{ player.bosses_killed }}</div>
+      <div class="label">Bosses Slain</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>❤️ HP</span>
+        <span>{{ player.health }}/{{ player.max_health }}</span>
+      </div>
+      <div class="bar-container"><div class="bar-fill bar-hp" style="width:{{ hp_percent }}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span>⭐ XP</span>
+        <span>{{ player.xp }}/{{ xp_needed }}</span>
+      </div>
+      <div class="bar-container"><div class="bar-fill bar-xp" style="width:{{ xp_percent }}%"></div></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="stat-card">
+      <div class="icon">⚔️</div>
+      <div class="value">{{ player.attack }}</div>
+      <div class="label">Attack</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">🛡️</div>
+      <div class="value">{{ player.defense }}</div>
+      <div class="label">Defense</div>
+    </div>
+  </div>
+
+  <h3 class="section-title">Quick Actions</h3>
+  <div class="actions">
+    <a href="/adventure" class="action-card">
+      <div class="icon">⚔️</div>
+      <h3>Go Adventure</h3>
+      <p>Fight monsters, earn XP and coins!</p>
+    </a>
+    <a href="/shop" class="action-card">
+      <div class="icon">🏪</div>
+      <h3>Visit Shop</h3>
+      <p>Buy weapons, armor, and potions</p>
+    </a>
+    <a href="/inventory" class="action-card">
+      <div class="icon">🎒</div>
+      <h3>Inventory</h3>
+      <p>Manage and equip your items</p>
+    </a>
+    <a href="/leaderboard" class="action-card">
+      <div class="icon">🏆</div>
+      <h3>Leaderboard</h3>
+      <p>See top players on the server</p>
+    </a>
+  </div>
+</div>
+</body>
+</html>

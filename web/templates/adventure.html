@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HermesBot — Adventure</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
+.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
+.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
+.nav .logout{margin-left:16px;color:#ff6666}
+.container{max-width:900px;margin:0 auto;padding:24px}
+.location-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s}
+.location-card:hover{border-color:#a855f7;transform:translateX(4px)}
+.location-card.locked{opacity:0.5;cursor:not-allowed}
+.location-card h3{font-size:1.2em;margin-bottom:6px}
+.location-card p{color:#888;font-size:0.9em}
+.location-card .req{color:#f97316;font-size:0.85em;margin-top:4px}
+.combat-area{background:rgba(20,20,40,0.9);border:1px solid #6c3ce0;border-radius:16px;padding:32px;margin-top:24px;display:none}
+.combat-header{text-align:center;margin-bottom:24px}
+.combat-header h2{font-size:1.6em;margin-bottom:8px}
+.vs-display{display:flex;align-items:center;justify-content:center;gap:32px;margin:24px 0}
+.fighter{text-align:center}
+.fighter .emoji{font-size:4em;display:block;margin-bottom:8px}
+.fighter .name{font-size:1.2em;font-weight:600}
+.fighter .stats{color:#888;font-size:0.85em;margin-top:4px}
+.vs{font-size:2em;font-weight:700;color:#a855f7}
+.combat-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;max-height:200px;overflow-y:auto;margin:16px 0;font-size:0.9em;line-height:1.6}
+.combat-log .win{color:#22c55e}
+.combat-log .lose{color:#ef4444}
+.combat-log .dmg{color:#f97316}
+.result{text-align:center;padding:24px}
+.result h2{font-size:2em;margin-bottom:12px}
+.result .rewards{font-size:1.2em;color:#a855f7}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-primary{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(168,85,247,0.4)}
+.btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
+.cooldown{text-align:center;color:#f97316;font-size:1.1em;padding:20px}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">⚡ HermesBot</div>
+  <div class="nav-links nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/adventure" class="active">Adventure</a>
+    <a href="/shop">Shop</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/leaderboard">Leaderboard</a>
+    <a href="/logout" class="logout">Logout</a>
+  </div>
+</nav>
+<div class="container">
+  <h2 style="margin-bottom:20px">⚔️ Choose Your Adventure</h2>
+  <p style="color:#888;margin-bottom:20px">Level {{ player.level }} | ❤️ {{ player.health }}/{{ player.max_health }} HP | 🪙 {{ player.coins }} coins</p>
+
+  {% for loc in locations %}
+  <div class="location-card" onclick="startAdventure('{{ loc.name }}')" id="loc-{{ loop.index }}">
+    <h3>{{ loc.name }} {% if player.level < loc.min_level %}🔒{% endif %}</h3>
+    <p>{{ loc.description }}</p>
+    <div class="req">Required Level: {{ loc.min_level }} | Monsters: {{ loc.monsters|length }} | Boss: {{ loc.boss.name }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="combat-area" id="combatArea">
+    <div class="combat-header">
+      <h2 id="combatTitle">Battle!</h2>
+      <p id="combatLocation" style="color:#888"></p>
+    </div>
+    <div class="vs-display">
+      <div class="fighter">
+        <span class="emoji">🧙</span>
+        <div class="name">{{ username }}</div>
+        <div class="stats">ATK: {{ player.attack }} | DEF: {{ player.defense }}</div>
+        <div class="stats" id="playerHpDisplay">HP: {{ player.health }}/{{ player.max_health }}</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="fighter">
+        <span class="emoji" id="enemyEmoji">👹</span>
+        <div class="name" id="enemyName">Enemy</div>
+        <div class="stats" id="enemyStats">ATK: ? | DEF: ?</div>
+        <div class="stats" id="enemyHpDisplay">HP: ?/?</div>
+      </div>
+    </div>
+    <div class="combat-log" id="combatLog"></div>
+    <div id="resultArea"></div>
+  </div>
+</div>
+
+<script>
+const locations = {{ locations|tojson }};
+let inCombat = false;
+
+function startAdventure(locName) {
+  if (inCombat) return;
+  const loc = locations.find(l => l.name === locName);
+  if (!loc) return;
+
+  inCombat = true;
+  document.getElementById('combatArea').style.display = 'block';
+  document.getElementById('combatTitle').textContent = '⚔️ ' + loc.name;
+  document.getElementById('combatLocation').textContent = loc.description;
+  document.getElementById('combatLog').innerHTML = '';
+  document.getElementById('resultArea').innerHTML = '';
+
+  fetch('/api/adventure', {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('combatLog').innerHTML = `<div class="cooldown">⏳ ${data.error}</div>`;
+        document.getElementById('resultArea').innerHTML = `<button class="btn btn-primary" onclick="closeCombat()">Go Back</button>`;
+        return;
+      }
+
+      document.getElementById('enemyEmoji').textContent = data.enemy.name.split(' ')[0];
+      document.getElementById('enemyName').textContent = data.enemy.name;
+      document.getElementById('enemyStats').textContent = `ATK: ${data.enemy.atk} | DEF: ${data.enemy.def}`;
+      document.getElementById('enemyHpDisplay').textContent = `HP: ${data.enemy.hp}/${data.enemy.hp}`;
+
+      let log = '';
+      data.combat_log.forEach((line, i) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.textContent = line;
+          if (line.includes('You deal')) div.className = 'win';
+          else div.className = 'dmg';
+          document.getElementById('combatLog').appendChild(div);
+          document.getElementById('combatLog').scrollTop = 99999;
+        }, i * 600);
+      });
+
+      setTimeout(() => {
+        const resultDiv = document.getElementById('resultArea');
+        if (data.won) {
+          let html = `<div class="result"><h2 style="color:#22c55e">🎉 Victory!</h2>`;
+          html += `<p>You defeated ${data.enemy.name} in ${data.rounds} rounds!</p>`;
+          html += `<p class="rewards">⭐ +${data.xp_gain} XP | 🪙 +${data.coin_gain} Coins</p>`;
+          if (data.leveled_up) html += `<p style="color:#fbbf24;font-size:1.2em;margin-top:8px">🎉 LEVEL UP! You are now Level ${data.player.level}!</p>`;
+          html += `<p style="margin-top:12px;color:#888">Monsters: ${data.player.monsters_killed} | Bosses: ${data.player.bosses_killed}</p>`;
+          html += `<button class="btn btn-primary" style="margin-top:16px" onclick="closeCombat()">Continue</button></div>`;
+          resultDiv.innerHTML = html;
+        } else {
+          let html = `<div class="result"><h2 style="color:#ef4444">💀 Defeated!</h2>`;
+          html += `<p>You were slain by ${data.enemy.name}...</p>`;
+          html += `<p class="rewards">🪙 Lost 20 coins | ❤️ Respawned with half HP</p>`;
+          html += `<button class="btn btn-danger" style="margin-top:16px" onclick="closeCombat()">Try Again</button></div>`;
+          resultDiv.innerHTML = html;
+        }
+      }, data.combat_log.length * 600 + 500);
+    })
+    .catch(err => {
+      document.getElementById('combatLog').innerHTML = `<div class="cooldown">Error: ${err.message}</div>`;
+      document.getElementById('resultArea').innerHTML = `<button class="btn btn-primary" onclick="closeCombat()">Go Back</button>`;
+    });
+}
+
+function closeCombat() {
+  inCombat = false;
+  document.getElementById('combatArea').style.display = 'none';
+  location.reload();
+}
+</script>
+</body>
+</html>
