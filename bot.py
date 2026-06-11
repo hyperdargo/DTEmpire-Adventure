@@ -74,6 +74,7 @@ CHANGELOG = [
             "🎮 Games (roll, coinflip, 8ball, rps, trivia, guess, hack)",
             "📊 Centralized logging to #hermes-logs",
             "🔄 Self-upgrade via git pull + restart",
+            "🌐 Web Dashboard — Play in browser at port 8081",
             "📰 >latestnews command for changelog",
             "🖥️ System status monitoring",
             "🔒 Server-locked, no DMs allowed",
