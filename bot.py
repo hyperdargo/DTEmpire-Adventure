@@ -1046,13 +1046,16 @@ async def load_extensions():
         except Exception as e:
             logger.error(f"Failed to load cog {cog}: {e}")
 
-async def main():
+def main():
     if not BOT_TOKEN:
         logger.error("DISCORD_BOT_TOKEN not set!")
         sys.exit(1)
     logger.info("Starting HermesBot v2.0...")
-    await load_extensions()
-    await bot.start(BOT_TOKEN)
+    # Load cogs synchronously before running
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(load_extensions())
+    loop.close()
+    bot.run(BOT_TOKEN)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
