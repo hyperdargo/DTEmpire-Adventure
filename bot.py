@@ -712,6 +712,9 @@ async def help_cmd(ctx):
     embed.add_field(name="🎮 Games",
         value="`>roll [NdN]` `>coinflip` `>8ball <q>` `>rps <choice>` `>trivia` `>guess` `>hack [@user]`",
         inline=False)
+    embed.add_field(name="⚔️ Adventure & RPG",
+        value="`>adventure` — Fight monsters & earn rewards\n`>profile` — View your stats & equipment\n`>shop [category]` — Browse the shop\n`>buy <item_id>` — Buy items\n`>equip <item_id>` — Equip weapons/armor\n`>inventory` — View your items\n`>heal` — Restore HP (10 coins)\n`>daily` — Claim daily reward\n`>locations` — View adventure areas\n`>leaderboard [cat]` — Server rankings",
+        inline=False)
     embed.add_field(name="🎫 Tickets",
         value="`>ticket <subject>` `>close` `>add <@user>` `>remove <@user>`",
         inline=False)
@@ -1071,6 +1074,695 @@ async def hack(ctx, member: discord.Member = None):
     for s in stages:
         await asyncio.sleep(1.5)
         await msg.edit(content=s)
+
+# ═══════════════════════════════════════════════════════════════
+# ADVENTURE GAME + ECONOMY + SHOP
+# ═══════════════════════════════════════════════════════════════
+
+import random as _rand
+
+# ── Data storage ──
+PLAYER_FILE = DATA_DIR / "players.json"
+GUILD_SHOP_FILE = DATA_DIR / "guild_shops.json"
+
+def load_players():
+    try:
+        with open(PLAYER_FILE) as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_players(data):
+    with open(PLAYER_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def load_guild_shops():
+    try:
+        with open(GUILD_SHOP_FILE) as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_guild_shops(data):
+    with open(GUILD_SHOP_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def get_player(guild_id, user_id):
+    players = load_players()
+    key = f"{guild_id}_{user_id}"
+    if key not in players:
+        players[key] = {
+            "user_id": user_id,
+            "guild_id": guild_id,
+            "name": "",
+            "level": 1,
+            "xp": 0,
+            "coins": 100,
+            "health": 100,
+            "max_health": 100,
+            "attack": 10,
+            "defense": 5,
+            "inventory": [],
+            "equipped_weapon": None,
+            "equipped_armor": None,
+            "monsters_killed": 0,
+            "deaths": 0,
+            "bosses_killed": 0,
+            "adventures_completed": 0,
+            "last_daily": 0,
+            "last_adventure": 0,
+            "created": time.time(),
+        }
+        save_players(players)
+    return players[key]
+
+def get_default_shop(guild_id):
+    shops = load_guild_shops()
+    gid = str(guild_id)
+    if gid not in shops:
+        shops[gid] = {
+            "weapons": [
+                {"id": "wooden_sword", "name": "🗡️ Wooden Sword", "attack": 5, "price": 50, "desc": "A basic wooden sword. +5 ATK"},
+                {"id": "iron_sword", "name": "⚔️ Iron Sword", "attack": 12, "price": 150, "desc": "A sturdy iron blade. +12 ATK"},
+                {"id": "steel_sword", "name": "🔪 Steel Sword", "attack": 20, "price": 350, "desc": "Sharp steel. +20 ATK"},
+                {"id": "flame_blade", "name": "🔥 Flame Blade", "attack": 35, "price": 750, "desc": "Burns with eternal fire. +35 ATK"},
+                {"id": "dragon_slayer", "name": "🐉 Dragon Slayer", "attack": 55, "price": 1500, "desc": "Forged to slay dragons. +55 ATK"},
+                {"id": "excalibur", "name": "👑 Excalibur", "attack": 80, "price": 3000, "desc": "The legendary sword of kings. +80 ATK"},
+            ],
+            "armor": [
+                {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
+                {"id": "chainmail", "name": "⛓️ Chainmail", "defense": 8, "price": 120, "desc": "Linked metal rings. +8 DEF"},
+                {"id": "iron_armor", "name": "🛡️ Iron Armor", "defense": 15, "price": 300, "desc": "Solid iron plates. +15 DEF"},
+                {"id": "steel_armor", "name": "🏰 Steel Armor", "defense": 25, "price": 600, "desc": "Heavy steel protection. +25 DEF"},
+                {"id": "dragon_scale", "name": "🐲 Dragon Scale", "defense": 40, "price": 1200, "desc": "Made from dragon scales. +40 DEF"},
+                {"id": "divine_plate", "name": "✨ Divine Plate", "defense": 60, "price": 2500, "desc": "Blessed by the gods. +60 DEF"},
+            ],
+            "potions": [
+                {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
+                {"id": "large_potion", "name": "💖 Large Potion", "heal": 75, "price": 60, "desc": "Restores 75 HP"},
+                {"id": "elixir", "name": "🧪 Elixir", "heal": 200, "price": 150, "desc": "Fully restores HP"},
+                {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
+            ],
+            "special": [
+                {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
+                {"id": "shield_ring", "name": "💍 Shield Ring", "price": 350, "desc": "+5 permanent DEF"},
+                {"id": "power_ring", "name": "💎 Power Ring", "price": 350, "desc": "+5 permanent ATK"},
+                {"id": "life_crystal", "name": "💠 Life Crystal", "price": 500, "desc": "+20 permanent max HP"},
+            ]
+        }
+        save_guild_shops(shops)
+    return shops[gid]
+
+# ── Adventure locations ──
+ADVENTURE_LOCATIONS = [
+    {
+        "name": "🌲 Dark Forest",
+        "description": "A dense, mysterious forest where shadows lurk between the trees.",
+        "min_level": 1,
+        "monsters": [
+            {"name": "🐺 Wolf", "hp": 30, "atk": 8, "def": 2, "xp": 15, "coins": (10, 25)},
+            {"name": "🕷️ Giant Spider", "hp": 25, "atk": 10, "def": 1, "xp": 12, "coins": (8, 20)},
+            {"name": "👻 Ghost", "hp": 40, "atk": 12, "def": 3, "xp": 20, "coins": (15, 35)},
+            {"name": "🧟 Zombie", "hp": 50, "atk": 7, "def": 5, "xp": 18, "coins": (12, 30)},
+        ],
+        "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)},
+        "boss_chance": 0.15,
+    },
+    {
+        "name": "🏔️ Frozen Mountains",
+        "description": "Icy peaks where only the brave dare to tread.",
+        "min_level": 5,
+        "monsters": [
+            {"name": "❄️ Ice Elemental", "hp": 60, "atk": 18, "def": 8, "xp": 35, "coins": (25, 50)},
+            {"name": "🐻 Polar Bear", "hp": 80, "atk": 22, "def": 6, "xp": 40, "coins": (30, 55)},
+            {"name": "🦅 Frost Hawk", "hp": 45, "atk": 25, "def": 4, "xp": 30, "coins": (20, 45)},
+            {"name": "🧊 Ice Golem", "hp": 100, "atk": 15, "def": 15, "xp": 45, "coins": (35, 60)},
+        ],
+        "boss": {"name": "🐉 Frost Dragon", "hp": 300, "atk": 35, "def": 20, "xp": 150, "coins": (150, 300)},
+        "boss_chance": 0.12,
+    },
+    {
+        "name": "🌋 Volcanic Caverns",
+        "description": "Rivers of lava and chambers of fire. Only the strong survive.",
+        "min_level": 10,
+        "monsters": [
+            {"name": "🔥 Fire Imp", "hp": 70, "atk": 30, "def": 10, "xp": 50, "coins": (40, 70)},
+            {"name": "🌋 Magma Beast", "hp": 120, "atk": 28, "def": 18, "xp": 60, "coins": (50, 85)},
+            {"name": "💀 Lava Skeleton", "hp": 90, "atk": 35, "def": 12, "xp": 55, "coins": (45, 75)},
+            {"name": "🦂 Fire Scorpion", "hp": 85, "atk": 32, "def": 15, "xp": 52, "coins": (42, 72)},
+        ],
+        "boss": {"name": "👹 Inferno Lord", "hp": 500, "atk": 50, "def": 30, "xp": 250, "coins": (250, 500)},
+        "boss_chance": 0.10,
+    },
+    {
+        "name": "🏰 Abandoned Castle",
+        "description": "A once-great castle now ruled by dark forces.",
+        "min_level": 15,
+        "monsters": [
+            {"name": "⚔️ Dark Knight", "hp": 150, "atk": 40, "def": 25, "xp": 80, "coins": (60, 100)},
+            {"name": "🧙 Dark Mage", "hp": 100, "atk": 50, "def": 15, "xp": 90, "coins": (70, 110)},
+            {"name": "🦇 Vampire", "hp": 130, "atk": 45, "def": 20, "xp": 85, "coins": (65, 105)},
+            {"name": "💀 Death Knight", "hp": 180, "atk": 38, "def": 30, "xp": 95, "coins": (75, 120)},
+        ],
+        "boss": {"name": "👑 Shadow King", "hp": 800, "atk": 65, "def": 40, "xp": 400, "coins": (400, 800)},
+        "boss_chance": 0.08,
+    },
+    {
+        "name": "🌌 The Void",
+        "description": "The final frontier. Reality bends here. Only legends dare enter.",
+        "min_level": 20,
+        "monsters": [
+            {"name": "👁️ Void Watcher", "hp": 200, "atk": 55, "def": 35, "xp": 120, "coins": (100, 160)},
+            {"name": "🌀 Chaos Entity", "hp": 250, "atk": 60, "def": 30, "xp": 140, "coins": (120, 180)},
+            {"name": "💀 Reaper", "hp": 180, "atk": 70, "def": 25, "xp": 130, "coins": (110, 170)},
+            {"name": "🐲 Void Dragon", "hp": 350, "atk": 50, "def": 45, "xp": 160, "coins": (140, 220)},
+        ],
+        "boss": {"name": "🌑 The Void Emperor", "hp": 1500, "atk": 90, "def": 60, "xp": 800, "coins": (800, 1500)},
+        "boss_chance": 0.05,
+    },
+]
+
+# ── Commands ──
+
+@bot.command(name="adventure", aliases=["adv", "explore", "fight"])
+async def adventure(ctx):
+    """Go on an adventure! Fight monsters, earn coins and XP."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    now = time.time()
+
+    # Cooldown: 30 seconds between adventures
+    if now - player.get("last_adventure", 0) < 30:
+        remaining = int(30 - (now - player.get("last_adventure", 0)))
+        return await ctx.send(f"⏳ You're catching your breath! Wait **{remaining}s** before your next adventure.")
+
+    # Pick available locations based on level
+    available = [loc for loc in ADVENTURE_LOCATIONS if loc["min_level"] <= player["level"]]
+    if not available:
+        return await ctx.send("❌ No adventures available at your level!")
+
+    location = _rand.choice(available)
+
+    # Determine if boss fight
+    is_boss = _rand.random() < location["boss_chance"]
+    if is_boss:
+        enemy = location["boss"].copy()
+        enemy["is_boss"] = True
+    else:
+        enemy = _rand.choice(location["monsters"]).copy()
+        enemy["is_boss"] = False
+
+    # Calculate player stats with equipment
+    player_atk = player["attack"]
+    player_def = player["defense"]
+    if player.get("equipped_weapon"):
+        shop = get_default_shop(ctx.guild.id)
+        for w in shop["weapons"]:
+            if w["id"] == player["equipped_weapon"]:
+                player_atk += w["attack"]
+                break
+    if player.get("equipped_armor"):
+        shop = get_default_shop(ctx.guild.id)
+        for a in shop["armor"]:
+            if a["id"] == player["equipped_armor"]:
+                player_def += a["defense"]
+                break
+
+    # Combat simulation
+    player_hp = player["health"]
+    enemy_hp = enemy["hp"]
+    rounds = 0
+    combat_log = []
+
+    while player_hp > 0 and enemy_hp > 0 and rounds < 20:
+        rounds += 1
+        # Player attacks
+        dmg_to_enemy = max(1, player_atk - enemy["def"] + _rand.randint(-3, 3))
+        enemy_hp -= dmg_to_enemy
+        combat_log.append(f"⚔️ You deal **{dmg_to_enemy}** damage!")
+
+        if enemy_hp <= 0:
+            break
+
+        # Enemy attacks
+        dmg_to_player = max(1, enemy["atk"] - player_def + _rand.randint(-3, 3))
+        player_hp -= dmg_to_player
+        combat_log.append(f"💥 {enemy['name']} deals **{dmg_to_player}** damage to you!")
+
+    # Determine outcome
+    won = enemy_hp <= 0 and player_hp > 0
+
+    if won:
+        xp_gain = enemy["xp"] + _rand.randint(0, enemy["xp"] // 2)
+        coin_gain = _rand.randint(enemy["coins"][0], enemy["coins"][1])
+
+        player["xp"] += xp_gain
+        player["coins"] += coin_gain
+        player["health"] = max(1, player_hp)
+        player["monsters_killed"] += 1
+        player["adventures_completed"] += 1
+        if is_boss:
+            player["bosses_killed"] += 1
+
+        # Level up check
+        xp_needed = player["level"] * 50
+        leveled_up = False
+        while player["xp"] >= xp_needed:
+            player["level"] += 1
+            player["xp"] -= xp_needed
+            player["max_health"] += 10
+            player["health"] = player["max_health"]
+            player["attack"] += 3
+            player["defense"] += 2
+            xp_needed = player["level"] * 50
+            leveled_up = True
+
+        player["last_adventure"] = now
+        save_players(load_players())  # trigger save via get_player
+
+        # Build result embed
+        boss_tag = " 👑 BOSS" if is_boss else ""
+        embed = discord.Embed(
+            title=f"⚔️ Victory! — {location['name']}{boss_tag}",
+            description=f"You defeated **{enemy['name']}** in **{rounds}** rounds!",
+            color=discord.Color.gold() if is_boss else discord.Color.green(),
+            timestamp=datetime.datetime.utcnow()
+        )
+        embed.add_field(name="Rewards", value=f"⭐ **+{xp_gain}** XP\n🪙 **+{coin_gain}** Coins", inline=True)
+        embed.add_field(name="Status", value=f"❤️ HP: **{max(1, player_hp)}/{player['max_health']}**\n📊 Level: **{player['level']}**", inline=True)
+        if leveled_up:
+            embed.add_field(name="🎉 LEVEL UP!", value=f"You are now **Level {player['level']}**!\nATK +3 | DEF +2 | Max HP +10", inline=False)
+        # Show last 4 combat lines
+        if combat_log:
+            embed.add_field(name="Combat", value="\n".join(combat_log[-4:]), inline=False)
+        embed.set_footer(text=f"Monsters killed: {player['monsters_killed']} | Bosses: {player['bosses_killed']}")
+        await ctx.send(embed=embed)
+
+    else:
+        # Player died
+        player["deaths"] += 1
+        player["health"] = player["max_health"] // 2  # Respawn with half HP
+        player["coins"] = max(0, player["coins"] - 20)  # Lose some coins
+        player["last_adventure"] = now
+
+        embed = discord.Embed(
+            title=f"💀 Defeated! — {location['name']}",
+            description=f"You were slain by **{enemy['name']}** after **{rounds}** rounds...",
+            color=discord.Color.red(),
+            timestamp=datetime.datetime.utcnow()
+        )
+        embed.add_field(name="Penalty", value="🪙 Lost **20** coins\n❤️ Respawned with **half HP**", inline=True)
+        embed.add_field(name="Stats", value=f"💀 Deaths: **{player['deaths']}**\n📊 Level: **{player['level']}**", inline=True)
+        if combat_log:
+            embed.add_field(name="Combat", value="\n".join(combat_log[-4:]), inline=False)
+        embed.set_footer(text="Heal up and try again! Use >shop to buy potions.")
+        await ctx.send(embed=embed)
+
+    # Save player data
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+    players[key] = player
+    save_players(players)
+
+
+@bot.command(name="profile", aliases=["me", "stats", "character"])
+async def profile(ctx, member: discord.Member = None):
+    """View your adventure profile and stats."""
+    member = member or ctx.author
+    player = get_player(ctx.guild.id, member.id)
+
+    # Calculate equipment bonuses
+    equip_text = []
+    shop = get_default_shop(ctx.guild.id)
+    if player.get("equipped_weapon"):
+        for w in shop["weapons"]:
+            if w["id"] == player["equipped_weapon"]:
+                equip_text.append(f"⚔️ {w['name']} (+{w['attack']} ATK)")
+                break
+    if player.get("equipped_armor"):
+        for a in shop["armor"]:
+            if a["id"] == player["equipped_armor"]:
+                equip_text.append(f"🛡️ {a['name']} (+{a['defense']} DEF)")
+                break
+
+    total_atk = player["attack"]
+    total_def = player["defense"]
+    if player.get("equipped_weapon"):
+        for w in shop["weapons"]:
+            if w["id"] == player["equipped_weapon"]:
+                total_atk += w["attack"]
+    if player.get("equipped_armor"):
+        for a in shop["armor"]:
+            if a["id"] == player["equipped_armor"]:
+                total_def += a["defense"]
+
+    xp_needed = player["level"] * 50
+    xp_bar_filled = int((player["xp"] / xp_needed) * 10)
+    xp_bar = "█" * xp_bar_filled + "░" * (10 - xp_bar_filled)
+
+    embed = discord.Embed(
+        title=f"👤 {member.display_name}'s Profile",
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
+
+    embed.add_field(name="📊 Level", value=f"**{player['level']}**", inline=True)
+    embed.add_field(name="⭐ XP", value=f"`{xp_bar}` {player['xp']}/{xp_needed}", inline=True)
+    embed.add_field(name="🪙 Coins", value=f"**{player['coins']}**", inline=True)
+
+    embed.add_field(name="❤️ Health", value=f"**{player['health']}/{player['max_health']}**", inline=True)
+    embed.add_field(name="⚔️ Attack", value=f"**{total_atk}** (base {player['attack']})", inline=True)
+    embed.add_field(name="🛡️ Defense", value=f"**{total_def}** (base {player['defense']})", inline=True)
+
+    if equip_text:
+        embed.add_field(name="🎒 Equipment", value="\n".join(equip_text), inline=False)
+
+    embed.add_field(name="🏆 Stats",
+        value=f"Monsters killed: **{player['monsters_killed']}**\nBosses slain: **{player['bosses_killed']}**\nAdventures: **{player['adventures_completed']}**\nDeaths: **{player['deaths']}**",
+        inline=False)
+    embed.set_footer(text="Use >adventure to fight! | >shop to buy gear")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="shop", aliases=["store", "market"])
+async def shop(ctx, category: str = "all"):
+    """Browse the shop. Categories: weapons, armor, potions, special, all."""
+    shop_data = get_default_shop(ctx.guild.id)
+    player = get_player(ctx.guild.id, ctx.author.id)
+
+    cat_map = {
+        "weapons": ("⚔️ Weapons", "weapons"),
+        "weapon": ("⚔️ Weapons", "weapons"),
+        "w": ("⚔️ Weapons", "weapons"),
+        "armor": ("🛡️ Armor", "armor"),
+        "a": ("🛡️ Armor", "armor"),
+        "potions": ("🧪 Potions", "potions"),
+        "potion": ("🧪 Potions", "potions"),
+        "p": ("🧪 Potions", "potions"),
+        "special": ("✨ Special Items", "special"),
+        "s": ("✨ Special Items", "special"),
+    }
+
+    embed = discord.Embed(
+        title="🏪 Hermes' Shop",
+        description=f"Your coins: **🪙 {player['coins']}**\nUse `>buy <item_id>` to purchase!",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+
+    if category.lower() == "all":
+        for cat_key, (cat_name, cat_id) in [("weapons", ("⚔️ Weapons", "weapons")), ("armor", ("🛡️ Armor", "armor")), ("potions", ("🧪 Potions", "potions")), ("special", ("✨ Special Items", "special"))]:
+            items = shop_data.get(cat_id, [])
+            item_text = ""
+            for item in items:
+                item_text += f"`{item['id']}` — **{item['name']}** — 🪙 {item['price']}\n  *{item['desc']}*\n"
+            embed.add_field(name=cat_name, value=item_text or "Empty", inline=False)
+    elif category.lower() in cat_map:
+        cat_name, cat_id = cat_map[category.lower()]
+        items = shop_data.get(cat_id, [])
+        item_text = ""
+        for item in items:
+            item_text += f"`{item['id']}` — **{item['name']}** — 🪙 {item['price']}\n  *{item['desc']}*\n"
+        embed.add_field(name=cat_name, value=item_text or "Empty", inline=False)
+    else:
+        return await ctx.send("❌ Categories: `weapons`, `armor`, `potions`, `special`, `all`")
+
+    embed.set_footer(text="Use >buy <item_id> to purchase | >equip <item_id> to equip")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="buy")
+async def buy(ctx, item_id: str):
+    """Buy an item from the shop. Usage: >buy <item_id>"""
+    shop_data = get_default_shop(ctx.guild.id)
+    player = get_player(ctx.guild.id, ctx.author.id)
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+
+    # Find item in any category
+    found_item = None
+    for cat in ["weapons", "armor", "potions", "special"]:
+        for item in shop_data.get(cat, []):
+            if item["id"] == item_id.lower():
+                found_item = item
+                break
+        if found_item:
+            break
+
+    if not found_item:
+        return await ctx.send(f"❌ Item `{item_id}` not found. Use `>shop` to see available items.")
+
+    if player["coins"] < found_item["price"]:
+        return await ctx.send(f"❌ Not enough coins! You need **🪙 {found_item['price']}** but only have **🪙 {player['coins']}**.")
+
+    # Purchase
+    player["coins"] -= found_item["price"]
+
+    # Handle different item types
+    if "heal" in found_item:
+        # Potion — use immediately
+        player["health"] = min(player["max_health"], player["health"] + found_item["heal"])
+        players[key] = player
+        save_players(players)
+        await ctx.send(f"✅ Used **{found_item['name']}**! Restored **{found_item['heal']}** HP. ❤️ {player['health']}/{player['max_health']}")
+    elif "xp_boost" in found_item:
+        player["xp"] += found_item["xp_boost"]
+        players[key] = player
+        save_players(players)
+        await ctx.send(f"✅ Used **{found_item['name']}**! Gained **{found_item['xp_boost']}** XP!")
+    elif cat in ["weapons", "armor"]:
+        # Add to inventory
+        player["inventory"].append(found_item["id"])
+        players[key] = player
+        save_players(players)
+        await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}**!\nUse `>equip {found_item['id']}` to equip it.")
+    else:
+        # Special items — apply permanent bonuses
+        if found_item["id"] == "lucky_charm":
+            player["inventory"].append(found_item["id"])
+        elif found_item["id"] == "shield_ring":
+            player["defense"] += 5
+        elif found_item["id"] == "power_ring":
+            player["attack"] += 5
+        elif found_item["id"] == "life_crystal":
+            player["max_health"] += 20
+            player["health"] += 20
+        players[key] = player
+        save_players(players)
+        await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}!**\n*{found_item['desc']}*")
+
+
+@bot.command(name="equip")
+async def equip(ctx, item_id: str):
+    """Equip a weapon or armor from your inventory."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+    shop_data = get_default_shop(ctx.guild.id)
+
+    # Check if item is in inventory
+    if item_id.lower() not in player["inventory"]:
+        return await ctx.send(f"❌ You don't have `{item_id}` in your inventory. Buy it from `>shop` first!")
+
+    # Find item in shop to determine type
+    for item in shop_data.get("weapons", []):
+        if item["id"] == item_id.lower():
+            # Unequip current weapon
+            player["equipped_weapon"] = item["id"]
+            players[key] = player
+            save_players(players)
+            await ctx.send(f"⚔️ Equipped **{item['name']}**! (+{item['attack']} ATK)")
+            return
+
+    for item in shop_data.get("armor", []):
+        if item["id"] == item_id.lower():
+            player["equipped_armor"] = item["id"]
+            players[key] = player
+            save_players(players)
+            await ctx.send(f"🛡️ Equipped **{item['name']}**! (+{item['defense']} DEF)")
+            return
+
+    await ctx.send(f"❌ `{item_id}` is not equippable.")
+
+
+@bot.command(name="inventory", aliases=["inv", "bag"])
+async def inventory(ctx):
+    """View your inventory."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    shop_data = get_default_shop(ctx.guild.id)
+
+    if not player["inventory"]:
+        return await ctx.send("🎒 Your inventory is empty! Use `>shop` to buy items.")
+
+    items_text = []
+    # Count items
+    from collections import Counter
+    counts = Counter(player["inventory"])
+    for item_id, count in counts.items():
+        # Find item name
+        name = item_id
+        for cat in ["weapons", "armor", "potions", "special"]:
+            for item in shop_data.get(cat, []):
+                if item["id"] == item_id:
+                    name = item["name"]
+                    break
+        count_text = f" x{count}" if count > 1 else ""
+        items_text.append(f"• {name}{count_text}")
+
+    embed = discord.Embed(
+        title=f"🎒 {ctx.author.display_name}'s Inventory",
+        description="\n".join(items_text[:30]),
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    equipped = []
+    if player.get("equipped_weapon"):
+        for w in shop_data.get("weapons", []):
+            if w["id"] == player["equipped_weapon"]:
+                equipped.append(f"⚔️ {w['name']}")
+    if player.get("equipped_armor"):
+        for a in shop_data.get("armor", []):
+            if a["id"] == player["equipped_armor"]:
+                equipped.append(f"🛡️ {a['name']}")
+    if equipped:
+        embed.add_field(name="Equipped", value="\n".join(equipped), inline=False)
+    embed.set_footer(text="Use >equip <item_id> to equip weapons/armor")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="heal")
+async def heal(ctx):
+    """Heal yourself (costs 10 coins)."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+
+    if player["health"] >= player["max_health"]:
+        return await ctx.send("✅ You're already at full health!")
+
+    if player["coins"] < 10:
+        return await ctx.send("❌ Not enough coins! Healing costs **🪙 10**.")
+
+    player["coins"] -= 10
+    healed = min(player["max_health"] - player["health"], 30)
+    player["health"] += healed
+    players[key] = player
+    save_players(players)
+    await ctx.send(f"💚 Healed **{healed}** HP for **🪙 10**! ❤️ {player['health']}/{player['max_health']}")
+
+
+@bot.command(name="daily")
+async def daily(ctx):
+    """Claim your daily reward."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    players = load_players()
+    key = f"{ctx.guild.id}_{ctx.author.id}"
+    now = time.time()
+
+    if now - player.get("last_daily", 0) < 86400:
+        remaining = int(86400 - (now - player.get("last_daily", 0)))
+        h, m = divmod(remaining, 3600)
+        m, s = divmod(m, 60)
+        return await ctx.send(f"⏳ Daily reward available in **{h}h {m}m {s}s**!")
+
+    # Scale reward with level
+    base_coins = 50 + (player["level"] * 10)
+    bonus_xp = 20 + (player["level"] * 5)
+
+    # Random bonus
+    bonus_roll = _rand.random()
+    bonus_text = ""
+    if bonus_roll < 0.05:
+        bonus_coins = 500
+        player["coins"] += bonus_coins
+        bonus_text = f"🎉 JACKPOT! Bonus **🪙 {bonus_coins}** coins!"
+    elif bonus_roll < 0.2:
+        bonus_coins = 100
+        player["coins"] += bonus_coins
+        bonus_text = f"🍀 Lucky! Bonus **🪙 {bonus_coins}** coins!"
+
+    player["coins"] += base_coins
+    player["xp"] += bonus_xp
+    player["last_daily"] = now
+    players[key] = player
+    save_players(players)
+
+    embed = discord.Embed(
+        title="🎁 Daily Reward!",
+        description=f"**🪙 +{base_coins}** coins\n**⭐ +{bonus_xp}** XP",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    if bonus_text:
+        embed.add_field(name="Bonus!", value=bonus_text, inline=False)
+    embed.set_footer(text="Come back tomorrow for more!")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="leaderboard", aliases=["lb", "top"])
+async def leaderboard(ctx, category: str = "level"):
+    """View the server leaderboard. Categories: level, coins, kills, bosses."""
+    players = load_players()
+    guild_players = {k: v for k, v in players.items() if str(v.get("guild_id")) == str(ctx.guild.id)}
+
+    if not guild_players:
+        return await ctx.send("❌ No players found. Start playing with `>adventure`!")
+
+    cat_map = {
+        "level": ("📊 Level", "level", True),
+        "coins": ("🪙 Coins", "coins", True),
+        "kills": ("⚔️ Monsters Killed", "monsters_killed", True),
+        "bosses": ("👑 Bosses Slain", "bosses_killed", True),
+        "deaths": ("💀 Deaths", "deaths", True),
+        "adventures": ("🗺️ Adventures", "adventures_completed", True),
+    }
+
+    if category.lower() not in cat_map:
+        return await ctx.send("❌ Categories: `level`, `coins`, `kills`, `bosses`, `deaths`, `adventures`")
+
+    cat_name, cat_key, reverse = cat_map[category.lower()]
+    sorted_players = sorted(guild_players.values(), key=lambda x: x.get(cat_key, 0), reverse=reverse)[:10]
+
+    lines = []
+    medals = ["🥇", "🥈", "🥉"]
+    for i, p in enumerate(sorted_players):
+        medal = medals[i] if i < 3 else f"`{i+1}.`"
+        # Try to get member name
+        member = ctx.guild.get_member(p["user_id"])
+        name = member.display_name if member else f"User#{p['user_id']}"
+        lines.append(f"{medal} **{name}** — {p.get(cat_key, 0)}")
+
+    embed = discord.Embed(
+        title=f"🏆 Leaderboard — {cat_name}",
+        description="\n".join(lines) or "No data yet!",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.set_footer(text=f"Category: {category} | Use >leaderboard <category>")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="locations", aliases=["areas", "zones"])
+async def locations(ctx):
+    """View all adventure locations and their requirements."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+    embed = discord.Embed(
+        title="🗺️ Adventure Locations",
+        description="Travel to different areas to fight monsters and earn rewards!",
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    for loc in ADVENTURE_LOCATIONS:
+        locked = "🔒" if player["level"] < loc["min_level"] else "✅"
+        monsters = ", ".join(m["name"] for m in loc["monsters"])
+        embed.add_field(
+            name=f"{locked} {loc['name']} (Lv.{loc['min_level']}+)",
+            value=f"{loc['description']}\nMonsters: {monsters}\nBoss: {loc['boss']['name']}",
+            inline=False
+        )
+    embed.set_footer(text=f"Your level: {player['level']} | Use >adventure to explore!")
+    await ctx.send(embed=embed)
+
 
 # ═══════════════════════════════════════════════════════════════
 # ADMIN COMMANDS
