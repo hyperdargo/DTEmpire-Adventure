@@ -28,18 +28,20 @@ from collections import defaultdict
 # CONFIG — loaded from environment
 # ═══════════════════════════════════════════════════════════════
 
+# Paths (needed for .env loading)
+BASE_DIR = Path(__file__).parent
+
 # Load .env file
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 load_dotenv(Path.home() / ".hermes" / ".env")  # fallback
 
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
-HOME_GUILD_ID = int(os.environ.get("DISCORD_HOME_GUILD_ID", "0"))
+HOME_GUILD_ID = int(os.environ.get("DISCORD_HOME_GUILD_ID") or "0")
 LOG_CHANNEL_ID = 1514565322882158602
 ALLOWED_USERS = [int(u) for u in os.environ.get("DISCORD_ALLOWED_USERS", "").split(",") if u.strip()]
 
-# Paths
-BASE_DIR = Path(__file__).parent
+# Data paths
 DATA_DIR = BASE_DIR / "data"
 LOG_DIR = BASE_DIR / "logs"
 DATA_DIR.mkdir(exist_ok=True)
@@ -1044,14 +1046,13 @@ async def load_extensions():
         except Exception as e:
             logger.error(f"Failed to load cog {cog}: {e}")
 
-def main():
+async def main():
     if not BOT_TOKEN:
         logger.error("DISCORD_BOT_TOKEN not set!")
         sys.exit(1)
     logger.info("Starting HermesBot v2.0...")
-    # Load cogs before running
-    bot.loop.run_until_complete(load_extensions())
-    bot.run(BOT_TOKEN, log_handler=None)
+    await load_extensions()
+    await bot.start(BOT_TOKEN)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

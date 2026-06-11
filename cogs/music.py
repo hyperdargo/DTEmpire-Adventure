@@ -234,9 +234,9 @@ class Music(commands.Cog):
             return await ctx.send("❌ Not enough songs.")
         random.shuffle(player.queue)
         await ctx.send("🔀 Queue shuffled!")
-
-    @commands.command(name="remove")
-    async def remove(self, ctx, index: int):
+    @commands.command(name="removequeue", aliases=["rmq"])
+    async def remove_queue(self, ctx, index: int):
+        """Remove a song from the queue by index."""
         player = self.get_player(ctx.guild.id)
         if index < 1 or index > len(player.queue):
             return await ctx.send("❌ Invalid index.")
