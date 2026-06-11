@@ -86,7 +86,18 @@ CHANGELOG = [
 # BOT SETUP
 # ═══════════════════════════════════════════════════════════════
 
-intents = discord.Intents.all()  # Need all intents for logging + auto-mod
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+intents.voice_states = True
+intents.guilds = True
+intents.guild_scheduled_events = False
+intents.presences = False
+intents.auto_moderation = False
+intents.integrations = False
+intents.webhooks = False
+intents.invites = False
+intents.moderation = False
 
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 bot.start_time = time.time()
