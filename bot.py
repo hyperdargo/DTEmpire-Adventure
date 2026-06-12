@@ -92,6 +92,16 @@ CHANGELOG = [
             "🌐 Web dashboard: new Daily Heal button, improved inventory UX",
         ]
     },
+    {
+        "version": "v2.2",
+        "date": "2026-06-13",
+        "changes": [
+            "🌅 New location: Celestial Spire (Lv.12+) — floating tower above the clouds with 4 monsters + boss",
+            "🌲 Dark Forest expanded: +2 new monsters (Vampire Bat & Thorn Beast)",
+            "🗡️ New shop items: Stormbreaker (legendary sword), Celestial Aegis (legendary armor), Elixir of Power",
+            "🔄 Web dashboard synced with bot data — all locations and shop items match",
+        ]
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -1346,6 +1356,7 @@ def get_default_shop(guild_id):
                 {"id": "obsidian_katana", "name": "🗾 Obsidian Katana", "attack": 45, "price": 1100, "desc": "A razor-sharp volcanic glass blade. +45 ATK"},
                 {"id": "dragon_slayer", "name": "🐉 Dragon Slayer", "attack": 55, "price": 1500, "desc": "Forged to slay dragons. +55 ATK"},
                 {"id": "excalibur", "name": "👑 Excalibur", "attack": 80, "price": 3000, "desc": "The legendary sword of kings. +80 ATK"},
+                {"id": "stormbreaker", "name": "⚡ Stormbreaker", "attack": 95, "price": 4500, "desc": "Forged in the heart of a storm. +95 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1355,6 +1366,7 @@ def get_default_shop(guild_id):
                 {"id": "titanium_armor", "name": "🛡️ Titanium Armor", "defense": 32, "price": 900, "desc": "Lightweight yet nearly unbreakable. +32 DEF"},
                 {"id": "dragon_scale", "name": "🐲 Dragon Scale", "defense": 40, "price": 1200, "desc": "Made from dragon scales. +40 DEF"},
                 {"id": "divine_plate", "name": "✨ Divine Plate", "defense": 60, "price": 2500, "desc": "Blessed by the gods. +60 DEF"},
+                {"id": "celestial_aegis", "name": "🌟 Celestial Aegis", "defense": 75, "price": 4000, "desc": "Woven from starlight. +75 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1362,6 +1374,7 @@ def get_default_shop(guild_id):
                 {"id": "elixir", "name": "🧪 Elixir", "heal": 200, "price": 150, "desc": "Fully restores HP"},
                 {"id": "mega_elixir", "name": "💫 Mega Elixir", "heal": 500, "price": 350, "desc": "Heals 500 HP instantly"},
                 {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
+                {"id": "elixir_of_power", "name": "🧬 Elixir of Power", "xp_boost": 200, "price": 500, "desc": "Grants 200 XP instantly"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1387,6 +1400,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🧟 Zombie", "hp": 50, "atk": 7, "def": 5, "xp": 18, "coins": (12, 30)},
             {"name": "🗡️ Bandit", "hp": 45, "atk": 14, "def": 3, "xp": 22, "coins": (18, 40)},
             {"name": "🍄 Mushroom Sprite", "hp": 35, "atk": 11, "def": 6, "xp": 16, "coins": (10, 28)},
+            {"name": "🦇 Vampire Bat", "hp": 40, "atk": 16, "def": 4, "xp": 20, "coins": (15, 35)},
+            {"name": "🌿 Thorn Beast", "hp": 55, "atk": 13, "def": 8, "xp": 24, "coins": (20, 42)},
         ],
         "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)},
         "boss_chance": 0.15,
@@ -1455,6 +1470,19 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🌑 The Void Emperor", "hp": 1500, "atk": 90, "def": 60, "xp": 800, "coins": (800, 1500)},
         "boss_chance": 0.05,
+    },
+    {
+        "name": "🌅 Celestial Spire",
+        "description": "A floating tower that rises above the clouds, touching the stars themselves. Ancient celestial guardians protect its heights.",
+        "min_level": 12,
+        "monsters": [
+            {"name": "👼 Winged Sentinel", "hp": 110, "atk": 38, "def": 22, "xp": 70, "coins": (55, 90)},
+            {"name": "☀️ Solar Wraith", "hp": 130, "atk": 42, "def": 18, "xp": 80, "coins": (65, 100)},
+            {"name": "🌙 Lunar Shade", "hp": 100, "atk": 48, "def": 15, "xp": 75, "coins": (60, 95)},
+            {"name": "⭐ Star Colossus", "hp": 160, "atk": 35, "def": 28, "xp": 90, "coins": (75, 115)},
+        ],
+        "boss": {"name": "🌌 Astral Titan", "hp": 700, "atk": 60, "def": 40, "xp": 350, "coins": (350, 700)},
+        "boss_chance": 0.08,
     },
 ]
 

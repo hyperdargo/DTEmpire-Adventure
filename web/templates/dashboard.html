@@ -124,6 +124,12 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </a>
   </div>
 
+  <h3 class="section-title">Quick Actions (Web)</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+    <button class="btn btn-heal" onclick="heal()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer">💚 Heal (10 coins)</button>
+    <button class="btn btn-equip" onclick="claimDaily()" style="background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer">🎁 Claim Daily</button>
+  </div>
+
   <h3 class="section-title">Quick Actions (Discord)</h3>
   <div style="background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;margin-top:8px">
     <p style="color:#888;margin-bottom:12px">These actions are available via Discord bot commands:</p>
@@ -134,5 +140,29 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </div>
   </div>
 </div>
+<script>
+function heal() {
+  fetch('/api/heal', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { alert(data.message); location.reload(); }
+    else alert(data.error);
+  });
+}
+function claimDaily() {
+  fetch('/api/daily', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      let msg = `🎁 Daily Reward!\n🪙 +${data.coins} coins\n⭐ +${data.xp} XP`;
+      if (data.bonus) msg += '\n' + data.bonus;
+      alert(msg);
+      location.reload();
+    } else {
+      alert(data.error);
+    }
+  });
+}
+</script>
 </body>
 </html>
