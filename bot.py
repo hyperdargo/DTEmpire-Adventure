@@ -102,6 +102,17 @@ CHANGELOG = [
             "🔄 Web dashboard synced with bot data — all locations and shop items match",
         ]
     },
+    {
+        "version": "v2.3",
+        "date": "2026-06-14",
+        "changes": [
+            "🌸 New location: Enchanted Garden (Lv.3+) — magical garden with mystical creatures and 4 monsters + boss",
+            "🏔️ Frozen Mountains expanded: +2 new monsters (Avalanche Yeti & Crystal Golem)",
+            "🗡️ New shop items: Phoenix Blade (legendary weapon), Mystic Robes (epic armor), Time Warp Potion, Enchanted Lure",
+            "🐟 New >fishlb command — fishing leaderboard to see top anglers",
+            "🌐 Web dashboard: new Enchanted Garden location, updated shop with new categories",
+        ]
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -753,6 +764,7 @@ async def help_cmd(ctx, category: str = None):
         embed.add_field(name="`>guess`", value="Guess a number 1-100", inline=False)
         embed.add_field(name="`>hack [@user]`", value="Fake hack (just for fun)", inline=False)
         embed.add_field(name="`>fish`", value="Go fishing! Catch fish, treasure, and legendary items (60s cooldown)", inline=False)
+        embed.add_field(name="`>fishlb`", value="Fishing leaderboard — see top anglers", inline=False)
         embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
         return await ctx.send(embed=embed)
 
@@ -807,7 +819,7 @@ async def help_cmd(ctx, category: str = None):
         value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo` `>avatar` `>latestnews`",
         inline=False)
     embed.add_field(name="🎮 Games",
-        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish`",
+        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb`",
         inline=False)
     embed.add_field(name="⚔️ Adventure & RPG",
         value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard`\n`>adventurehelp` — Full RPG guide",
@@ -1232,6 +1244,8 @@ async def fish(ctx):
     bonus = 1.0
     if "lucky_charm" in player.get("inventory", []):
         bonus = 1.5
+    if "enchanted_lure" in player.get("inventory", []):
+        bonus = max(bonus, 1.3)
 
     coins_earned = int(value * bonus)
     xp_earned = max(5, coins_earned // 3)
@@ -1239,6 +1253,9 @@ async def fish(ctx):
     player["coins"] += coins_earned
     player["xp"] += xp_earned
     player["last_fish"] = now
+    player["fish_caught"] = player.get("fish_caught", 0) + 1
+    if rarity in ("epic", "legendary"):
+        player["fish_legendary"] = player.get("fish_legendary", 0) + 1
 
     # Level up check
     xp_needed = player["level"] * 50
@@ -1276,7 +1293,8 @@ async def fish(ctx):
     embed.add_field(name="Catch", value=f"{emoji} **{name}** {rarity_emoji.get(rarity, '')} *{rarity.upper()}*", inline=False)
     embed.add_field(name="Reward", value=f"🪙 +**{coins_earned}** coins | ⭐ +**{xp_earned}** XP", inline=True)
     if bonus > 1.0:
-        embed.add_field(name="🍀 Lucky Charm Bonus", value=f"50% bonus applied!", inline=True)
+        bonus_name = "🍀 Lucky Charm" if bonus >= 1.5 else "✨ Enchanted Lure"
+        embed.add_field(name=f"{bonus_name} Bonus", value=f"{int((bonus-1)*100)}% bonus applied!", inline=True)
     if leveled_up:
         embed.add_field(name="🎉 LEVEL UP!", value=f"You are now **Level {player['level']}**!", inline=False)
     embed.set_footer(text="Cooldown: 60s | Use >fish again after cooldown!")
@@ -1357,6 +1375,7 @@ def get_default_shop(guild_id):
                 {"id": "dragon_slayer", "name": "🐉 Dragon Slayer", "attack": 55, "price": 1500, "desc": "Forged to slay dragons. +55 ATK"},
                 {"id": "excalibur", "name": "👑 Excalibur", "attack": 80, "price": 3000, "desc": "The legendary sword of kings. +80 ATK"},
                 {"id": "stormbreaker", "name": "⚡ Stormbreaker", "attack": 95, "price": 4500, "desc": "Forged in the heart of a storm. +95 ATK"},
+                {"id": "phoenix_blade", "name": "🔥 Phoenix Blade", "attack": 110, "price": 6000, "desc": "Reborn from immortal flames. +110 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1367,6 +1386,7 @@ def get_default_shop(guild_id):
                 {"id": "dragon_scale", "name": "🐲 Dragon Scale", "defense": 40, "price": 1200, "desc": "Made from dragon scales. +40 DEF"},
                 {"id": "divine_plate", "name": "✨ Divine Plate", "defense": 60, "price": 2500, "desc": "Blessed by the gods. +60 DEF"},
                 {"id": "celestial_aegis", "name": "🌟 Celestial Aegis", "defense": 75, "price": 4000, "desc": "Woven from starlight. +75 DEF"},
+                {"id": "mystic_robes", "name": "🌙 Mystic Robes", "defense": 50, "price": 1800, "desc": "Enchanted fabric that absorbs magic. +50 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1375,6 +1395,7 @@ def get_default_shop(guild_id):
                 {"id": "mega_elixir", "name": "💫 Mega Elixir", "heal": 500, "price": 350, "desc": "Heals 500 HP instantly"},
                 {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
                 {"id": "elixir_of_power", "name": "🧬 Elixir of Power", "xp_boost": 200, "price": 500, "desc": "Grants 200 XP instantly"},
+                {"id": "time_warp_potion", "name": "⏳ Time Warp Potion", "xp_boost": 500, "price": 1200, "desc": "Bends spacetime for 500 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1382,6 +1403,7 @@ def get_default_shop(guild_id):
                 {"id": "power_ring", "name": "💎 Power Ring", "price": 350, "desc": "+5 permanent ATK"},
                 {"id": "life_crystal", "name": "💠 Life Crystal", "price": 500, "desc": "+20 permanent max HP"},
                 {"id": "gravity_well", "name": "🌀 Gravity Well", "price": 800, "desc": "+10 ATK & +10 DEF permanently"},
+                {"id": "enchanted_lure", "name": "✨ Enchanted Lure", "price": 450, "desc": "Doubles fishing rare catch chance"},
             ]
         }
         save_guild_shops(shops)
@@ -1407,6 +1429,19 @@ ADVENTURE_LOCATIONS = [
         "boss_chance": 0.15,
     },
     {
+        "name": "🌸 Enchanted Garden",
+        "description": "A magical garden where flowers sing and mushrooms dance. Mystical creatures guard ancient secrets.",
+        "min_level": 3,
+        "monsters": [
+            {"name": "🌺 Flower Sprite", "hp": 40, "atk": 12, "def": 5, "xp": 20, "coins": (15, 30)},
+            {"name": "🦋 Fairy Dragon", "hp": 55, "atk": 15, "def": 7, "xp": 28, "coins": (20, 40)},
+            {"name": "🍂 Autumn Wisp", "hp": 35, "atk": 18, "def": 3, "xp": 25, "coins": (18, 35)},
+            {"name": "🌿 Vine Ent", "hp": 70, "atk": 10, "def": 10, "xp": 30, "coins": (22, 45)},
+        ],
+        "boss": {"name": "👸 Garden Queen", "hp": 200, "atk": 25, "def": 15, "xp": 100, "coins": (100, 200)},
+        "boss_chance": 0.12,
+    },
+    {
         "name": "🏔️ Frozen Mountains",
         "description": "Icy peaks where only the brave dare to tread.",
         "min_level": 5,
@@ -1415,6 +1450,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🐻 Polar Bear", "hp": 80, "atk": 22, "def": 6, "xp": 40, "coins": (30, 55)},
             {"name": "🦅 Frost Hawk", "hp": 45, "atk": 25, "def": 4, "xp": 30, "coins": (20, 45)},
             {"name": "🧊 Ice Golem", "hp": 100, "atk": 15, "def": 15, "xp": 45, "coins": (35, 60)},
+            {"name": "🏔️ Avalanche Yeti", "hp": 110, "atk": 20, "def": 12, "xp": 48, "coins": (38, 65)},
+            {"name": "💎 Crystal Golem", "hp": 90, "atk": 16, "def": 20, "xp": 50, "coins": (40, 70)},
         ],
         "boss": {"name": "🐉 Frost Dragon", "hp": 300, "atk": 35, "def": 20, "xp": 150, "coins": (150, 300)},
         "boss_chance": 0.12,
@@ -1485,6 +1522,11 @@ ADVENTURE_LOCATIONS = [
         "boss_chance": 0.08,
     },
 ]
+
+# Write adventure data to JSON cache for web dashboard
+_adventure_cache = DATA_DIR / "adventure_locations.json"
+with open(_adventure_cache, "w") as _acf:
+    json.dump(ADVENTURE_LOCATIONS, _acf, indent=2)
 
 # ── Commands ──
 
@@ -1794,6 +1836,8 @@ async def buy(ctx, item_id: str):
         elif found_item["id"] == "gravity_well":
             player["attack"] += 10
             player["defense"] += 10
+        elif found_item["id"] == "enchanted_lure":
+            player["inventory"].append(found_item["id"])
         players[key] = player
         save_players(players)
         await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}!**\n*{found_item['desc']}*")
@@ -2059,12 +2103,14 @@ async def adventure_help(ctx):
     embed.add_field(
         name="🗺️ Locations",
         value=(
-            "Use `>locations` to see all areas!\n"
-            "• 🌲 **Dark Forest** (Lv.1) — Wolves, Spiders, Ghosts\n"
-            "• 🏔️ **Frozen Mountains** (Lv.5) — Ice Elementals, Polar Bears\n"
-            "• 🌊 **Sunken Depths** (Lv.8) — Krakens, Sirens, Shark Warriors\n"
-            "• 🌋 **Volcanic Caverns** (Lv.10) — Fire Imps, Magma Beasts\n"
-            "• 🏰 **Abandoned Castle** (Lv.15) — Dark Knights, Vampires\n"
+            "Use `>locations` to see all areas!\\n"
+            "• 🌲 **Dark Forest** (Lv.1) — Wolves, Spiders, Ghosts\\n"
+            "• 🌸 **Enchanted Garden** (Lv.3) — Flower Sprites, Fairy Dragons\\n"
+            "• 🏔️ **Frozen Mountains** (Lv.5) — Ice Elementals, Polar Bears\\n"
+            "• 🌊 **Sunken Depths** (Lv.8) — Krakens, Sirens, Shark Warriors\\n"
+            "• 🌋 **Volcanic Caverns** (Lv.10) — Fire Imps, Magma Beasts\\n"
+            "• 🌅 **Celestial Spire** (Lv.12) — Winged Sentinels, Solar Wraiths\\n"
+            "• 🏰 **Abandoned Castle** (Lv.15) — Dark Knights, Vampires\\n"
             "• 🌌 **The Void** (Lv.20) — Void Watchers, Chaos Entities"
         ),
         inline=False
@@ -2121,6 +2167,42 @@ async def adventure_help(ctx):
     )
 
     embed.set_footer(text="Tip: Start with >adventure and work your way up! Good luck, adventurer! ⚔️")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="fishlb", aliases=["fishleaderboard", "fishingtop", "castlb"])
+async def fish_leaderboard(ctx):
+    """View the fishing leaderboard — top anglers by total catches and legendary hauls."""
+    players = load_players()
+    guild_players = {k: v for k, v in players.items() if str(v.get("guild_id")) == str(ctx.guild.id)}
+
+    if not guild_players:
+        return await ctx.send("❌ No fishing data yet. Start fishing with `>fish`!")
+
+    # Sort by fish_caught (fish count), then by fish_legendary
+    sorted_p = sorted(
+        guild_players.values(),
+        key=lambda x: (x.get("fish_caught", 0), x.get("fish_legendary", 0)),
+        reverse=True
+    )[:10]
+
+    lines = []
+    medals = ["🥇", "🥈", "🥉"]
+    for i, p in enumerate(sorted_p):
+        medal = medals[i] if i < 3 else f"`{i+1}.`"
+        member = ctx.guild.get_member(p["user_id"])
+        name = member.display_name if member else f"User#{p['user_id']}"
+        caught = p.get("fish_caught", 0)
+        legendary = p.get("fish_legendary", 0)
+        lines.append(f"{medal} **{name}** — 🎣 {caught} catches | ⭐ {legendary} legendary")
+
+    embed = discord.Embed(
+        title="🎣 Fishing Leaderboard",
+        description="\n".join(lines) or "No data yet!",
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow(),
+    )
+    embed.set_footer(text="Use >fish to catch fish and climb the ranks!")
     await ctx.send(embed=embed)
 
 

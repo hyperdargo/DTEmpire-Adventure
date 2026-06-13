@@ -44,7 +44,7 @@ tr:hover{background:rgba(168,85,247,0.05)}
       {% for p in players %}
       <tr>
         <td class="rank">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
-        <td class="name">User#{{ p.user_id|string[-4:] }}</td>
+        <td class="name">User#{{ (p.user_id|string)[-4:] }}</td>
         <td class="value">{{ p.level }}</td>
         <td class="value">{{ p.monsters_killed }}</td>
         <td class="value">{{ p.bosses_killed }}</td>
