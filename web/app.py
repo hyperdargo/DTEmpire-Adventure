@@ -75,6 +75,7 @@ def discord_token_exchange(code):
     }).encode()
     req = urllib.request.Request(f"{DISCORD_API}/oauth2/token", data=data, method="POST")
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    req.add_header("User-Agent", "HermesBot (https://adventure.ankitgupta.com.np, 1.0)")
     with urllib.request.urlopen(req) as resp:
         return json.loads(resp.read())
 
@@ -82,6 +83,7 @@ def discord_get_user(access_token):
     """Get the authenticated user's Discord profile."""
     req = urllib.request.Request(f"{DISCORD_API}/users/@me")
     req.add_header("Authorization", f"Bearer {access_token}")
+    req.add_header("User-Agent", "HermesBot (https://adventure.ankitgupta.com.np, 1.0)")
     with urllib.request.urlopen(req) as resp:
         return json.loads(resp.read())
 
