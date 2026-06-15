@@ -13,14 +13,37 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
 .nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
 .nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:900px;margin:0 auto;padding:24px}
-.location-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s}
-.location-card:hover{border-color:#a855f7;transform:translateX(4px)}
-.location-card.locked{opacity:0.5;cursor:not-allowed}
-.location-card h3{font-size:1.2em;margin-bottom:6px}
-.location-card p{color:#888;font-size:0.9em}
-.location-card .req{color:#f97316;font-size:0.85em;margin-top:4px}
-.combat-area{background:rgba(20,20,40,0.9);border:1px solid #6c3ce0;border-radius:16px;padding:32px;margin-top:24px;display:none}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+
+/* Top bar: Level left, Player right */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px}
+.level-box{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;flex:0 0 auto}
+.level-box .level-num{font-size:2.4em;font-weight:800;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.level-box .level-label{font-size:0.75em;color:#888;text-transform:uppercase;letter-spacing:1px}
+.level-box .xp-bar{width:160px;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-top:4px}
+.level-bar-fill{height:100%;background:linear-gradient(90deg,#6c3ce0,#a855f7);border-radius:4px;transition:width 0.5s}
+.player-quick{display:flex;gap:16px;align-items:center;background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:16px 24px}
+.stat-pill{display:flex;align-items:center;gap:6px;font-size:0.95em}
+.stat-pill .icon{font-size:1.2em}
+.stat-pill .val{font-weight:700}
+
+/* Main 2-column layout */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.panel{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:16px;padding:24px}
+.panel h2{font-size:1.3em;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #333}
+
+/* Location cards */
+.location-card{background:rgba(30,30,60,0.6);border:1px solid #444;border-radius:10px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.3s}
+.location-card:hover{border-color:#a855f7;transform:translateX(4px);background:rgba(40,40,80,0.6)}
+.location-card.locked{opacity:0.4;cursor:not-allowed}
+.location-card.locked:hover{border-color:#444;transform:none}
+.location-card.selected{border-color:#a855f7;background:rgba(108,60,224,0.15)}
+.location-card h3{font-size:1.1em;margin-bottom:4px}
+.location-card p{color:#888;font-size:0.85em}
+.location-card .req{color:#f97316;font-size:0.8em;margin-top:4px}
+
+/* Combat area */
+.combat-area{border:1px solid #6c3ce0;border-radius:16px;padding:32px}
 .combat-header{text-align:center;margin-bottom:24px}
 .combat-header h2{font-size:1.6em;margin-bottom:8px}
 .vs-display{display:flex;align-items:center;justify-content:center;gap:32px;margin:24px 0}
@@ -31,16 +54,37 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .vs{font-size:2em;font-weight:700;color:#a855f7}
 .combat-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;max-height:200px;overflow-y:auto;margin:16px 0;font-size:0.9em;line-height:1.6}
 .combat-log .win{color:#22c55e}
-.combat-log .lose{color:#ef4444}
 .combat-log .dmg{color:#f97316}
 .result{text-align:center;padding:24px}
 .result h2{font-size:2em;margin-bottom:12px}
 .result .rewards{font-size:1.2em;color:#a855f7}
-.btn{padding:12px 24px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.3s}
+
+/* Buttons */
+.btn{padding:12px 28px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.3s}
 .btn-primary{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(168,85,247,0.4)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
-.cooldown{text-align:center;color:#f97316;font-size:1.1em;padding:20px}
+.btn-big{padding:18px 40px;font-size:1.2em;width:100%;margin-top:16px}
+
+/* Play again with cooldown */
+.play-again-wrap{text-align:center;margin-top:20px}
+.play-again-wrap .cooldown-text{color:#f97316;font-size:1.1em;margin-bottom:8px}
+.play-again-wrap .cooldown-num{font-size:2em;font-weight:800;color:#f97316}
+
+/* Cooldown overlay on locations */
+.cooldown-overlay{text-align:center;color:#f97316;font-size:1.1em;padding:40px 20px}
+
+/* Selected location header in combat panel */
+.selected-loc-name{font-size:1.4em;font-weight:700;color:#a855f7;margin-bottom:4px}
+.selected-loc-desc{color:#888;font-size:0.9em;margin-bottom:16px}
+
+/* Responsive */
+@media(max-width:768px){
+  .main-grid{grid-template-columns:1fr}
+  .top-bar{flex-direction:column}
+  .player-quick{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
@@ -55,56 +99,130 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     <a href="/logout" class="logout">Logout</a>
   </div>
 </nav>
+
 <div class="container">
-  <h2 style="margin-bottom:20px">⚔️ Choose Your Adventure</h2>
-  <p style="color:#888;margin-bottom:20px">Level {{ player.level }} | ❤️ {{ player.health }}/{{ player.max_health }} HP | 🪙 {{ player.coins }} coins</p>
-
-  {% for loc in locations %}
-  <div class="location-card" onclick="startAdventure('{{ loc.name }}')" id="loc-{{ loop.index }}">
-    <h3>{{ loc.name }} {% if player.level < loc.min_level %}🔒{% endif %}</h3>
-    <p>{{ loc.description }}</p>
-    <div class="req">Required Level: {{ loc.min_level }} | Monsters: {{ loc.monsters|length }} | Boss: {{ loc.boss.name }}</div>
+  <!-- Top bar: Level left, Player stats right -->
+  <div class="top-bar">
+    <div class="level-box">
+      <div>
+        <div class="level-label">Level</div>
+        <div class="level-num" id="levelNum">{{ player.level }}</div>
+      </div>
+      <div style="margin-left:8px">
+        <div style="font-size:0.8em;color:#888" id="xpText">{{ player.xp }} / {{ player.level * 50 }} XP</div>
+        <div class="xp-bar"><div class="level-bar-fill" id="xpBar" style="width:{{ (player.xp / (player.level * 50)) * 100 }}%"></div></div>
+      </div>
+    </div>
+    <div class="player-quick">
+      <div class="stat-pill"><span class="icon">❤️</span><span class="val" id="statHp">{{ player.health }}/{{ player.max_health }}</span></div>
+      <div class="stat-pill"><span class="icon">⚔️</span><span class="val" id="statAtk">{{ player.attack }}</span></div>
+      <div class="stat-pill"><span class="icon">🛡️</span><span class="val" id="statDef">{{ player.defense }}</span></div>
+      <div class="stat-pill"><span class="icon">🪙</span><span class="val" id="statCoins">{{ player.coins }}</span></div>
+    </div>
   </div>
-  {% endfor %}
 
-  <div class="combat-area" id="combatArea">
-    <div class="combat-header">
-      <h2 id="combatTitle">Battle!</h2>
-      <p id="combatLocation" style="color:#888"></p>
-    </div>
-    <div class="vs-display">
-      <div class="fighter">
-        <span class="emoji">🧙</span>
-        <div class="name">{{ username }}</div>
-        <div class="stats">ATK: {{ player.attack }} | DEF: {{ player.defense }}</div>
-        <div class="stats" id="playerHpDisplay">HP: {{ player.health }}/{{ player.max_health }}</div>
+  <!-- Main 2-column: Locations left, Combat right -->
+  <div class="main-grid">
+    <!-- LEFT: Location picker -->
+    <div class="panel">
+      <h2>🗺️ Locations</h2>
+      <div id="locationsList">
+        {% for loc in locations %}
+        <div class="location-card {% if player.level < loc.min_level %}locked{% endif %}"
+             onclick="selectLocation('{{ loc.name }}', {{ loc.min_level }})"
+             id="loc-{{ loop.index }}">
+          <h3>{{ loc.name }} {% if player.level < loc.min_level %}🔒{% endif %}</h3>
+          <p>{{ loc.description }}</p>
+          <div class="req">Req Lvl {{ loc.min_level }} | Monsters: {{ loc.monsters|length }} | Boss: {{ loc.boss.name }}</div>
+        </div>
+        {% endfor %}
       </div>
-      <div class="vs">VS</div>
-      <div class="fighter">
-        <span class="emoji" id="enemyEmoji">👹</span>
-        <div class="name" id="enemyName">Enemy</div>
-        <div class="stats" id="enemyStats">ATK: ? | DEF: ?</div>
-        <div class="stats" id="enemyHpDisplay">HP: ?/?</div>
+      <div id="locCooldown" class="cooldown-overlay" style="display:none">
+        <div class="cooldown-num" id="locCooldownNum">3</div>
+        <div>Cooldown — wait before next battle!</div>
       </div>
     </div>
-    <div class="combat-log" id="combatLog"></div>
-    <div id="resultArea"></div>
+
+    <!-- RIGHT: Combat area -->
+    <div class="panel combat-area" id="combatPanel">
+      <div id="combatPlaceholder" style="text-align:center;color:#666;padding:60px 20px">
+        <div style="font-size:3em;margin-bottom:16px">⚔️</div>
+        <p>Select a location on the left to begin your adventure!</p>
+      </div>
+
+      <div id="combatContent" style="display:none">
+        <div class="combat-header">
+          <div class="selected-loc-name" id="selectedLocName"></div>
+          <div class="selected-loc-desc" id="selectedLocDesc"></div>
+          <button class="btn btn-primary btn-big" id="fightBtn" onclick="startAdventure()">⚔️ FIGHT!</button>
+        </div>
+
+        <div id="battleArea" style="display:none">
+          <div class="vs-display">
+            <div class="fighter">
+              <span class="emoji">🧙</span>
+              <div class="name" id="playerName">{{ username }}</div>
+              <div class="stats" id="playerStats">ATK: {{ player.attack }} | DEF: {{ player.defense }}</div>
+              <div class="stats" id="playerHpDisplay">HP: {{ player.health }}/{{ player.max_health }}</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="fighter">
+              <span class="emoji" id="enemyEmoji">👹</span>
+              <div class="name" id="enemyName">Enemy</div>
+              <div class="stats" id="enemyStats">ATK: ? | DEF: ?</div>
+              <div class="stats" id="enemyHpDisplay">HP: ?/?</div>
+            </div>
+          </div>
+          <div class="combat-log" id="combatLog"></div>
+          <div id="resultArea"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 const locations = {{ locations|tojson }};
+let PLAYER_LEVEL = {{ player.level }};
+let selectedLoc = null;
 let inCombat = false;
+let cooldownTimer = null;
 
-function startAdventure(locName) {
+function selectLocation(locName, minLevel) {
   if (inCombat) return;
+  if (PLAYER_LEVEL < minLevel) return;
+
+  // Deselect all
+  document.querySelectorAll('.location-card').forEach(c => c.classList.remove('selected'));
+
+  // Select this one
   const loc = locations.find(l => l.name === locName);
   if (!loc) return;
+  selectedLoc = loc;
 
+  const card = document.getElementById('loc-' + (locations.indexOf(loc) + 1));
+  if (card) card.classList.add('selected');
+
+  // Show combat panel with selected loc info
+  document.getElementById('combatPlaceholder').style.display = 'none';
+  document.getElementById('combatContent').style.display = 'block';
+  document.getElementById('selectedLocName').textContent = loc.name;
+  document.getElementById('selectedLocDesc').textContent = loc.description;
+  document.getElementById('fightBtn').style.display = 'block';
+  document.getElementById('fightBtn').disabled = false;
+  document.getElementById('fightBtn').textContent = '⚔️ FIGHT!';
+  document.getElementById('battleArea').style.display = 'none';
+}
+
+function startAdventure() {
+  if (inCombat || !selectedLoc) return;
   inCombat = true;
-  document.getElementById('combatArea').style.display = 'block';
-  document.getElementById('combatTitle').textContent = '⚔️ ' + loc.name;
-  document.getElementById('combatLocation').textContent = loc.description;
+
+  const fightBtn = document.getElementById('fightBtn');
+  fightBtn.disabled = true;
+  fightBtn.textContent = '⏳ Fighting...';
+
+  document.getElementById('battleArea').style.display = 'block';
   document.getElementById('combatLog').innerHTML = '';
   document.getElementById('resultArea').innerHTML = '';
 
@@ -112,8 +230,10 @@ function startAdventure(locName) {
     .then(r => r.json())
     .then(data => {
       if (data.error) {
-        document.getElementById('combatLog').innerHTML = `<div class="cooldown">⏳ ${data.error}</div>`;
-        document.getElementById('resultArea').innerHTML = `<button class="btn btn-primary" onclick="closeCombat()">Go Back</button>`;
+        document.getElementById('combatLog').innerHTML = `<div style="color:#f97316;text-align:center;padding:20px">⏳ ${data.error}</div>`;
+
+        // Show cooldown then let them fight again
+        showPostCombatCooldown();
         return;
       }
 
@@ -121,6 +241,10 @@ function startAdventure(locName) {
       document.getElementById('enemyName').textContent = data.enemy.name;
       document.getElementById('enemyStats').textContent = `ATK: ${data.enemy.atk} | DEF: ${data.enemy.def}`;
       document.getElementById('enemyHpDisplay').textContent = `HP: ${data.enemy.hp}/${data.enemy.hp}`;
+
+      // Update all player stats from server response
+      updatePlayerStats(data.player);
+      PLAYER_LEVEL = data.player.level;
 
       let log = '';
       data.combat_log.forEach((line, i) => {
@@ -142,27 +266,72 @@ function startAdventure(locName) {
           html += `<p class="rewards">⭐ +${data.xp_gain} XP | 🪙 +${data.coin_gain} Coins</p>`;
           if (data.leveled_up) html += `<p style="color:#fbbf24;font-size:1.2em;margin-top:8px">🎉 LEVEL UP! You are now Level ${data.player.level}!</p>`;
           html += `<p style="margin-top:12px;color:#888">Monsters: ${data.player.monsters_killed} | Bosses: ${data.player.bosses_killed}</p>`;
-          html += `<button class="btn btn-primary" style="margin-top:16px" onclick="closeCombat()">Continue</button></div>`;
           resultDiv.innerHTML = html;
         } else {
           let html = `<div class="result"><h2 style="color:#ef4444">💀 Defeated!</h2>`;
           html += `<p>You were slain by ${data.enemy.name}...</p>`;
           html += `<p class="rewards">🪙 Lost 20 coins | ❤️ Respawned with half HP</p>`;
-          html += `<button class="btn btn-danger" style="margin-top:16px" onclick="closeCombat()">Try Again</button></div>`;
           resultDiv.innerHTML = html;
         }
+
+        // Show play again with live cooldown
+        showPostCombatCooldown();
       }, data.combat_log.length * 600 + 500);
     })
     .catch(err => {
-      document.getElementById('combatLog').innerHTML = `<div class="cooldown">Error: ${err.message}</div>`;
-      document.getElementById('resultArea').innerHTML = `<button class="btn btn-primary" onclick="closeCombat()">Go Back</button>`;
+      document.getElementById('combatLog').innerHTML = `<div style="color:#ef4444;text-align:center;padding:20px">Error: ${err.message}</div>`;
+      showPostCombatCooldown();
     });
 }
 
-function closeCombat() {
-  inCombat = false;
-  document.getElementById('combatArea').style.display = 'none';
-  location.reload();
+function showPostCombatCooldown() {
+  const fightBtn = document.getElementById('fightBtn');
+  fightBtn.style.display = 'block';
+  fightBtn.disabled = true;
+
+  let secs = 3;
+  fightBtn.textContent = `⏳ ${secs}s`;
+
+  cooldownTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(cooldownTimer);
+      fightBtn.textContent = '⚔️ Play Again!';
+      fightBtn.disabled = false;
+      inCombat = false;
+    } else {
+      fightBtn.textContent = `⏳ ${secs}s`;
+    }
+  }, 1000);
+}
+
+function updatePlayerStats(p) {
+  // Update top bar
+  document.getElementById('levelNum').textContent = p.level;
+  document.getElementById('xpText').textContent = `${p.xp} / ${p.level * 50} XP`;
+  document.getElementById('xpBar').style.width = `${(p.xp / (p.level * 50)) * 100}%`;
+  document.getElementById('statHp').textContent = `${p.health}/${p.max_health}`;
+  document.getElementById('statAtk').textContent = p.attack;
+  document.getElementById('statDef').textContent = p.defense;
+  document.getElementById('statCoins').textContent = p.coins;
+
+  // Update battle area player stats
+  document.getElementById('playerStats').textContent = `ATK: ${p.attack} | DEF: ${p.defense}`;
+  document.getElementById('playerHpDisplay').textContent = `HP: ${p.health}/${p.max_health}`;
+
+  // Update locked/unlocked locations
+  document.querySelectorAll('.location-card').forEach((card, i) => {
+    if (i < locations.length) {
+      const loc = locations[i];
+      if (p.level < loc.min_level) {
+        card.classList.add('locked');
+        card.querySelector('h3').textContent = loc.name + ' 🔒';
+      } else {
+        card.classList.remove('locked');
+        card.querySelector('h3').textContent = loc.name;
+      }
+    }
+  });
 }
 </script>
 </body>

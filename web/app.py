@@ -301,8 +301,8 @@ def adventure_page():
 def api_adventure():
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
     now = time.time()
-    if now - player.get("last_adventure", 0) < 30:
-        return jsonify({"error": f"Cooldown! Wait {int(30 - (now - player.get('last_adventure', 0)))}s"}), 429
+    if now - player.get("last_adventure", 0) < 3:
+        return jsonify({"error": f"Cooldown! Wait {int(3 - (now - player.get('last_adventure', 0)))}s"}), 429
 
     available = [loc for loc in ADVENTURE_LOCATIONS if loc["min_level"] <= player["level"]]
     if not available:
@@ -466,6 +466,11 @@ def api_buy():
         elif item["id"] == "gravity_well":
             player["attack"] += 10
             player["defense"] += 10
+        elif item["id"] == "soul_gem":
+            player["attack"] += 15
+            player["defense"] += 15
+            player["max_health"] += 30
+            player["health"] += 30
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)

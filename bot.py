@@ -113,6 +113,31 @@ CHANGELOG = [
             "🌐 Web dashboard: new Enchanted Garden location, updated shop with new categories",
         ]
     },
+    {
+        "version": "v2.4",
+        "date": "2026-06-15",
+        "changes": [
+            "💀 New location: Cursed Catacombs (Lv.17+) — ancient underground tomb with undead horrors and 4 monsters + boss",
+            "🌋 Volcanic Caverns expanded: +2 new monsters (Magma Titan & Inferno Wraith)",
+            "🗡️ New shop items: Doomhammer (legendary maul), Abyssal Cloak (legendary armor), Soul Gem (special)",
+            "🏆 New >achievements command — track milestones like monster kills, boss slays, and levelups",
+            "🆕 New players now start with a Wooden Sword instead of nothing",
+            "🌐 Web dashboard: new Catacombs location, achievements section on dashboard, updated shop",
+        ],
+    },
+    {
+        "version": "v2.5",
+        "date": "2026-06-16",
+        "changes": [
+            "🌪️ New location: Storm Peaks (Lv.14+) — treacherous mountain peaks battered by eternal storms with 4 monsters + boss",
+            "🌊 Sunken Depths expanded: +2 new monsters (Abyssal Serpent & Coral Guardian)",
+            "🏔️ Frozen Mountains expanded: +2 new monsters (Blizzard Wolf & Frozen Wraith)",
+            "🗡️ New shop items: Tempest Fury (legendary sword), Storm Shield (legendary armor), Elixir of Fortune",
+            "🎣 New >fishstats command — view your personal fishing statistics",
+            "🔧 Web shop synced: added missing Doomhammer, Abyssal Cloak, and Soul Gem to web shop data",
+            "🌐 Web dashboard: new Storm Peaks location, updated shop with new items",
+        ],
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -136,6 +161,13 @@ bot = commands.Bot(command_prefix=">", intents=intents, help_command=None)
 bot.start_time = time.time()
 bot.home_guild_id = HOME_GUILD_ID
 bot.log_channel_id = LOG_CHANNEL_ID
+
+@bot.event
+async def on_connect():
+    """Load cogs on first connect."""
+    if not getattr(bot, '_cogs_loaded', False):
+        await load_extensions()
+        bot._cogs_loaded = True
 
 # Auto-mod state
 automod_config = {
@@ -765,6 +797,7 @@ async def help_cmd(ctx, category: str = None):
         embed.add_field(name="`>hack [@user]`", value="Fake hack (just for fun)", inline=False)
         embed.add_field(name="`>fish`", value="Go fishing! Catch fish, treasure, and legendary items (60s cooldown)", inline=False)
         embed.add_field(name="`>fishlb`", value="Fishing leaderboard — see top anglers", inline=False)
+        embed.add_field(name="`>fishstats`", value="Your personal fishing statistics", inline=False)
         embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
         return await ctx.send(embed=embed)
 
@@ -819,7 +852,7 @@ async def help_cmd(ctx, category: str = None):
         value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo` `>avatar` `>latestnews`",
         inline=False)
     embed.add_field(name="🎮 Games",
-        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb`",
+        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb` `>fishstats`",
         inline=False)
     embed.add_field(name="⚔️ Adventure & RPG",
         value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard`\n`>adventurehelp` — Full RPG guide",
@@ -1254,6 +1287,7 @@ async def fish(ctx):
     player["xp"] += xp_earned
     player["last_fish"] = now
     player["fish_caught"] = player.get("fish_caught", 0) + 1
+    player["fish_coins"] = player.get("fish_coins", 0) + coins_earned
     if rarity in ("epic", "legendary"):
         player["fish_legendary"] = player.get("fish_legendary", 0) + 1
 
@@ -1347,9 +1381,7 @@ def get_player(guild_id, user_id):
             "max_health": 100,
             "attack": 10,
             "defense": 5,
-            "inventory": [],
-            "equipped_weapon": None,
-            "equipped_armor": None,
+            "inventory": ["wooden_sword"], "equipped_weapon": None, "equipped_armor": None,
             "monsters_killed": 0,
             "deaths": 0,
             "bosses_killed": 0,
@@ -1376,6 +1408,8 @@ def get_default_shop(guild_id):
                 {"id": "excalibur", "name": "👑 Excalibur", "attack": 80, "price": 3000, "desc": "The legendary sword of kings. +80 ATK"},
                 {"id": "stormbreaker", "name": "⚡ Stormbreaker", "attack": 95, "price": 4500, "desc": "Forged in the heart of a storm. +95 ATK"},
                 {"id": "phoenix_blade", "name": "🔥 Phoenix Blade", "attack": 110, "price": 6000, "desc": "Reborn from immortal flames. +110 ATK"},
+                {"id": "doomhammer", "name": "🔨 Doomhammer", "attack": 130, "price": 8000, "desc": "Smashes everything in its path. +130 ATK"},
+                {"id": "tempest_fury", "name": "🌪️ Tempest Fury", "attack": 150, "price": 10000, "desc": "A blade infused with the fury of storms. +150 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1387,6 +1421,8 @@ def get_default_shop(guild_id):
                 {"id": "divine_plate", "name": "✨ Divine Plate", "defense": 60, "price": 2500, "desc": "Blessed by the gods. +60 DEF"},
                 {"id": "celestial_aegis", "name": "🌟 Celestial Aegis", "defense": 75, "price": 4000, "desc": "Woven from starlight. +75 DEF"},
                 {"id": "mystic_robes", "name": "🌙 Mystic Robes", "defense": 50, "price": 1800, "desc": "Enchanted fabric that absorbs magic. +50 DEF"},
+                {"id": "abyssal_cloak", "name": "🌑 Abyssal Cloak", "defense": 90, "price": 5500, "desc": "Woven from the fabric of the abyss. +90 DEF"},
+                {"id": "storm_shield", "name": "⛈️ Storm Shield", "defense": 105, "price": 7000, "desc": "Forged in the heart of a hurricane. +105 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1396,6 +1432,7 @@ def get_default_shop(guild_id):
                 {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
                 {"id": "elixir_of_power", "name": "🧬 Elixir of Power", "xp_boost": 200, "price": 500, "desc": "Grants 200 XP instantly"},
                 {"id": "time_warp_potion", "name": "⏳ Time Warp Potion", "xp_boost": 500, "price": 1200, "desc": "Bends spacetime for 500 XP"},
+                {"id": "elixir_of_fortune", "name": "🍀 Elixir of Fortune", "xp_boost": 1000, "price": 2500, "desc": "Grants 1000 XP and doubles fishing rewards for 5 minutes"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1404,6 +1441,7 @@ def get_default_shop(guild_id):
                 {"id": "life_crystal", "name": "💠 Life Crystal", "price": 500, "desc": "+20 permanent max HP"},
                 {"id": "gravity_well", "name": "🌀 Gravity Well", "price": 800, "desc": "+10 ATK & +10 DEF permanently"},
                 {"id": "enchanted_lure", "name": "✨ Enchanted Lure", "price": 450, "desc": "Doubles fishing rare catch chance"},
+                {"id": "soul_gem", "name": "💎 Soul Gem", "price": 2000, "desc": "+15 ATK & +15 DEF & +30 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1452,6 +1490,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🧊 Ice Golem", "hp": 100, "atk": 15, "def": 15, "xp": 45, "coins": (35, 60)},
             {"name": "🏔️ Avalanche Yeti", "hp": 110, "atk": 20, "def": 12, "xp": 48, "coins": (38, 65)},
             {"name": "💎 Crystal Golem", "hp": 90, "atk": 16, "def": 20, "xp": 50, "coins": (40, 70)},
+            {"name": "🐺 Blizzard Wolf", "hp": 85, "atk": 26, "def": 8, "xp": 42, "coins": (32, 58)},
+            {"name": "👻 Frozen Wraith", "hp": 70, "atk": 30, "def": 5, "xp": 38, "coins": (28, 52)},
         ],
         "boss": {"name": "🐉 Frost Dragon", "hp": 300, "atk": 35, "def": 20, "xp": 150, "coins": (150, 300)},
         "boss_chance": 0.12,
@@ -1465,6 +1505,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🧜 Siren", "hp": 55, "atk": 28, "def": 6, "xp": 40, "coins": (30, 55)},
             {"name": "🦈 Shark Warrior", "hp": 95, "atk": 25, "def": 14, "xp": 50, "coins": (40, 70)},
             {"name": "🪼 Jelly Swarm", "hp": 65, "atk": 20, "def": 12, "xp": 38, "coins": (28, 52)},
+            {"name": "🐍 Abyssal Serpent", "hp": 110, "atk": 26, "def": 16, "xp": 55, "coins": (42, 75)},
+            {"name": "🪸 Coral Guardian", "hp": 130, "atk": 20, "def": 22, "xp": 58, "coins": (45, 78)},
         ],
         "boss": {"name": "🐋 Leviathan", "hp": 400, "atk": 42, "def": 25, "xp": 200, "coins": (200, 400)},
         "boss_chance": 0.10,
@@ -1478,9 +1520,24 @@ ADVENTURE_LOCATIONS = [
             {"name": "🌋 Magma Beast", "hp": 120, "atk": 28, "def": 18, "xp": 60, "coins": (50, 85)},
             {"name": "💀 Lava Skeleton", "hp": 90, "atk": 35, "def": 12, "xp": 55, "coins": (45, 75)},
             {"name": "🦂 Fire Scorpion", "hp": 85, "atk": 32, "def": 15, "xp": 52, "coins": (42, 72)},
+            {"name": "🗿 Magma Titan", "hp": 160, "atk": 38, "def": 22, "xp": 70, "coins": (60, 95)},
+            {"name": "👻 Inferno Wraith", "hp": 100, "atk": 45, "def": 14, "xp": 65, "coins": (55, 90)},
         ],
         "boss": {"name": "👹 Inferno Lord", "hp": 500, "atk": 50, "def": 30, "xp": 250, "coins": (250, 500)},
         "boss_chance": 0.10,
+    },
+    {
+        "name": "💀 Cursed Catacombs",
+        "description": "Ancient underground tombs filled with undead horrors. The air is thick with dark magic and the whispers of the damned.",
+        "min_level": 17,
+        "monsters": [
+            {"name": "💀 Skeleton Warrior", "hp": 140, "atk": 45, "def": 30, "xp": 75, "coins": (55, 95)},
+            {"name": "👻 Wraith", "hp": 110, "atk": 52, "def": 20, "xp": 80, "coins": (60, 100)},
+            {"name": "🦴 Bone Colossus", "hp": 200, "atk": 40, "def": 38, "xp": 90, "coins": (70, 115)},
+            {"name": "🩸 Blood Revenant", "hp": 160, "atk": 55, "def": 28, "xp": 85, "coins": (65, 105)},
+        ],
+        "boss": {"name": "☠️ Lich King", "hp": 1000, "atk": 75, "def": 50, "xp": 500, "coins": (500, 1000)},
+        "boss_chance": 0.07,
     },
     {
         "name": "🏰 Abandoned Castle",
@@ -1519,6 +1576,19 @@ ADVENTURE_LOCATIONS = [
             {"name": "⭐ Star Colossus", "hp": 160, "atk": 35, "def": 28, "xp": 90, "coins": (75, 115)},
         ],
         "boss": {"name": "🌌 Astral Titan", "hp": 700, "atk": 60, "def": 40, "xp": 350, "coins": (350, 700)},
+        "boss_chance": 0.08,
+    },
+    {
+        "name": "🌪️ Storm Peaks",
+        "description": "Treacherous mountain peaks battered by eternal storms. Lightning cracks the sky as thunder beasts roam the crags.",
+        "min_level": 14,
+        "monsters": [
+            {"name": "⚡ Storm Elemental", "hp": 130, "atk": 48, "def": 20, "xp": 85, "coins": (65, 105)},
+            {"name": "🦅 Thunder Roc", "hp": 160, "atk": 42, "def": 28, "xp": 90, "coins": (70, 110)},
+            {"name": "🌩️ Lightning Sprite", "hp": 100, "atk": 55, "def": 15, "xp": 80, "coins": (60, 100)},
+            {"name": "⛈️ Tempest Hound", "hp": 140, "atk": 45, "def": 22, "xp": 88, "coins": (68, 108)},
+        ],
+        "boss": {"name": "🌪️ Storm Tyrant", "hp": 750, "atk": 68, "def": 38, "xp": 380, "coins": (380, 750)},
         "boss_chance": 0.08,
     },
 ]
@@ -1838,6 +1908,11 @@ async def buy(ctx, item_id: str):
             player["defense"] += 10
         elif found_item["id"] == "enchanted_lure":
             player["inventory"].append(found_item["id"])
+        elif found_item["id"] == "soul_gem":
+            player["attack"] += 15
+            player["defense"] += 15
+            player["max_health"] += 30
+            player["health"] += 30
         players[key] = player
         save_players(players)
         await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}!**\n*{found_item['desc']}*")
@@ -1918,6 +1993,67 @@ async def inventory(ctx):
     if equipped:
         embed.add_field(name="Equipped", value="\n".join(equipped), inline=False)
     embed.set_footer(text="Use >equip <item_id> to equip weapons/armor")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="achievements", aliases=["achieve", "milestones"])
+async def achievements(ctx, member: discord.Member = None):
+    """View your adventure achievements and milestones."""
+    member = member or ctx.author
+    player = get_player(ctx.guild.id, member.id)
+
+    # Define achievement tiers
+    monster_milestones = [10, 25, 50, 100, 250, 500, 1000]
+    boss_milestones = [1, 5, 10, 25, 50, 100]
+    level_milestones = [5, 10, 15, 20, 25, 30, 50]
+    adventure_milestones = [10, 50, 100, 250, 500, 1000]
+
+    def get_achieved(value, milestones):
+        return [m for m in milestones if value >= m]
+
+    mon_achieved = get_achieved(player["monsters_killed"], monster_milestones)
+    boss_achieved = get_achieved(player["bosses_killed"], boss_milestones)
+    lvl_achieved = get_achieved(player["level"], level_milestones)
+    adv_achieved = get_achieved(player["adventures_completed"], adventure_milestones)
+
+    embed = discord.Embed(
+        title=f"🏆 {member.display_name}'s Achievements",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+
+    # Monster kills
+    mon_text = ""
+    for m in monster_milestones:
+        status = "✅" if m in mon_achieved else "⬜"
+        mon_text += f"{status} {m} monsters killed\n"
+    embed.add_field(name="⚔️ Monster Hunter", value=mon_text, inline=True)
+
+    # Boss kills
+    boss_text = ""
+    for m in boss_milestones:
+        status = "✅" if m in boss_achieved else "⬜"
+        boss_text += f"{status} {m} bosses slain\n"
+    embed.add_field(name="👑 Boss Slayer", value=boss_text, inline=True)
+
+    # Level
+    lvl_text = ""
+    for m in level_milestones:
+        status = "✅" if m in lvl_achieved else "⬜"
+        lvl_text += f"{status} Reach Level {m}\n"
+    embed.add_field(name="📊 Level Milestones", value=lvl_text, inline=True)
+
+    # Adventures
+    adv_text = ""
+    for m in adventure_milestones:
+        status = "✅" if m in adv_achieved else "⬜"
+        adv_text += f"{status} {m} adventures\n"
+    embed.add_field(name="🗺️ Explorer", value=adv_text, inline=True)
+
+    # Summary
+    total_achieved = len(mon_achieved) + len(boss_achieved) + len(lvl_achieved) + len(adv_achieved)
+    total_possible = len(monster_milestones) + len(boss_milestones) + len(level_milestones) + len(adventure_milestones)
+    embed.set_footer(text=f"Achievements: {total_achieved}/{total_possible} | Keep playing to unlock more!")
     await ctx.send(embed=embed)
 
 
@@ -2110,7 +2246,9 @@ async def adventure_help(ctx):
             "• 🌊 **Sunken Depths** (Lv.8) — Krakens, Sirens, Shark Warriors\\n"
             "• 🌋 **Volcanic Caverns** (Lv.10) — Fire Imps, Magma Beasts\\n"
             "• 🌅 **Celestial Spire** (Lv.12) — Winged Sentinels, Solar Wraiths\\n"
+            "• 🌪️ **Storm Peaks** (Lv.14) — Storm Elementals, Thunder Rocs\\n"
             "• 🏰 **Abandoned Castle** (Lv.15) — Dark Knights, Vampires\\n"
+            "• 💀 **Cursed Catacombs** (Lv.17) — Skeleton Warriors, Wraiths\\n"
             "• 🌌 **The Void** (Lv.20) — Void Watchers, Chaos Entities"
         ),
         inline=False
@@ -2206,6 +2344,53 @@ async def fish_leaderboard(ctx):
     await ctx.send(embed=embed)
 
 
+@bot.command(name="fishstats", aliases=["myfish", "fishingstats", "caststats"])
+async def fish_stats(ctx):
+    """View your personal fishing statistics."""
+    player = get_player(ctx.guild.id, ctx.author.id)
+
+    caught = player.get("fish_caught", 0)
+    legendary = player.get("fish_legendary", 0)
+    coins_from_fishing = player.get("fish_coins", 0)
+
+    # Calculate rarity breakdown (estimated from total and legendary)
+    epic_est = max(0, int(caught * 0.04))
+    rare_est = max(0, int(caught * 0.10))
+    uncommon_est = max(0, int(caught * 0.25))
+    common_est = max(0, caught - legendary - epic_est - rare_est - uncommon_est)
+
+    embed = discord.Embed(
+        title=f"🎣 {ctx.author.display_name}'s Fishing Stats",
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow(),
+    )
+    embed.add_field(name="🎣 Total Catches", value=f"**{caught}**", inline=True)
+    embed.add_field(name="⭐ Legendary Catches", value=f"**{legendary}**", inline=True)
+    embed.add_field(name="🪙 Coins from Fishing", value=f"**{coins_from_fishing}**", inline=True)
+
+    rarity_text = (
+        f"⚪ Common: ~{common_est}\n"
+        f"🟢 Uncommon: ~{uncommon_est}\n"
+        f"🔵 Rare: ~{rare_est}\n"
+        f"🟣 Epic: ~{epic_est}\n"
+        f"🟡 Legendary: ~{legendary}"
+    )
+    embed.add_field(name="📊 Rarity Breakdown", value=rarity_text, inline=True)
+
+    # Best catch estimate
+    if legendary > 0:
+        embed.add_field(name="🏆 Best Catch", value="Mermaid's Tear (1000-2000 coins)", inline=True)
+    elif epic_est > 0:
+        embed.add_field(name="🏆 Best Catch", value="Sea Crown (200-400 coins)", inline=True)
+    elif rare_est > 0:
+        embed.add_field(name="🏆 Best Catch", value="Ancient Coin (80-150 coins)", inline=True)
+    else:
+        embed.add_field(name="🏆 Best Catch", value="Keep fishing!", inline=True)
+
+    embed.set_footer(text="Use >fish to catch more! Cooldown: 60s")
+    await ctx.send(embed=embed)
+
+
 # ═══════════════════════════════════════════════════════════════
 # ADMIN COMMANDS
 # ═══════════════════════════════════════════════════════════════
@@ -2265,16 +2450,27 @@ async def load_extensions():
         except Exception as e:
             logger.error(f"Failed to load cog {cog}: {e}")
 
+_started = False
+
 def main():
+    global _started
+    if _started:
+        logger.warning("main() called again — ignoring")
+        return
+    _started = True
     if not BOT_TOKEN:
         logger.error("DISCORD_BOT_TOKEN not set!")
         sys.exit(1)
     logger.info("Starting HermesBot v2.0...")
-    # Load cogs synchronously before running
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(load_extensions())
-    loop.close()
-    bot.run(BOT_TOKEN)
+    try:
+        bot.run(BOT_TOKEN, reconnect=True)
+    except Exception as e:
+        logger.error(f"bot.run() exited with error: {e}")
+        import traceback
+        traceback.print_exc()
+    logger.error("bot.run() RETURNED — this should not happen!")
+    import time
+    time.sleep(999)
 
 if __name__ == "__main__":
     main()
