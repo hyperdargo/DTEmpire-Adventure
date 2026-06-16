@@ -136,7 +136,18 @@ CHANGELOG = [
             "🎣 New >fishstats command — view your personal fishing statistics",
             "🔧 Web shop synced: added missing Doomhammer, Abyssal Cloak, and Soul Gem to web shop data",
             "🌐 Web dashboard: new Storm Peaks location, updated shop with new items",
-        ],
+        ]
+    },
+    {
+        "version": "v2.6",
+        "date": "2026-06-17",
+        "changes": [
+            "🌫️ New location: Twilight Marsh (Lv.16+) — haunted swamp with will-o'-wisps and 4 monsters + boss",
+            "🌌 The Void expanded: +2 new monsters (Abyssal Horror & All-Seeing Eye)",
+            "🗡️ New shop items: Void Reaper (mythic sword), Eternal Flame (mythic sword), Void Plate (mythic armor), Eternal Aegis (mythic armor)",
+            "✨ New shop specials: Dragon Heart, Celestial Blessing — powerful permanent stat boosts",
+            "🌐 Web dashboard: new Twilight Marsh location, updated shop with mythic-tier items",
+        ]
     },
 ]
 
@@ -1410,6 +1421,8 @@ def get_default_shop(guild_id):
                 {"id": "phoenix_blade", "name": "🔥 Phoenix Blade", "attack": 110, "price": 6000, "desc": "Reborn from immortal flames. +110 ATK"},
                 {"id": "doomhammer", "name": "🔨 Doomhammer", "attack": 130, "price": 8000, "desc": "Smashes everything in its path. +130 ATK"},
                 {"id": "tempest_fury", "name": "🌪️ Tempest Fury", "attack": 150, "price": 10000, "desc": "A blade infused with the fury of storms. +150 ATK"},
+                {"id": "void_reaper", "name": "🌑 Void Reaper", "attack": 175, "price": 13000, "desc": "Forged from the essence of the Void. +175 ATK"},
+                {"id": "eternal_flame", "name": "🔥 Eternal Flame", "attack": 200, "price": 16000, "desc": "Burns with the fire of a thousand suns. +200 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1423,6 +1436,8 @@ def get_default_shop(guild_id):
                 {"id": "mystic_robes", "name": "🌙 Mystic Robes", "defense": 50, "price": 1800, "desc": "Enchanted fabric that absorbs magic. +50 DEF"},
                 {"id": "abyssal_cloak", "name": "🌑 Abyssal Cloak", "defense": 90, "price": 5500, "desc": "Woven from the fabric of the abyss. +90 DEF"},
                 {"id": "storm_shield", "name": "⛈️ Storm Shield", "defense": 105, "price": 7000, "desc": "Forged in the heart of a hurricane. +105 DEF"},
+                {"id": "void_plate", "name": "🌌 Void Plate", "defense": 120, "price": 9000, "desc": "Absorbs attacks into the Void. +120 DEF"},
+                {"id": "eternal_aegis", "name": "✨ Eternal Aegis", "defense": 140, "price": 12000, "desc": "An indestructible shield of pure light. +140 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1442,6 +1457,8 @@ def get_default_shop(guild_id):
                 {"id": "gravity_well", "name": "🌀 Gravity Well", "price": 800, "desc": "+10 ATK & +10 DEF permanently"},
                 {"id": "enchanted_lure", "name": "✨ Enchanted Lure", "price": 450, "desc": "Doubles fishing rare catch chance"},
                 {"id": "soul_gem", "name": "💎 Soul Gem", "price": 2000, "desc": "+15 ATK & +15 DEF & +30 max HP permanently"},
+                {"id": "dragon_heart", "name": "🐲 Dragon Heart", "price": 3500, "desc": "+25 ATK & +25 DEF & +50 max HP permanently"},
+                {"id": "celestial_blessing", "name": "🌟 Celestial Blessing", "price": 5000, "desc": "+40 ATK & +40 DEF & +100 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1561,6 +1578,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🌀 Chaos Entity", "hp": 250, "atk": 60, "def": 30, "xp": 140, "coins": (120, 180)},
             {"name": "💀 Reaper", "hp": 180, "atk": 70, "def": 25, "xp": 130, "coins": (110, 170)},
             {"name": "🐲 Void Dragon", "hp": 350, "atk": 50, "def": 45, "xp": 160, "coins": (140, 220)},
+            {"name": "\U0001f573\ufe0f Abyssal Horror", "hp": 280, "atk": 65, "def": 40, "xp": 155, "coins": (130, 200)},
+            {"name": "\U0001f441\ufe0f All-Seeing Eye", "hp": 220, "atk": 75, "def": 35, "xp": 145, "coins": (120, 190)},
         ],
         "boss": {"name": "🌑 The Void Emperor", "hp": 1500, "atk": 90, "def": 60, "xp": 800, "coins": (800, 1500)},
         "boss_chance": 0.05,
@@ -1590,6 +1609,19 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🌪️ Storm Tyrant", "hp": 750, "atk": 68, "def": 38, "xp": 380, "coins": (380, 750)},
         "boss_chance": 0.08,
+    },
+    {
+        "name": "🌫️ Twilight Marsh",
+        "description": "A haunted swamp shrouded in perpetual twilight. Will-o'-wisps lure travelers astray while ancient horrors lurk beneath the murky water.",
+        "min_level": 16,
+        "monsters": [
+            {"name": "💀 Bog Zombie", "hp": 160, "atk": 42, "def": 28, "xp": 80, "coins": (60, 100)},
+            {"name": "🐊 Swamp Crocodile", "hp": 200, "atk": 48, "def": 35, "xp": 90, "coins": (70, 115)},
+            {"name": "👻 Will-o'-Wisp", "hp": 120, "atk": 58, "def": 18, "xp": 85, "coins": (65, 105)},
+            {"name": "🧟 Swamp Lurker", "hp": 180, "atk": 50, "def": 30, "xp": 88, "coins": (68, 110)},
+        ],
+        "boss": {"name": "🐉 Marsh Hydra", "hp": 900, "atk": 72, "def": 45, "xp": 450, "coins": (450, 900)},
+        "boss_chance": 0.07,
     },
 ]
 
