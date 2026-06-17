@@ -471,6 +471,16 @@ def api_buy():
             player["defense"] += 15
             player["max_health"] += 30
             player["health"] += 30
+        elif item["id"] == "crystal_core":
+            player["attack"] += 60
+            player["defense"] += 60
+            player["max_health"] += 150
+            player["health"] += 150
+        elif item["id"] == "essence_of_eternity":
+            player["attack"] += 100
+            player["defense"] += 100
+            player["max_health"] += 250
+            player["health"] += 250
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)

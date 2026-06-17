@@ -149,6 +149,19 @@ CHANGELOG = [
             "🌐 Web dashboard: new Twilight Marsh location, updated shop with mythic-tier items",
         ]
     },
+    {
+        "version": "v2.7",
+        "date": "2026-06-18",
+        "changes": [
+            "💎 New location: Crystal Caverns (Lv.18+) — dazzling underground crystal labyrinth with 4 monsters + boss",
+            "🌸 Enchanted Garden expanded: +2 new monsters (Crystal Chameleon & Pollen Drifter)",
+            "🗡️ New shop items: Prismatic Blade (legendary sword), Crystal Staff (legendary weapon), Prismatic Shield (legendary armor), Crystal Plate (legendary armor)",
+            "🧪 New potions: Crystal Elixir (1000 HP heal), Elixir of the Gods (2500 XP boost)",
+            "✨ New shop specials: Crystal Core (+60 ATK/DEF, +150 HP), Essence of Eternity (+100 ATK/DEF, +250 HP)",
+            "📊 New >serverstats command — view server member count, channels, roles, and boost info",
+            "🌐 Web dashboard: new Crystal Caverns location, updated shop with all new items",
+        ]
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -791,6 +804,7 @@ async def help_cmd(ctx, category: str = None):
         embed.add_field(name="`>uptime`", value="Show bot uptime", inline=False)
         embed.add_field(name="`>status`", value="Bot system status", inline=False)
         embed.add_field(name="`>serverinfo`", value="Server information", inline=False)
+        embed.add_field(name="`>serverstats`", value="Server statistics — members, channels, roles", inline=False)
         embed.add_field(name="`>userinfo [@user]`", value="User information", inline=False)
         embed.add_field(name="`>avatar [@user]`", value="Show user avatar", inline=False)
         embed.add_field(name="`>latestnews`", value="Latest changelog", inline=False)
@@ -860,7 +874,7 @@ async def help_cmd(ctx, category: str = None):
         timestamp=datetime.datetime.utcnow()
     )
     embed.add_field(name="📋 General",
-        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>userinfo` `>avatar` `>latestnews`",
+        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>serverstats` `>userinfo` `>avatar` `>latestnews`",
         inline=False)
     embed.add_field(name="🎮 Games",
         value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb` `>fishstats`",
@@ -917,6 +931,39 @@ async def avatar(ctx, member: discord.Member = None):
     member = member or ctx.author
     embed = discord.Embed(title=f"{member}'s Avatar", color=discord.Color.blue())
     if member.avatar: embed.set_image(url=member.avatar.url)
+    await ctx.send(embed=embed)
+
+@bot.command(name="serverstats")
+async def serverstats(ctx):
+    """Show server statistics — member count, channels, roles, and activity."""
+    g = ctx.guild
+    total_members = g.member_count or 0
+    online = sum(1 for m in g.members if m.status != discord.Status.offline)
+    offline = total_members - online
+    text_ch = len(g.text_channels)
+    voice_ch = len(g.voice_channels)
+    total_ch = text_ch + voice_ch
+    roles_count = len(g.roles) - 1  # exclude @everyone
+    admins = sum(1 for m in g.members if m.guild_permissions.administrator and not m.bot)
+    bots = sum(1 for m in g.members if m.bot)
+    humans = total_members - bots
+    boost_level = g.premium_tier
+    boosts = g.premium_subscription_count or 0
+    created = f"<t:{int(g.created_at.timestamp())}:R>"
+
+    embed = discord.Embed(
+        title=f"📊 {g.name} — Server Stats",
+        color=discord.Color.blue(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    if g.icon:
+        embed.set_thumbnail(url=g.icon.url)
+    embed.add_field(name="👥 Members", value=f"**{total_members}** total\n🟢 {online} online\n⚫ {offline} offline\n👤 {humans} humans\n🤖 {bots} bots", inline=True)
+    embed.add_field(name="💬 Channels", value=f"**{total_ch}** total\n💬 {text_ch} text\n🔊 {voice_ch} voice", inline=True)
+    embed.add_field(name="🏷️ Roles", value=f"**{roles_count}** roles\n🛡️ {admins} admins\n👑 Boost Lvl {boost_level} ({boosts} boosts)", inline=True)
+    embed.add_field(name="📅 Created", value=created, inline=True)
+    embed.add_field(name="🆔 Server ID", value=str(g.id), inline=True)
+    embed.set_footer(text="HermesBot Server Stats")
     await ctx.send(embed=embed)
 
 @bot.command(name="say")
@@ -1423,6 +1470,8 @@ def get_default_shop(guild_id):
                 {"id": "tempest_fury", "name": "🌪️ Tempest Fury", "attack": 150, "price": 10000, "desc": "A blade infused with the fury of storms. +150 ATK"},
                 {"id": "void_reaper", "name": "🌑 Void Reaper", "attack": 175, "price": 13000, "desc": "Forged from the essence of the Void. +175 ATK"},
                 {"id": "eternal_flame", "name": "🔥 Eternal Flame", "attack": 200, "price": 16000, "desc": "Burns with the fire of a thousand suns. +200 ATK"},
+                {"id": "prismatic_blade", "name": "💠 Prismatic Blade", "attack": 230, "price": 20000, "desc": "Refracts light into devastating energy. +230 ATK"},
+                {"id": "crystal_staff", "name": "🔮 Crystal Staff", "attack": 260, "price": 25000, "desc": "Channels geomantic power through crystal. +260 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1438,6 +1487,8 @@ def get_default_shop(guild_id):
                 {"id": "storm_shield", "name": "⛈️ Storm Shield", "defense": 105, "price": 7000, "desc": "Forged in the heart of a hurricane. +105 DEF"},
                 {"id": "void_plate", "name": "🌌 Void Plate", "defense": 120, "price": 9000, "desc": "Absorbs attacks into the Void. +120 DEF"},
                 {"id": "eternal_aegis", "name": "✨ Eternal Aegis", "defense": 140, "price": 12000, "desc": "An indestructible shield of pure light. +140 DEF"},
+                {"id": "prismatic_shield", "name": "💠 Prismatic Shield", "defense": 165, "price": 18000, "desc": "A shield that refracts incoming attacks. +165 DEF"},
+                {"id": "crystal_plate", "name": "🔮 Crystal Plate", "defense": 190, "price": 24000, "desc": "Forged from enchanted crystal matrices. +190 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1448,6 +1499,8 @@ def get_default_shop(guild_id):
                 {"id": "elixir_of_power", "name": "🧬 Elixir of Power", "xp_boost": 200, "price": 500, "desc": "Grants 200 XP instantly"},
                 {"id": "time_warp_potion", "name": "⏳ Time Warp Potion", "xp_boost": 500, "price": 1200, "desc": "Bends spacetime for 500 XP"},
                 {"id": "elixir_of_fortune", "name": "🍀 Elixir of Fortune", "xp_boost": 1000, "price": 2500, "desc": "Grants 1000 XP and doubles fishing rewards for 5 minutes"},
+                {"id": "crystal_elixir", "name": "💎 Crystal Elixir", "heal": 1000, "price": 800, "desc": "A potent crystalline brew. Restores 1000 HP"},
+                {"id": "elixir_of_the_gods", "name": "🌟 Elixir of the Gods", "xp_boost": 2500, "price": 5000, "desc": "Divine elixir. Grants 2500 XP instantly"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1459,6 +1512,8 @@ def get_default_shop(guild_id):
                 {"id": "soul_gem", "name": "💎 Soul Gem", "price": 2000, "desc": "+15 ATK & +15 DEF & +30 max HP permanently"},
                 {"id": "dragon_heart", "name": "🐲 Dragon Heart", "price": 3500, "desc": "+25 ATK & +25 DEF & +50 max HP permanently"},
                 {"id": "celestial_blessing", "name": "🌟 Celestial Blessing", "price": 5000, "desc": "+40 ATK & +40 DEF & +100 max HP permanently"},
+                {"id": "crystal_core", "name": "💎 Crystal Core", "price": 7500, "desc": "+60 ATK & +60 DEF & +150 max HP permanently"},
+                {"id": "essence_of_eternity", "name": "✨ Essence of Eternity", "price": 10000, "desc": "+100 ATK & +100 DEF & +250 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1492,6 +1547,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🦋 Fairy Dragon", "hp": 55, "atk": 15, "def": 7, "xp": 28, "coins": (20, 40)},
             {"name": "🍂 Autumn Wisp", "hp": 35, "atk": 18, "def": 3, "xp": 25, "coins": (18, 35)},
             {"name": "🌿 Vine Ent", "hp": 70, "atk": 10, "def": 10, "xp": 30, "coins": (22, 45)},
+            {"name": "🦎 Crystal Chameleon", "hp": 60, "atk": 20, "def": 8, "xp": 32, "coins": (25, 48)},
+            {"name": "🌺 Pollen Drifter", "hp": 45, "atk": 16, "def": 5, "xp": 22, "coins": (18, 38)},
         ],
         "boss": {"name": "👸 Garden Queen", "hp": 200, "atk": 25, "def": 15, "xp": 100, "coins": (100, 200)},
         "boss_chance": 0.12,
@@ -1622,6 +1679,19 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🐉 Marsh Hydra", "hp": 900, "atk": 72, "def": 45, "xp": 450, "coins": (450, 900)},
         "boss_chance": 0.07,
+    },
+    {
+        "name": "💎 Crystal Caverns",
+        "description": "A dazzling underground labyrinth of crystalline formations. Ancient geomantic energy pulses through every facet, and crystalline guardians protect the deepest chambers.",
+        "min_level": 18,
+        "monsters": [
+            {"name": "💠 Crystal Spider", "hp": 170, "atk": 50, "def": 35, "xp": 95, "coins": (75, 120)},
+            {"name": "🔮 Prismatic Golem", "hp": 250, "atk": 42, "def": 48, "xp": 110, "coins": (90, 140)},
+            {"name": "✨ Shimmer Wisp", "hp": 130, "atk": 62, "def": 22, "xp": 88, "coins": (70, 115)},
+            {"name": "🪨 Gemstone Colossus", "hp": 320, "atk": 38, "def": 55, "xp": 120, "coins": (100, 160)},
+        ],
+        "boss": {"name": "👑 Crystal Emperor", "hp": 1200, "atk": 85, "def": 65, "xp": 600, "coins": (600, 1200)},
+        "boss_chance": 0.06,
     },
 ]
 
