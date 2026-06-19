@@ -450,6 +450,9 @@ def api_buy():
     elif "xp_boost" in item:
         player["xp"] += item["xp_boost"]
         msg = f"Used {item['name']}! Gained {item['xp_boost']} XP."
+        if item["id"] == "soul_elixir":
+            player["health"] = player["max_health"]
+            msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
     elif cat in ["weapons", "armor"]:
         player["inventory"].append(item["id"])
         msg = f"Bought {item['name']}! Equip it from your inventory."
@@ -481,6 +484,26 @@ def api_buy():
             player["defense"] += 100
             player["max_health"] += 250
             player["health"] += 250
+        elif item["id"] == "dragon_heart":
+            player["attack"] += 25
+            player["defense"] += 25
+            player["max_health"] += 50
+            player["health"] += 50
+        elif item["id"] == "celestial_blessing":
+            player["attack"] += 40
+            player["defense"] += 40
+            player["max_health"] += 100
+            player["health"] += 100
+        elif item["id"] == "abyssal_heart":
+            player["attack"] += 150
+            player["defense"] += 150
+            player["max_health"] += 350
+            player["health"] += 350
+        elif item["id"] == "soul_stone":
+            player["attack"] += 200
+            player["defense"] += 200
+            player["max_health"] += 500
+            player["health"] += 500
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)

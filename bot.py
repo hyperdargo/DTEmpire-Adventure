@@ -162,6 +162,20 @@ CHANGELOG = [
             "🌐 Web dashboard: new Crystal Caverns location, updated shop with all new items",
         ]
     },
+    {
+        "version": "v2.8",
+        "date": "2026-06-19",
+        "changes": [
+            "🔥 New location: Abyssal Rift (Lv.20+) — a scorching dimension between worlds with 6 monsters + boss",
+            "🌲 Dark Forest expanded: +2 new monsters (Shadow Fox & Dark Sprite)",
+            "🌌 The Void expanded: +2 new monsters (Void Leviathan & Soul Devourer)",
+            "🗡️ New shop items: Abyssal Blade, Soul Reaper (weapons), Abyssal Armor, Soul Guard (armor)",
+            "🧪 New potions: Abyssal Brew (2000 HP heal), Soul Elixir (5000 XP + full heal)",
+            "✨ New shop specials: Abyssal Heart, Soul Stone — powerful permanent stat boosts",
+            "⚔️ New >duel command — challenge another player to a PvP duel!",
+            "🔧 Web shop synced: added all missing items (Crystal Core, Essence of Eternity, Dragon Heart, Celestial Blessing, Prismatic Blade/Shield, Crystal Staff/Plate)",
+        ]
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -823,6 +837,7 @@ async def help_cmd(ctx, category: str = None):
         embed.add_field(name="`>fish`", value="Go fishing! Catch fish, treasure, and legendary items (60s cooldown)", inline=False)
         embed.add_field(name="`>fishlb`", value="Fishing leaderboard — see top anglers", inline=False)
         embed.add_field(name="`>fishstats`", value="Your personal fishing statistics", inline=False)
+        embed.add_field(name="`>duel @user`", value="Challenge another player to a PvP duel", inline=False)
         embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒")
         return await ctx.send(embed=embed)
 
@@ -880,7 +895,7 @@ async def help_cmd(ctx, category: str = None):
         value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb` `>fishstats`",
         inline=False)
     embed.add_field(name="⚔️ Adventure & RPG",
-        value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard`\n`>adventurehelp` — Full RPG guide",
+        value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard` `>duel`\\n`>adventurehelp` — Full RPG guide",
         inline=False)
     embed.add_field(name="🎫 Tickets",
         value="`>ticket` `>close` `>add` `>remove`",
@@ -1472,6 +1487,8 @@ def get_default_shop(guild_id):
                 {"id": "eternal_flame", "name": "🔥 Eternal Flame", "attack": 200, "price": 16000, "desc": "Burns with the fire of a thousand suns. +200 ATK"},
                 {"id": "prismatic_blade", "name": "💠 Prismatic Blade", "attack": 230, "price": 20000, "desc": "Refracts light into devastating energy. +230 ATK"},
                 {"id": "crystal_staff", "name": "🔮 Crystal Staff", "attack": 260, "price": 25000, "desc": "Channels geomantic power through crystal. +260 ATK"},
+                {"id": "abyssal_blade", "name": "🔥 Abyssal Blade", "attack": 300, "price": 32000, "desc": "Forged in the Abyssal Rift. Burns with hellfire. +300 ATK"},
+                {"id": "soul_reaper", "name": "💀 Soul Reaper", "attack": 350, "price": 40000, "desc": "Steals the soul of the fallen. +350 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1489,6 +1506,8 @@ def get_default_shop(guild_id):
                 {"id": "eternal_aegis", "name": "✨ Eternal Aegis", "defense": 140, "price": 12000, "desc": "An indestructible shield of pure light. +140 DEF"},
                 {"id": "prismatic_shield", "name": "💠 Prismatic Shield", "defense": 165, "price": 18000, "desc": "A shield that refracts incoming attacks. +165 DEF"},
                 {"id": "crystal_plate", "name": "🔮 Crystal Plate", "defense": 190, "price": 24000, "desc": "Forged from enchanted crystal matrices. +190 DEF"},
+                {"id": "abyssal_armor", "name": "🔥 Abyssal Armor", "defense": 220, "price": 30000, "desc": "Forged in the Abyssal Rift. Immune to fire. +220 DEF"},
+                {"id": "soul_guard", "name": "💀 Soul Guard", "defense": 260, "price": 38000, "desc": "Protects the wearer's soul from harm. +260 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1501,6 +1520,8 @@ def get_default_shop(guild_id):
                 {"id": "elixir_of_fortune", "name": "🍀 Elixir of Fortune", "xp_boost": 1000, "price": 2500, "desc": "Grants 1000 XP and doubles fishing rewards for 5 minutes"},
                 {"id": "crystal_elixir", "name": "💎 Crystal Elixir", "heal": 1000, "price": 800, "desc": "A potent crystalline brew. Restores 1000 HP"},
                 {"id": "elixir_of_the_gods", "name": "🌟 Elixir of the Gods", "xp_boost": 2500, "price": 5000, "desc": "Divine elixir. Grants 2500 XP instantly"},
+                {"id": "abyssal_brew", "name": "🔥 Abyssal Brew", "heal": 2000, "price": 1500, "desc": "A fiery concoction from the Abyssal Rift. Restores 2000 HP"},
+                {"id": "soul_elixir", "name": "💀 Soul Elixir", "xp_boost": 5000, "price": 8000, "desc": "Grants 5000 XP and fully restores HP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1514,6 +1535,8 @@ def get_default_shop(guild_id):
                 {"id": "celestial_blessing", "name": "🌟 Celestial Blessing", "price": 5000, "desc": "+40 ATK & +40 DEF & +100 max HP permanently"},
                 {"id": "crystal_core", "name": "💎 Crystal Core", "price": 7500, "desc": "+60 ATK & +60 DEF & +150 max HP permanently"},
                 {"id": "essence_of_eternity", "name": "✨ Essence of Eternity", "price": 10000, "desc": "+100 ATK & +100 DEF & +250 max HP permanently"},
+                {"id": "abyssal_heart", "name": "🔥 Abyssal Heart", "price": 15000, "desc": "+150 ATK & +150 DEF & +350 max HP permanently"},
+                {"id": "soul_stone", "name": "💀 Soul Stone", "price": 20000, "desc": "+200 ATK & +200 DEF & +500 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1534,6 +1557,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🍄 Mushroom Sprite", "hp": 35, "atk": 11, "def": 6, "xp": 16, "coins": (10, 28)},
             {"name": "🦇 Vampire Bat", "hp": 40, "atk": 16, "def": 4, "xp": 20, "coins": (15, 35)},
             {"name": "🌿 Thorn Beast", "hp": 55, "atk": 13, "def": 8, "xp": 24, "coins": (20, 42)},
+            {"name": "🦊 Shadow Fox", "hp": 50, "atk": 18, "def": 5, "xp": 26, "coins": (22, 45)},
+            {"name": "🌑 Dark Sprite", "hp": 45, "atk": 15, "def": 10, "xp": 22, "coins": (18, 38)},
         ],
         "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)},
         "boss_chance": 0.15,
@@ -1637,6 +1662,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🐲 Void Dragon", "hp": 350, "atk": 50, "def": 45, "xp": 160, "coins": (140, 220)},
             {"name": "\U0001f573\ufe0f Abyssal Horror", "hp": 280, "atk": 65, "def": 40, "xp": 155, "coins": (130, 200)},
             {"name": "\U0001f441\ufe0f All-Seeing Eye", "hp": 220, "atk": 75, "def": 35, "xp": 145, "coins": (120, 190)},
+            {"name": "\U0001f300 Void Leviathan", "hp": 400, "atk": 68, "def": 50, "xp": 175, "coins": (150, 240)},
+            {"name": "\U0001f480 Soul Devourer", "hp": 300, "atk": 80, "def": 38, "xp": 160, "coins": (135, 210)},
         ],
         "boss": {"name": "🌑 The Void Emperor", "hp": 1500, "atk": 90, "def": 60, "xp": 800, "coins": (800, 1500)},
         "boss_chance": 0.05,
@@ -1692,6 +1719,21 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "👑 Crystal Emperor", "hp": 1200, "atk": 85, "def": 65, "xp": 600, "coins": (600, 1200)},
         "boss_chance": 0.06,
+    },
+    {
+        "name": "🔥 Abyssal Rift",
+        "description": "A scorching dimension between worlds where the boundaries of reality melt away. Demons and abyssal creatures pour through the rift, threatening to consume everything.",
+        "min_level": 20,
+        "monsters": [
+            {"name": "👿 Abyssal Imp", "hp": 220, "atk": 65, "def": 35, "xp": 130, "coins": (110, 170)},
+            {"name": "🔥 Hellfire Hound", "hp": 260, "atk": 58, "def": 42, "xp": 140, "coins": (120, 180)},
+            {"name": "💀 Doom Knight", "hp": 320, "atk": 55, "def": 50, "xp": 155, "coins": (130, 200)},
+            {"name": "🌋 Magma Fiend", "hp": 280, "atk": 70, "def": 38, "xp": 145, "coins": (125, 190)},
+            {"name": "👁️ Rift Stalker", "hp": 240, "atk": 75, "def": 30, "xp": 135, "coins": (115, 175)},
+            {"name": "🐲 Abyssal Drake", "hp": 380, "atk": 60, "def": 55, "xp": 165, "coins": (140, 220)},
+        ],
+        "boss": {"name": "👹 Abyssal Overlord", "hp": 1800, "atk": 100, "def": 70, "xp": 1000, "coins": (1000, 2000)},
+        "boss_chance": 0.05,
     },
 ]
 
@@ -1985,9 +2027,15 @@ async def buy(ctx, item_id: str):
         await ctx.send(f"✅ Used **{found_item['name']}**! Restored **{found_item['heal']}** HP. ❤️ {player['health']}/{player['max_health']}")
     elif "xp_boost" in found_item:
         player["xp"] += found_item["xp_boost"]
+        # Soul Elixir also heals
+        if found_item["id"] == "soul_elixir":
+            player["health"] = player["max_health"]
         players[key] = player
         save_players(players)
-        await ctx.send(f"✅ Used **{found_item['name']}**! Gained **{found_item['xp_boost']}** XP!")
+        msg = f"✅ Used **{found_item['name']}**! Gained **{found_item['xp_boost']}** XP!"
+        if found_item["id"] == "soul_elixir":
+            msg += f"\n❤️ Fully healed to {player['health']}/{player['max_health']}!"
+        await ctx.send(msg)
     elif cat in ["weapons", "armor"]:
         # Add to inventory
         player["inventory"].append(found_item["id"])
@@ -2015,6 +2063,36 @@ async def buy(ctx, item_id: str):
             player["defense"] += 15
             player["max_health"] += 30
             player["health"] += 30
+        elif found_item["id"] == "dragon_heart":
+            player["attack"] += 25
+            player["defense"] += 25
+            player["max_health"] += 50
+            player["health"] += 50
+        elif found_item["id"] == "celestial_blessing":
+            player["attack"] += 40
+            player["defense"] += 40
+            player["max_health"] += 100
+            player["health"] += 100
+        elif found_item["id"] == "crystal_core":
+            player["attack"] += 60
+            player["defense"] += 60
+            player["max_health"] += 150
+            player["health"] += 150
+        elif found_item["id"] == "essence_of_eternity":
+            player["attack"] += 100
+            player["defense"] += 100
+            player["max_health"] += 250
+            player["health"] += 250
+        elif found_item["id"] == "abyssal_heart":
+            player["attack"] += 150
+            player["defense"] += 150
+            player["max_health"] += 350
+            player["health"] += 350
+        elif found_item["id"] == "soul_stone":
+            player["attack"] += 200
+            player["defense"] += 200
+            player["max_health"] += 500
+            player["health"] += 500
         players[key] = player
         save_players(players)
         await ctx.send(f"✅ Bought **{found_item['name']}** for **🪙 {found_item['price']}!**\n*{found_item['desc']}*")
@@ -2156,6 +2234,67 @@ async def achievements(ctx, member: discord.Member = None):
     total_achieved = len(mon_achieved) + len(boss_achieved) + len(lvl_achieved) + len(adv_achieved)
     total_possible = len(monster_milestones) + len(boss_milestones) + len(level_milestones) + len(adventure_milestones)
     embed.set_footer(text=f"Achievements: {total_achieved}/{total_possible} | Keep playing to unlock more!")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="duel")
+async def duel(ctx, opponent: discord.Member = None):
+    """Challenge another player to a duel! Usage: >duel @user"""
+    if not opponent:
+        return await ctx.send("❌ You need to mention someone to duel! Usage: `>duel @user`")
+    if opponent.bot:
+        return await ctx.send("❌ You can't duel a bot!")
+    if opponent == ctx.author:
+        return await ctx.send("❌ You can't duel yourself!")
+
+    challenger = get_player(ctx.guild.id, ctx.author.id)
+    defender = get_player(ctx.guild.id, opponent.id)
+
+    # Calculate stats with equipment
+    def calc_stats(player):
+        atk = player["attack"]
+        df = player["defense"]
+        shop = get_default_shop(ctx.guild.id)
+        if player.get("equipped_weapon"):
+            for w in shop["weapons"]:
+                if w["id"] == player["equipped_weapon"]:
+                    atk += w["attack"]
+                    break
+        if player.get("equipped_armor"):
+            for a in shop["armor"]:
+                if a["id"] == player["equipped_armor"]:
+                    df += a["defense"]
+                    break
+        return atk, df
+
+    catk, cdef = calc_stats(challenger)
+    datk, ddef = calc_stats(defender)
+
+    # Simulate combat
+    chp = challenger["health"]
+    dhp = defender["health"]
+    rounds = 0
+
+    while chp > 0 and dhp > 0 and rounds < 30:
+        rounds += 1
+        dmg = max(1, catk - ddef + _rand.randint(-5, 5))
+        dhp -= dmg
+        if dhp <= 0:
+            break
+        dmg = max(1, datk - cdef + _rand.randint(-5, 5))
+        chp -= dmg
+
+    challenger_won = dhp <= 0 and chp > 0
+
+    embed = discord.Embed(
+        title="⚔️ Duel Results!",
+        description=f"**{ctx.author.display_name}** vs **{opponent.display_name}**",
+        color=discord.Color.gold() if challenger_won else discord.Color.red(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.add_field(name="⚔️ Challenger", value=f"{ctx.author.mention}\nATK: {catk} | DEF: {cdef}\nHP: {challenger['health']}", inline=True)
+    embed.add_field(name="🛡️ Defender", value=f"{opponent.mention}\nATK: {datk} | DEF: {ddef}\nHP: {defender['health']}", inline=True)
+    embed.add_field(name="📊 Result", value=f"**{'🎉 ' + ctx.author.display_name + ' wins!' if challenger_won else '💀 ' + opponent.display_name + ' wins!'}**\nAfter {rounds} rounds of combat!", inline=False)
     await ctx.send(embed=embed)
 
 
