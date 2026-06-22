@@ -64,6 +64,17 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.1",
+        "date": "2026-06-22",
+        "changes": [
+            "🌙 New location: Moonlit Sanctum (Lv.22+) — a celestial temple bathed in eternal moonlight with 4 monsters + boss",
+            "🌋 Volcanic Caverns expanded: +2 new monsters (Obsidian Golem & Pyroclasm Elemental)",
+            "🗡️ New shop items: Lunar Crescent (mythic sword, +580 ATK), Moonweave Robes (mythic armor, +440 DEF)",
+            "✨ New shop special: Moonstone Aegis (+500 ATK/DEF, +1250 HP permanent boost)",
+            "🔧 Web dashboard synced: all new items and locations added to web data",
+        ],
+    },
+    {
         "version": "v3.0",
         "date": "2026-06-21",
         "changes": [
@@ -1502,6 +1513,7 @@ def get_default_shop(guild_id):
                 {"id": "soul_reaper", "name": "💀 Soul Reaper", "attack": 350, "price": 40000, "desc": "Steals the soul of the fallen. +350 ATK"},
                 {"id": "shadow_fang", "name": "🌑 Shadow Fang", "attack": 420, "price": 50000, "desc": "A blade forged in the Shadowfall Depths. Strikes from the void. +420 ATK"},
                 {"id": "ember_fang", "name": "🔥 Ember Fang", "attack": 500, "price": 60000, "desc": "Forged in the Molten Core. Burns with eternal flame. +500 ATK"},
+                {"id": "lunar_crescent", "name": "🌙 Lunar Crescent", "attack": 580, "price": 75000, "desc": "A crescent blade forged from pure moonlight. +580 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1523,6 +1535,7 @@ def get_default_shop(guild_id):
                 {"id": "soul_guard", "name": "💀 Soul Guard", "defense": 260, "price": 38000, "desc": "Protects the wearer's soul from harm. +260 DEF"},
                 {"id": "shadowfall_armor", "name": "🌑 Shadowfall Armor", "defense": 310, "price": 48000, "desc": "Forged in the depths where shadows reign. Absorbs dark energy. +310 DEF"},
                 {"id": "molten_plate", "name": "🔥 Molten Plate", "defense": 370, "price": 58000, "desc": "Forged from the magma of the Eternal Flame. +370 DEF"},
+                {"id": "moonweave_robes", "name": "🌙 Moonweave Robes", "defense": 440, "price": 72000, "desc": "Woven from threads of pure moonlight by the Moon Goddess. +440 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1554,6 +1567,7 @@ def get_default_shop(guild_id):
                 {"id": "soul_stone", "name": "💀 Soul Stone", "price": 20000, "desc": "+200 ATK & +200 DEF & +500 max HP permanently"},
                 {"id": "void_essence", "name": "🌌 Void Essence", "price": 28000, "desc": "+300 ATK & +300 DEF & +750 max HP permanently"},
                 {"id": "flame_of_eternity", "name": "🔥 Flame of Eternity", "price": 35000, "desc": "+400 ATK & +400 DEF & +1000 max HP permanently"},
+                {"id": "moonstone_aegis", "name": "🌙 Moonstone Aegis", "price": 45000, "desc": "+500 ATK & +500 DEF & +1250 max HP permanently"},
             ]
         }
         save_guild_shops(shops)

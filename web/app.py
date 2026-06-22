@@ -514,6 +514,11 @@ def api_buy():
             player["defense"] += 400
             player["max_health"] += 1000
             player["health"] += 1000
+        elif item["id"] == "moonstone_aegis":
+            player["attack"] += 500
+            player["defense"] += 500
+            player["max_health"] += 1250
+            player["health"] += 1250
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
