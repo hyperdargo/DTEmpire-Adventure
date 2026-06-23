@@ -64,6 +64,20 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.2",
+        "date": "2026-06-23",
+        "changes": [
+            "🌙 New location: Moonlit Sanctum (Lv.22+) — celestial temple with 4 lunar monsters + Selene, Moon Goddess boss",
+            "🌿 New location: Overgrown Ruins (Lv.23+) — ancient ruins reclaimed by nature with 4 monsters + Gaia, Primal Colossus boss",
+            "🗡️ New shop weapons: Gaia's Wrath (+650 ATK), Eclipse Blade (+720 ATK)",
+            "🛡️ New shop armor: Gaia's Bark (+520 DEF), Eclipse Aegis (+600 DEF)",
+            "🧪 New potions: Nectar of the Gods (3000 HP heal), Elixir of Eternity (10000 XP + full heal)",
+            "✨ New shop specials: Gaia's Heart (+600 ATK/DEF, +1500 HP), Eclipse Core (+750 ATK/DEF, +2000 HP)",
+            "🔧 Fixed corrupt changelog entry in ADVENTURE_LOCATIONS array",
+            "🔧 Web shop synced: all new items added to web dashboard buy handlers",
+        ],
+    },
+    {
         "version": "v3.1",
         "date": "2026-06-22",
         "changes": [
@@ -1514,6 +1528,8 @@ def get_default_shop(guild_id):
                 {"id": "shadow_fang", "name": "🌑 Shadow Fang", "attack": 420, "price": 50000, "desc": "A blade forged in the Shadowfall Depths. Strikes from the void. +420 ATK"},
                 {"id": "ember_fang", "name": "🔥 Ember Fang", "attack": 500, "price": 60000, "desc": "Forged in the Molten Core. Burns with eternal flame. +500 ATK"},
                 {"id": "lunar_crescent", "name": "🌙 Lunar Crescent", "attack": 580, "price": 75000, "desc": "A crescent blade forged from pure moonlight. +580 ATK"},
+                {"id": "gaia_wrath", "name": "🌿 Gaia's Wrath", "attack": 650, "price": 90000, "desc": "A living weapon grown from the World Tree. +650 ATK"},
+                {"id": "eclipse_blade", "name": "🌑 Eclipse Blade", "attack": 720, "price": 110000, "desc": "Forged in the space between sun and moon. +720 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1536,6 +1552,8 @@ def get_default_shop(guild_id):
                 {"id": "shadowfall_armor", "name": "🌑 Shadowfall Armor", "defense": 310, "price": 48000, "desc": "Forged in the depths where shadows reign. Absorbs dark energy. +310 DEF"},
                 {"id": "molten_plate", "name": "🔥 Molten Plate", "defense": 370, "price": 58000, "desc": "Forged from the magma of the Eternal Flame. +370 DEF"},
                 {"id": "moonweave_robes", "name": "🌙 Moonweave Robes", "defense": 440, "price": 72000, "desc": "Woven from threads of pure moonlight by the Moon Goddess. +440 DEF"},
+                {"id": "gaia_bark", "name": "🌿 Gaia's Bark", "defense": 520, "price": 88000, "desc": "Living armor grown from ancient World Tree bark. +520 DEF"},
+                {"id": "eclipse_aegis", "name": "🌑 Eclipse Aegis", "defense": 600, "price": 105000, "desc": "A shield forged from the essence of celestial alignment. +600 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1550,6 +1568,8 @@ def get_default_shop(guild_id):
                 {"id": "elixir_of_the_gods", "name": "🌟 Elixir of the Gods", "xp_boost": 2500, "price": 5000, "desc": "Divine elixir. Grants 2500 XP instantly"},
                 {"id": "abyssal_brew", "name": "🔥 Abyssal Brew", "heal": 2000, "price": 1500, "desc": "A fiery concoction from the Abyssal Rift. Restores 2000 HP"},
                 {"id": "soul_elixir", "name": "💀 Soul Elixir", "xp_boost": 5000, "price": 8000, "desc": "Grants 5000 XP and fully restores HP"},
+                {"id": "nectar_of_the_gods", "name": "🌟 Nectar of the Gods", "heal": 3000, "price": 2500, "desc": "Divine nectar. Restores 3000 HP instantly"},
+                {"id": "elixir_of_eternity", "name": "⏳ Elixir of Eternity", "xp_boost": 10000, "price": 15000, "desc": "Grants 10000 XP and fully restores HP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1568,6 +1588,8 @@ def get_default_shop(guild_id):
                 {"id": "void_essence", "name": "🌌 Void Essence", "price": 28000, "desc": "+300 ATK & +300 DEF & +750 max HP permanently"},
                 {"id": "flame_of_eternity", "name": "🔥 Flame of Eternity", "price": 35000, "desc": "+400 ATK & +400 DEF & +1000 max HP permanently"},
                 {"id": "moonstone_aegis", "name": "🌙 Moonstone Aegis", "price": 45000, "desc": "+500 ATK & +500 DEF & +1250 max HP permanently"},
+                {"id": "gaia_heart", "name": "🌿 Gaia's Heart", "price": 60000, "desc": "+600 ATK & +600 DEF & +1500 max HP permanently"},
+                {"id": "eclipse_core", "name": "🌑 Eclipse Core", "price": 80000, "desc": "+750 ATK & +750 DEF & +2000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1795,14 +1817,29 @@ ADVENTURE_LOCATIONS = [
         "boss_chance": 0.04,
     },
     {
-        "version": "v2.9",
-        "date": "2026-06-20",
-        "changes": [
-            f"🌋 New location: Shadowfall Depths (Lv.19+) — chaotic underground rift with 4 monsters + Shadowlord boss",
-            f"🌫️ Twilight Marsh expanded: +2 new monsters (Shadow Newt & Bog Wraith)",
-            f"🗡️ New shop items: Shadow Fang (mythic sword, +420 ATK), Shadowfall Armor (mythic armor, +310 DEF)",
-            f"✨ New shop special: Void Essence (+300 ATK/DEF, +750 HP permanent boost)",
-            f"🔧 Web shop synced: all new items added to web dashboard",
+        "name": "🌙 Moonlit Sanctum",
+        "description": "A celestial temple bathed in eternal moonlight, hidden beyond the veil of night. Lunar guardians protect ancient secrets under the watchful gaze of the moon goddess.",
+        "min_level": 22,
+        "monsters": [
+            {"name": "🌙 Lunar Sentinel", "hp": 450, "atk": 105, "def": 60, "xp": 200, "coins": (180, 280)},
+            {"name": "⭐ Moonbeam Wisp", "hp": 380, "atk": 115, "def": 45, "xp": 190, "coins": (170, 260)},
+            {"name": "🦇 Nightmare Bat", "hp": 420, "atk": 110, "def": 55, "xp": 195, "coins": (175, 270)},
+            {"name": "🌑 Eclipse Shade", "hp": 500, "atk": 100, "def": 70, "xp": 210, "coins": (190, 290)},
         ],
+        "boss": {"name": "🌕 Selene, Moon Goddess", "hp": 3000, "atk": 130, "def": 85, "xp": 1800, "coins": (1800, 3500)},
+        "boss_chance": 0.04,
+    },
+    {
+        "name": "🌿 Overgrown Ruins",
+        "description": "Ancient ruins reclaimed by nature, where massive roots twist through crumbling stone and primal forest spirits guard forgotten treasures.",
+        "min_level": 23,
+        "monsters": [
+            {"name": "🌿 Root Terror", "hp": 480, "atk": 110, "def": 65, "xp": 210, "coins": (190, 290)},
+            {"name": "🪨 Stone Guardian", "hp": 600, "atk": 95, "def": 80, "xp": 220, "coins": (200, 300)},
+            {"name": "🌸 Blight Bloom", "hp": 420, "atk": 120, "def": 50, "xp": 200, "coins": (180, 275)},
+            {"name": "🦎 Thornback Drake", "hp": 550, "atk": 115, "def": 70, "xp": 230, "coins": (210, 310)},
+        ],
+        "boss": {"name": "🌳 Gaia, Primal Colossus", "hp": 3500, "atk": 140, "def": 90, "xp": 2000, "coins": (2000, 4000)},
+        "boss_chance": 0.04,
     },
 ]

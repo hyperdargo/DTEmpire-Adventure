@@ -453,11 +453,16 @@ def api_buy():
         if item["id"] == "soul_elixir":
             player["health"] = player["max_health"]
             msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
+        if item["id"] == "elixir_of_eternity":
+            player["health"] = player["max_health"]
+            msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
     elif cat in ["weapons", "armor"]:
         player["inventory"].append(item["id"])
         msg = f"Bought {item['name']}! Equip it from your inventory."
     else:
         if item["id"] == "lucky_charm":
+            player["inventory"].append(item["id"])
+        elif item["id"] == "enchanted_lure":
             player["inventory"].append(item["id"])
         elif item["id"] == "shield_ring":
             player["defense"] += 5
@@ -519,6 +524,16 @@ def api_buy():
             player["defense"] += 500
             player["max_health"] += 1250
             player["health"] += 1250
+        elif item["id"] == "gaia_heart":
+            player["attack"] += 600
+            player["defense"] += 600
+            player["max_health"] += 1500
+            player["health"] += 1500
+        elif item["id"] == "eclipse_core":
+            player["attack"] += 750
+            player["defense"] += 750
+            player["max_health"] += 2000
+            player["health"] += 2000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
