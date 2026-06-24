@@ -456,6 +456,10 @@ def api_buy():
         if item["id"] == "elixir_of_eternity":
             player["health"] = player["max_health"]
             msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
+        if item["id"] == "mirage_flask":
+            player["health"] = min(player["max_health"], player["health"] + 5000)
+            player["xp"] += 5000
+            msg += f" Restored 5000 HP and gained 5000 XP (now {player['health']}/{player['max_health']} HP)!"
     elif cat in ["weapons", "armor"]:
         player["inventory"].append(item["id"])
         msg = f"Bought {item['name']}! Equip it from your inventory."
@@ -534,6 +538,11 @@ def api_buy():
             player["defense"] += 750
             player["max_health"] += 2000
             player["health"] += 2000
+        elif item["id"] == "solar_prism":
+            player["attack"] += 900
+            player["defense"] += 900
+            player["max_health"] += 3000
+            player["health"] += 3000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)

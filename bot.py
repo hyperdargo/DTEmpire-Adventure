@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.3",
+        "date": "2026-06-24",
+        "changes": [
+            "🏜️ New location: Sunscorched Wastes (Lv.24+) — scorching desert with 4 monsters + Solarius, The Undying Sun boss",
+            "🔥 New shop weapon: Scorching Mirage (+820 ATK)",
+            "🛡️ New shop armor: Sunforged Plate (+700 DEF)",
+            "🍼 New shop potion: Mirage Flask (5000 HP + 5000 XP)",
+            "💠 New shop special: Solar Prism (+900 ATK/DEF, +3000 HP permanent boost)",
+            "💰 Shop data synced: guild_shops.json updated with all new items and previous missing entries",
+        ],
+    },
+    {
         "version": "v3.2",
         "date": "2026-06-23",
         "changes": [
@@ -1530,6 +1542,7 @@ def get_default_shop(guild_id):
                 {"id": "lunar_crescent", "name": "🌙 Lunar Crescent", "attack": 580, "price": 75000, "desc": "A crescent blade forged from pure moonlight. +580 ATK"},
                 {"id": "gaia_wrath", "name": "🌿 Gaia's Wrath", "attack": 650, "price": 90000, "desc": "A living weapon grown from the World Tree. +650 ATK"},
                 {"id": "eclipse_blade", "name": "🌑 Eclipse Blade", "attack": 720, "price": 110000, "desc": "Forged in the space between sun and moon. +720 ATK"},
+                {"id": "scorching_mirage", "name": "🏜️ Scorching Mirage", "attack": 820, "price": 140000, "desc": "A blade forged from desert heat and ancient magic. +820 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1554,6 +1567,7 @@ def get_default_shop(guild_id):
                 {"id": "moonweave_robes", "name": "🌙 Moonweave Robes", "defense": 440, "price": 72000, "desc": "Woven from threads of pure moonlight by the Moon Goddess. +440 DEF"},
                 {"id": "gaia_bark", "name": "🌿 Gaia's Bark", "defense": 520, "price": 88000, "desc": "Living armor grown from ancient World Tree bark. +520 DEF"},
                 {"id": "eclipse_aegis", "name": "🌑 Eclipse Aegis", "defense": 600, "price": 105000, "desc": "A shield forged from the essence of celestial alignment. +600 DEF"},
+                {"id": "sunforged_plate", "name": "🌞 Sunforged Plate", "defense": 700, "price": 130000, "desc": "Forged under the eternal desert sun. +700 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1570,6 +1584,7 @@ def get_default_shop(guild_id):
                 {"id": "soul_elixir", "name": "💀 Soul Elixir", "xp_boost": 5000, "price": 8000, "desc": "Grants 5000 XP and fully restores HP"},
                 {"id": "nectar_of_the_gods", "name": "🌟 Nectar of the Gods", "heal": 3000, "price": 2500, "desc": "Divine nectar. Restores 3000 HP instantly"},
                 {"id": "elixir_of_eternity", "name": "⏳ Elixir of Eternity", "xp_boost": 10000, "price": 15000, "desc": "Grants 10000 XP and fully restores HP"},
+                {"id": "mirage_flask", "name": "🌌 Mirage Flask", "heal": 5000, "xp_boost": 5000, "price": 20000, "desc": "Restores 5000 HP and grants 5000 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1590,6 +1605,7 @@ def get_default_shop(guild_id):
                 {"id": "moonstone_aegis", "name": "🌙 Moonstone Aegis", "price": 45000, "desc": "+500 ATK & +500 DEF & +1250 max HP permanently"},
                 {"id": "gaia_heart", "name": "🌿 Gaia's Heart", "price": 60000, "desc": "+600 ATK & +600 DEF & +1500 max HP permanently"},
                 {"id": "eclipse_core", "name": "🌑 Eclipse Core", "price": 80000, "desc": "+750 ATK & +750 DEF & +2000 max HP permanently"},
+                {"id": "solar_prism", "name": "💠 Solar Prism", "price": 120000, "desc": "+900 ATK & +900 DEF & +3000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1841,5 +1857,18 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🌳 Gaia, Primal Colossus", "hp": 3500, "atk": 140, "def": 90, "xp": 2000, "coins": (2000, 4000)},
         "boss_chance": 0.04,
+    },
+    {
+        "name": "🏜️ Sunscorched Wastes",
+        "description": "An endless desert where the sun beats down mercilessly and mirages dance on the scorching sand. Ancient ruins buried beneath the dunes hold treasures and terrors alike.",
+        "min_level": 24,
+        "monsters": [
+            {"name": "🦂 Sand Scorpion", "hp": 620, "atk": 125, "def": 75, "xp": 240, "coins": (220, 330)},
+            {"name": "🌊 Dust Devil Serpent", "hp": 580, "atk": 135, "def": 65, "xp": 235, "coins": (210, 320)},
+            {"name": "🦂 Scorpion King", "hp": 700, "atk": 120, "def": 85, "xp": 255, "coins": (240, 350)},
+            {"name": "👻 Mirage Wraith", "hp": 550, "atk": 140, "def": 60, "xp": 230, "coins": (200, 310)},
+        ],
+        "boss": {"name": "🌞 Solarius, The Undying Sun", "hp": 4000, "atk": 155, "def": 100, "xp": 2500, "coins": (2500, 5000)},
+        "boss_chance": 0.03,
     },
 ]
