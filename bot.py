@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.4",
+        "date": "2026-06-25",
+        "changes": [
+            "🏔️ New location: Glacial Citadel (Lv.25+) — ancient ice fortress with 4 monsters + Aurora, The Eternal Winter boss",
+            "🗡️ New shop weapons: Glacial Blade (+950 ATK), Frostbite Staff (+1050 ATK)",
+            "🛡️ New shop armor: Frostweave Cloak (+820 DEF), Aurora Aegis (+950 DEF)",
+            "🧪 New shop potions: Frostfire Mixture (7000 HP + 7000 XP), Elixir of the Aurora (15000 XP)",
+            "✨ New shop specials: Crystal of Eternal Frost (+1100 ATK/DEF, +4000 HP), Northern Star (+1300 ATK/DEF, +5000 HP)",
+            "🔧 Web dashboard + JSON caches synced with all new content",
+        ],
+    },
+    {
         "version": "v3.3",
         "date": "2026-06-24",
         "changes": [
@@ -1543,6 +1555,8 @@ def get_default_shop(guild_id):
                 {"id": "gaia_wrath", "name": "🌿 Gaia's Wrath", "attack": 650, "price": 90000, "desc": "A living weapon grown from the World Tree. +650 ATK"},
                 {"id": "eclipse_blade", "name": "🌑 Eclipse Blade", "attack": 720, "price": 110000, "desc": "Forged in the space between sun and moon. +720 ATK"},
                 {"id": "scorching_mirage", "name": "🏜️ Scorching Mirage", "attack": 820, "price": 140000, "desc": "A blade forged from desert heat and ancient magic. +820 ATK"},
+                {"id": "glacial_blade", "name": "🧊 Glacial Blade", "attack": 950, "price": 180000, "desc": "A blade forged in the heart of a glacier. +950 ATK"},
+                {"id": "frostbite_staff", "name": "❄️ Frostbite Staff", "attack": 1050, "price": 220000, "desc": "Channels the biting cold of eternal winter. +1050 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1568,6 +1582,8 @@ def get_default_shop(guild_id):
                 {"id": "gaia_bark", "name": "🌿 Gaia's Bark", "defense": 520, "price": 88000, "desc": "Living armor grown from ancient World Tree bark. +520 DEF"},
                 {"id": "eclipse_aegis", "name": "🌑 Eclipse Aegis", "defense": 600, "price": 105000, "desc": "A shield forged from the essence of celestial alignment. +600 DEF"},
                 {"id": "sunforged_plate", "name": "🌞 Sunforged Plate", "defense": 700, "price": 130000, "desc": "Forged under the eternal desert sun. +700 DEF"},
+                {"id": "frostweave_cloak", "name": "🧣 Frostweave Cloak", "defense": 820, "price": 170000, "desc": "Woven from threads of pure ice by winter spirits. +820 DEF"},
+                {"id": "aurora_aegis", "name": "🌌 Aurora Aegis", "defense": 950, "price": 210000, "desc": "A shield that captures the northern lights. +950 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1585,6 +1601,8 @@ def get_default_shop(guild_id):
                 {"id": "nectar_of_the_gods", "name": "🌟 Nectar of the Gods", "heal": 3000, "price": 2500, "desc": "Divine nectar. Restores 3000 HP instantly"},
                 {"id": "elixir_of_eternity", "name": "⏳ Elixir of Eternity", "xp_boost": 10000, "price": 15000, "desc": "Grants 10000 XP and fully restores HP"},
                 {"id": "mirage_flask", "name": "🌌 Mirage Flask", "heal": 5000, "xp_boost": 5000, "price": 20000, "desc": "Restores 5000 HP and grants 5000 XP"},
+                {"id": "frostfire_mixture", "name": "🧊🔥 Frostfire Mixture", "heal": 7000, "xp_boost": 7000, "price": 30000, "desc": "A paradoxical brew of fire and ice. Restores 7000 HP and 7000 XP"},
+                {"id": "elixir_of_the_aurora", "name": "🌌 Elixir of the Aurora", "xp_boost": 15000, "price": 25000, "desc": "Distilled from the northern lights. Grants 15000 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1606,6 +1624,8 @@ def get_default_shop(guild_id):
                 {"id": "gaia_heart", "name": "🌿 Gaia's Heart", "price": 60000, "desc": "+600 ATK & +600 DEF & +1500 max HP permanently"},
                 {"id": "eclipse_core", "name": "🌑 Eclipse Core", "price": 80000, "desc": "+750 ATK & +750 DEF & +2000 max HP permanently"},
                 {"id": "solar_prism", "name": "💠 Solar Prism", "price": 120000, "desc": "+900 ATK & +900 DEF & +3000 max HP permanently"},
+                {"id": "crystal_of_eternal_frost", "name": "💎 Crystal of Eternal Frost", "price": 160000, "desc": "+1100 ATK & +1100 DEF & +4000 max HP permanently"},
+                {"id": "northern_star", "name": "⭐ Northern Star", "price": 200000, "desc": "+1300 ATK & +1300 DEF & +5000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1870,5 +1890,18 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🌞 Solarius, The Undying Sun", "hp": 4000, "atk": 155, "def": 100, "xp": 2500, "coins": (2500, 5000)},
         "boss_chance": 0.03,
+    },
+        {
+        "name": "🏔️ Glacial Citadel",
+        "description": "An ancient fortress of ice and stone, buried deep within a mountain of eternal frost. The halls echo with the footsteps of forgotten warriors, and the throne room is guarded by the coldest heart in the realm.",
+        "min_level": 25,
+        "monsters": [
+            {"name": "🧊 Frost Lich", "hp": 850, "atk": 150, "def": 95, "xp": 320, "coins": (300, 480)},
+            {"name": "🐺 Dire Frost Wolf", "hp": 720, "atk": 165, "def": 80, "xp": 300, "coins": (280, 450)},
+            {"name": "🗿 Glacier Golem", "hp": 1000, "atk": 130, "def": 120, "xp": 350, "coins": (320, 500)},
+            {"name": "🦅 Blizzard Phoenix", "hp": 680, "atk": 175, "def": 70, "xp": 280, "coins": (250, 420)},
+        ],
+        "boss": {"name": "❄️ Aurora, The Eternal Winter", "hp": 5000, "atk": 180, "def": 130, "xp": 3500, "coins": (3500, 6000)},
+        "boss_chance": 0.02,
     },
 ]
