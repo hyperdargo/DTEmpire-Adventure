@@ -461,6 +461,9 @@ def api_buy():
         if item["id"] == "elixir_of_eternity":
             player["health"] = player["max_health"]
             msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
+        if item["id"] == "phantom_tide":
+            player["health"] = player["max_health"]
+            msg += f" Fully healed to {player['health']}/{player['max_health']} HP!"
     elif cat in ["weapons", "armor"]:
         player["inventory"].append(item["id"])
         msg = f"Bought {item['name']}! Equip it from your inventory."
@@ -554,6 +557,11 @@ def api_buy():
             player["defense"] += 1300
             player["max_health"] += 5000
             player["health"] += 5000
+        elif item["id"] == "indigo_monarch_crown":
+            player["attack"] += 1500
+            player["defense"] += 1500
+            player["max_health"] += 6000
+            player["health"] += 6000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)

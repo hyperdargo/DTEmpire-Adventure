@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.5",
+        "date": "2026-06-26",
+        "changes": [
+            "🌊 New location: Abyssal Trench (Lv.26+) — deepest ocean abyss with 4 monsters + The Scarred One boss",
+            "🗡️ New shop weapon: Stormsplitter Blade (+1200 ATK)",
+            "🛡️ New shop armor: Tidalwave Barrier (+1100 DEF)",
+            "🧪 New shop potion: Phantom Tide (20000 XP + full heal)",
+            "👑 New shop special: Indigo Monarch's Crown (+1500 ATK/DEF, +6000 HP permanent boost)",
+            "🔧 Web dashboard + JSON caches synced with all new content",
+        ],
+    },
+    {
         "version": "v3.4",
         "date": "2026-06-25",
         "changes": [
@@ -1557,6 +1569,7 @@ def get_default_shop(guild_id):
                 {"id": "scorching_mirage", "name": "🏜️ Scorching Mirage", "attack": 820, "price": 140000, "desc": "A blade forged from desert heat and ancient magic. +820 ATK"},
                 {"id": "glacial_blade", "name": "🧊 Glacial Blade", "attack": 950, "price": 180000, "desc": "A blade forged in the heart of a glacier. +950 ATK"},
                 {"id": "frostbite_staff", "name": "❄️ Frostbite Staff", "attack": 1050, "price": 220000, "desc": "Channels the biting cold of eternal winter. +1050 ATK"},
+                {"id": "stormsplitter_blade", "name": "🌊 Stormsplitter Blade", "attack": 1200, "price": 300000, "desc": "Cleaves through tidal waves and thunderstorms alike. +1200 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1584,6 +1597,7 @@ def get_default_shop(guild_id):
                 {"id": "sunforged_plate", "name": "🌞 Sunforged Plate", "defense": 700, "price": 130000, "desc": "Forged under the eternal desert sun. +700 DEF"},
                 {"id": "frostweave_cloak", "name": "🧣 Frostweave Cloak", "defense": 820, "price": 170000, "desc": "Woven from threads of pure ice by winter spirits. +820 DEF"},
                 {"id": "aurora_aegis", "name": "🌌 Aurora Aegis", "defense": 950, "price": 210000, "desc": "A shield that captures the northern lights. +950 DEF"},
+                {"id": "tidalwave_barrier", "name": "🌊 Tidalwave Barrier", "defense": 1100, "price": 280000, "desc": "A shield forged from the pressure of the deepest ocean. +1100 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1603,6 +1617,7 @@ def get_default_shop(guild_id):
                 {"id": "mirage_flask", "name": "🌌 Mirage Flask", "heal": 5000, "xp_boost": 5000, "price": 20000, "desc": "Restores 5000 HP and grants 5000 XP"},
                 {"id": "frostfire_mixture", "name": "🧊🔥 Frostfire Mixture", "heal": 7000, "xp_boost": 7000, "price": 30000, "desc": "A paradoxical brew of fire and ice. Restores 7000 HP and 7000 XP"},
                 {"id": "elixir_of_the_aurora", "name": "🌌 Elixir of the Aurora", "xp_boost": 15000, "price": 25000, "desc": "Distilled from the northern lights. Grants 15000 XP"},
+                {"id": "phantom_tide", "name": "🌊 Phantom Tide", "xp_boost": 20000, "price": 45000, "desc": "A ghostly ocean current. Grants 20000 XP and fully restores HP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1626,6 +1641,7 @@ def get_default_shop(guild_id):
                 {"id": "solar_prism", "name": "💠 Solar Prism", "price": 120000, "desc": "+900 ATK & +900 DEF & +3000 max HP permanently"},
                 {"id": "crystal_of_eternal_frost", "name": "💎 Crystal of Eternal Frost", "price": 160000, "desc": "+1100 ATK & +1100 DEF & +4000 max HP permanently"},
                 {"id": "northern_star", "name": "⭐ Northern Star", "price": 200000, "desc": "+1300 ATK & +1300 DEF & +5000 max HP permanently"},
+                {"id": "indigo_monarch_crown", "name": "👑 Indigo Monarch's Crown", "price": 250000, "desc": "+1500 ATK & +1500 DEF & +6000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1902,6 +1918,19 @@ ADVENTURE_LOCATIONS = [
             {"name": "🦅 Blizzard Phoenix", "hp": 680, "atk": 175, "def": 70, "xp": 280, "coins": (250, 420)},
         ],
         "boss": {"name": "❄️ Aurora, The Eternal Winter", "hp": 5000, "atk": 180, "def": 130, "xp": 3500, "coins": (3500, 6000)},
+        "boss_chance": 0.02,
+    },
+    {
+        "name": "🌊 Abyssal Trench",
+        "description": "The deepest point of the ocean, where sunlight never reaches and the weight of the sea itself can crush entire civilizations. Here dwells the most ancient entity the world has ever known.",
+        "min_level": 26,
+        "monsters": [
+            {"name": "🐙 Abyssal Squidhound", "hp": 900, "atk": 180, "def": 90, "xp": 380, "coins": (350, 550)},
+            {"name": "⛆ Deep Sea Wraith", "hp": 1100, "atk": 175, "def": 110, "xp": 420, "coins": (400, 600)},
+            {"name": "🦞 Predator Croc Requiem", "hp": 1300, "atk": 170, "def": 130, "xp": 470, "coins": (450, 680)},
+            {"name": "🕷️ Trench Digger Amalgam", "hp": 1000, "atk": 190, "def": 85, "xp": 400, "coins": (380, 580)},
+        ],
+        "boss": {"name": "🐙 The Scarred One", "hp": 6000, "atk": 200, "def": 160, "xp": 4000, "coins": (4000, 7500)},
         "boss_chance": 0.02,
     },
 ]
