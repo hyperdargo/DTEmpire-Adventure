@@ -15,10 +15,17 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .nav .logout{margin-left:16px;color:#ff6666}
 .container{max-width:1000px;margin:0 auto;padding:24px}
 .coins-display{text-align:right;font-size:1.2em;margin-bottom:16px;color:#fbbf24}
+.role-filter-banner{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(108,60,224,0.05));border:1px solid #6c3ce0;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.role-filter-banner .filter-icon{font-size:1.8em}
+.role-filter-banner .filter-text{flex:1}
+.role-filter-banner .filter-label{color:#a855f7;font-weight:600}
+.role-filter-banner .filter-desc{color:#888;font-size:0.85em}
 .tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
 .tab{padding:10px 20px;border:1px solid #333;border-radius:8px;background:rgba(20,20,40,0.8);color:#aaa;cursor:pointer;transition:all 0.3s;font-size:0.9em}
 .tab:hover,.tab.active{border-color:#a855f7;color:#fff;background:rgba(168,85,247,0.2)}
-.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.tab.disabled{opacity:0.3;cursor:not-allowed}
+.tab.disabled:hover{border-color:#333;color:#aaa;background:rgba(20,20,40,0.8)}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
 .item-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;transition:all 0.3s}
 .item-card:hover{border-color:#a855f7;transform:translateY(-2px)}
 .item-card h3{font-size:1.1em;margin-bottom:6px}
@@ -42,7 +49,9 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     <a href="/adventure">Adventure</a>
     <a href="/shop" class="active">Shop</a>
     <a href="/inventory">Inventory</a>
+    <a href="/duels">⚔️ Duels</a>
     <a href="/leaderboard">Leaderboard</a>
+    <a href="/roles">Roles</a>
     <a href="/logout" class="logout">Logout</a>
   </div>
 </nav>
@@ -50,12 +59,56 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
   <h2 style="margin-bottom:8px">🏪 Hermes' Shop</h2>
   <div class="coins-display">🪙 <span id="coinsValue">{{ player.coins }}</span> coins</div>
 
+  <!-- Role Filter Banner -->
+  {% if player_role %}
+  <div class="role-filter-banner">
+    <div class="filter-icon">
+      {% for rid, rinfo in roles_data.roles.items() %}
+        {% if rid == player_role %}{{ rinfo.emoji }}{% endif %}
+      {% endfor %}
+    </div>
+    <div class="filter-text">
+      <div class="filter-label">Shop filtered for: 
+        {% for rid, rinfo in roles_data.roles.items() %}
+          {% if rid == player_role %}{{ rinfo.name }}{% endif %}
+        {% endfor %}
+      </div>
+      <div class="filter-desc">Only items relevant to your role are shown. <a href="/roles" style="color:#a855f7">Change role</a></div>
+    </div>
+  </div>
+  {% elif player.level >= 5 %}
+  <div class="role-filter-banner" style="border-color:#f59e0b">
+    <div class="filter-icon">💡</div>
+    <div class="filter-text">
+      <div class="filter-label" style="color:#f59e0b">Choose a role to get shop discounts & filters!</div>
+      <div class="filter-desc"><a href="/roles" style="color:#a855f7">Pick your role</a> to see role-specific items.</div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="tabs">
     <div class="tab active" onclick="showTab('all')">All</div>
-    <div class="tab" onclick="showTab('weapons')">⚔️ Weapons</div>
-    <div class="tab" onclick="showTab('armor')">🛡️ Armor</div>
-    <div class="tab" onclick="showTab('potions')">🧪 Potions</div>
-    <div class="tab" onclick="showTab('special')">✨ Special</div>
+    {% for cat in allowed_categories %}
+    <div class="tab" onclick="showTab('{{ cat }}')">
+      {% if cat == 'weapons' %}⚔️ Weapons
+      {% elif cat == 'armor' %}🛡️ Armor
+      {% elif cat == 'potions' %}🧪 Potions
+      {% elif cat == 'special' %}✨ Special
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if 'weapons' not in allowed_categories %}
+    <div class="tab disabled" title="Not available for your role">⚔️ Weapons</div>
+    {% endif %}
+    {% if 'armor' not in allowed_categories %}
+    <div class="tab disabled" title="Not available for your role">🛡️ Armor</div>
+    {% endif %}
+    {% if 'potions' not in allowed_categories %}
+    <div class="tab disabled" title="Not available for your role">🧪 Potions</div>
+    {% endif %}
+    {% if 'special' not in allowed_categories %}
+    <div class="tab disabled" title="Not available for your role">✨ Special</div>
+    {% endif %}
   </div>
 
   <div id="itemsContainer" class="items-grid"></div>
@@ -63,15 +116,22 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 
 <script>
 const shopData = {{ shop|tojson }};
+const fullShop = {{ full_shop|tojson }};
+const allowedCats = {{ allowed_categories|tojson }};
 const allItems = [];
-['weapons','armor','potions','special'].forEach(cat => {
+const catLabels = {weapons: '⚔️', armor: '🛡️', potions: '🧪', special: '✨'};
+
+// Build items from filtered shop
+Object.keys(shopData).forEach(cat => {
   (shopData[cat] || []).forEach(item => {
     allItems.push({...item, category: cat});
   });
 });
 
 function showTab(cat) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => {
+    if (!t.classList.contains('disabled')) t.classList.remove('active');
+  });
   event.target.classList.add('active');
   const items = cat === 'all' ? allItems : allItems.filter(i => i.category === cat);
   renderItems(items);
@@ -79,6 +139,10 @@ function showTab(cat) {
 
 function renderItems(items) {
   const container = document.getElementById('itemsContainer');
+  if (items.length === 0) {
+    container.innerHTML = '<p style="color:#666;text-align:center;padding:40px;grid-column:1/-1">No items available in this category.</p>';
+    return;
+  }
   container.innerHTML = items.map(item => `
     <div class="item-card">
       <h3>${item.name}</h3>

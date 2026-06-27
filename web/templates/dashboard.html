@@ -14,7 +14,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
 .nav .logout{margin-left:16px;color:#ff6666}
 .container{max-width:1200px;margin:0 auto;padding:24px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
 .stat-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;text-align:center;transition:transform 0.2s}
 .stat-card:hover{transform:translateY(-2px);border-color:#6c3ce0}
 .stat-card .icon{font-size:2em;margin-bottom:8px}
@@ -25,12 +25,27 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .bar-hp{background:linear-gradient(90deg,#ef4444,#f97316)}
 .bar-xp{background:linear-gradient(90deg,#a855f7,#3b82f6)}
 .section-title{font-size:1.3em;margin:24px 0 16px;color:#a855f7}
-.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
 .action-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:24px;text-decoration:none;color:#e0e0e0;transition:all 0.3s;display:block}
 .action-card:hover{border-color:#a855f7;transform:translateY(-3px);box-shadow:0 8px 30px rgba(168,85,247,0.2)}
 .action-card .icon{font-size:2.5em;margin-bottom:12px}
 .action-card h3{margin-bottom:8px;color:#a855f7}
 .action-card p{color:#888;font-size:0.9em}
+.role-banner{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(108,60,224,0.05));border:1px solid #6c3ce0;border-radius:12px;padding:20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.role-banner .role-icon{font-size:3em}
+.role-banner .role-info{flex:1}
+.role-banner .role-name{font-size:1.2em;font-weight:700;color:#a855f7}
+.role-banner .role-desc{color:#888;font-size:0.9em}
+.role-banner .role-bonus{font-size:0.85em;color:#22c55e;margin-top:4px}
+.duel-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.duel-stat{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:8px;padding:10px 16px;text-align:center}
+.duel-stat .ds-value{font-size:1.3em;font-weight:700}
+.duel-stat .ds-label{font-size:0.75em;color:#888}
+.streak-fire{color:#f59e0b}
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-heal{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+.btn-daily{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -41,12 +56,43 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     <a href="/adventure">Adventure</a>
     <a href="/shop">Shop</a>
     <a href="/inventory">Inventory</a>
+    <a href="/duels">⚔️ Duels</a>
     <a href="/leaderboard">Leaderboard</a>
+    <a href="/roles">Roles</a>
     <a href="/logout" class="logout">Logout</a>
   </div>
 </nav>
 <div class="container">
-  <h2 style="margin-bottom:20px">Welcome, {{ username }}!</h2>
+  <h2 style="margin-bottom:20px">Welcome, {{ username }}! <span style="font-size:0.6em;color:#888;font-weight:400">🏷️ {{ player.active_title or 'Adventurer' }}</span></h2>
+
+  <!-- Role Banner -->
+  {% if role_info %}
+  <div class="role-banner">
+    <div class="role-icon">{{ role_info.emoji }}</div>
+    <div class="role-info">
+      <div class="role-name">{{ role_info.name }}</div>
+      <div class="role-desc">{{ role_info.desc }}</div>
+      <div class="role-bonus">
+        🎁 Bonuses:
+        {% for stat, val in role_info.bonus.items() %}
+        +{{ val }} {{ stat|replace('_', ' ')|title }}{% if not loop.last %} | {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <a href="/roles" class="btn btn-daily" style="text-decoration:none">Change Role</a>
+  </div>
+  {% elif available_roles %}
+  <div class="role-banner" style="border-color:#f59e0b;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.05))">
+    <div class="role-icon">❓</div>
+    <div class="role-info">
+      <div class="role-name" style="color:#f59e0b">No Role Selected</div>
+      <div class="role-desc">Choose a role to gain special bonuses and titles!</div>
+    </div>
+    <a href="/roles" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-decoration:none">Choose Role</a>
+  </div>
+  {% endif %}
+
+  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="icon">📊</div>
@@ -70,6 +116,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </div>
   </div>
 
+  <!-- HP & XP Bars -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
     <div class="stat-card">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px">
@@ -87,6 +134,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </div>
   </div>
 
+  <!-- Combat Stats -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
     <div class="stat-card">
       <div class="icon">⚔️</div>
@@ -100,6 +148,34 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </div>
   </div>
 
+  <!-- Duel Stats -->
+  <h3 class="section-title">⚔️ Duel Stats</h3>
+  <div class="duel-stats">
+    <div class="duel-stat">
+      <div class="ds-value" style="color:#22c55e">{{ player.duel_wins }}W</div>
+      <div class="ds-label">Wins</div>
+    </div>
+    <div class="duel-stat">
+      <div class="ds-value" style="color:#ef4444">{{ player.duel_losses }}L</div>
+      <div class="ds-label">Losses</div>
+    </div>
+    <div class="duel-stat">
+      <div class="ds-value {% if player.duel_streak >= 3 %}streak-fire{% endif %}">
+        {% if player.duel_streak >= 3 %}🔥{% endif %}{{ player.duel_streak }}
+      </div>
+      <div class="ds-label">Streak</div>
+    </div>
+    <div class="duel-stat">
+      <div class="ds-value">{{ duel_rank_emoji }} {{ player.duel_rank }}</div>
+      <div class="ds-label">Rank</div>
+    </div>
+    <div class="duel-stat">
+      <div class="ds-value" style="color:#f59e0b">{{ player.ai_duel_wins }}</div>
+      <div class="ds-label">AI Wins</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
   <h3 class="section-title">Quick Actions</h3>
   <div class="actions">
     <a href="/adventure" class="action-card">
@@ -112,10 +188,10 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
       <h3>Visit Shop</h3>
       <p>Buy weapons, armor, and potions</p>
     </a>
-    <a href="/inventory" class="action-card">
-      <div class="icon">🎒</div>
-      <h3>Inventory</h3>
-      <p>Manage and equip your items</p>
+    <a href="/duels" class="action-card">
+      <div class="icon">⚔️</div>
+      <h3>Duels</h3>
+      <p>Challenge players or fight AI!</p>
     </a>
     <a href="/leaderboard" class="action-card">
       <div class="icon">🏆</div>
@@ -124,31 +200,25 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </a>
   </div>
 
-  <h3 class="section-title">🎖️ Track Your Progress</h3>
+  <!-- Web Actions -->
+  <h3 class="section-title" style="margin-top:32px">Web Actions</h3>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
-    <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🏆 <strong>{{ player.monsters_killed }}</strong> Monsters Killed</span>
-    <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">👑 <strong>{{ player.bosses_killed }}</strong> Bosses Slain</span>
-    <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🗺️ <strong>{{ player.adventures_completed }}</strong> Adventures</span>
+    <button class="btn btn-heal" onclick="heal()">💚 Heal (10 coins)</button>
+    <button class="btn btn-daily" onclick="claimDaily()">🎁 Claim Daily</button>
   </div>
 
-  <h3 class="section-title">Quick Actions (Web)</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
-    <button class="btn btn-heal" onclick="heal()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer">💚 Heal (10 coins)</button>
-    <button class="btn btn-equip" onclick="claimDaily()" style="background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer">🎁 Claim Daily</button>
-  </div>
-
-  <h3 class="section-title">Quick Actions (Discord)</h3>
+  <!-- Discord Commands Reference -->
+  <h3 class="section-title">Discord Commands</h3>
   <div style="background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;margin-top:8px">
-    <p style="color:#888;margin-bottom:12px">These actions are available via Discord bot commands:</p>
+    <p style="color:#888;margin-bottom:12px">Available via Discord bot:</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎣 &gt;fish — Go fishing!</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🏆 &gt;fishlb — Fishing leaderboard</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📊 &gt;fishstats — Your fishing stats</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎁 &gt;daily — Daily reward</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">💚 &gt;heal — Restore HP</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🏆 &gt;achievements — Track milestones</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">⚔️ &gt;duel @user — PvP duel another player</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📰 &gt;latestnews — View changelog</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎣 &gt;fish</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🏆 &gt;fishlb</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📊 &gt;fishstats</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎁 &gt;daily</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">💚 &gt;heal</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">⚔️ &gt;duel @user</span>
+      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📰 &gt;latestnews</span>
     </div>
   </div>
 </div>

@@ -13,15 +13,28 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
 .nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
 .nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:700px;margin:0 auto;padding:24px}
+.container{max-width:900px;margin:0 auto;padding:24px}
 table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{padding:12px 16px;text-align:left;border-bottom:1px solid #222}
-th{color:#a855f7;font-size:0.85em;text-transform:uppercase}
+th,td{padding:14px 12px;text-align:left;border-bottom:1px solid #222}
+th{color:#a855f7;font-size:0.8em;text-transform:uppercase;letter-spacing:0.5px}
 tr:hover{background:rgba(168,85,247,0.05)}
-.medal{font-size:1.3em}
-.rank{color:#888;width:40px}
-.name{font-weight:600}
-.value{color:#fbbf24;font-weight:600;text-align:right}
+tr{cursor:pointer;transition:background 0.2s}
+.rank-col{width:50px;text-align:center}
+.medal{font-size:1.4em}
+.player-col{display:flex;align-items:center;gap:10px}
+.player-avatar{width:32px;height:32px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:1.1em}
+.player-name{font-weight:600;color:#e0e0e0;text-decoration:none}
+.player-name:hover{color:#a855f7}
+.role-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:600;margin-left:8px}
+.rank-colors{display:flex;align-items:center;gap:6px;font-size:0.85em}
+.value-col{color:#fbbf24;font-weight:600;text-align:right}
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.stat-pill{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:8px;padding:10px 18px;display:flex;align-items:center;gap:8px}
+.stat-pill .pill-label{color:#888;font-size:0.85em}
+.stat-pill .pill-value{font-weight:700;color:#a855f7}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:8px 16px;border:1px solid #333;border-radius:8px;background:transparent;color:#888;cursor:pointer;font-size:0.85em;transition:all 0.3s}
+.filter-btn:hover,.filter-btn.active{border-color:#a855f7;color:#a855f7;background:rgba(168,85,247,0.1)}
 </style>
 </head>
 <body>
@@ -32,22 +45,70 @@ tr:hover{background:rgba(168,85,247,0.05)}
     <a href="/adventure">Adventure</a>
     <a href="/shop">Shop</a>
     <a href="/inventory">Inventory</a>
+    <a href="/duels">⚔️ Duels</a>
     <a href="/leaderboard" class="active">Leaderboard</a>
+    <a href="/roles">Roles</a>
     <a href="/logout" class="logout">Logout</a>
   </div>
 </nav>
 <div class="container">
-  <h2 style="margin-bottom:20px">🏆 Leaderboard</h2>
-  <table>
-    <thead><tr><th class="rank">#</th><th>Player</th><th class="value">Level</th><th class="value">Kills</th><th class="value">Bosses</th></tr></thead>
+  <h2 style="margin-bottom:16px">🏆 Leaderboard</h2>
+  
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterBoard('all')">All Players</button>
+    <button class="filter-btn" onclick="filterBoard('online')">🟢 Online</button>
+    <button class="filter-btn" onclick="filterBoard('fighters')">⚔️ Fighters</button>
+    <button class="filter-btn" onclick="filterBoard('bosses')">👑 Boss Slayers</button>
+  </div>
+
+  <table id="leaderboardTable">
+    <thead>
+      <tr>
+        <th class="rank-col">#</th>
+        <th>Player</th>
+        <th class="value-col">Level</th>
+        <th class="value-col">Kills</th>
+        <th class="value-col">Bosses</th>
+        <th class="value-col">Duel Rank</th>
+      </tr>
+    </thead>
     <tbody>
       {% for p in players %}
-      <tr>
-        <td class="rank">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
-        <td class="name">{{ p.name or ('User#' + (p.user_id|string)[-4:]) }}</td>
-        <td class="value">{{ p.level }}</td>
-        <td class="value">{{ p.monsters_killed }}</td>
-        <td class="value">{{ p.bosses_killed }}</td>
+      <tr class="player-row" 
+          data-user-id="{{ p.user_id }}"
+          data-online="{{ 'true' if (now - p.get('last_seen', 0)) < 300 else 'false' }}"
+          data-role="{{ p.get('role', '') }}"
+          onclick="window.location='/profile/{{ p.user_id }}'">
+        <td class="rank-col">
+          {% if loop.index == 1 %}🥇
+          {% elif loop.index == 2 %}🥈
+          {% elif loop.index == 3 %}🥉
+          {% else %}{{ loop.index }}{% endif %}
+        </td>
+        <td>
+          <div class="player-col">
+            <div class="player-avatar">
+              {% if p.role_data %}{{ p.role_data.emoji }}{% else %}👤{% endif %}
+            </div>
+            <div>
+              <span class="player-name">{{ p.name or ('User#' + (p.user_id|string)[-4:]) }}</span>
+              {% if p.role_data %}
+              <span class="role-badge" style="background:rgba(168,85,247,0.1);color:{{ p.role_data.color }};border:1px solid {{ p.role_data.color }}40">
+                {{ p.role_data.name }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td class="value-col">{{ p.level }}</td>
+        <td class="value-col">{{ p.monsters_killed }}</td>
+        <td class="value-col">{{ p.bosses_killed }}</td>
+        <td>
+          <div class="rank-colors">
+            <span>{{ p.duel_rank_emoji }}</span>
+            <span style="font-size:0.85em;color:#888">{{ p.duel_rank }}</span>
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -56,5 +117,25 @@ tr:hover{background:rgba(168,85,247,0.05)}
   <p style="text-align:center;color:#666;padding:40px">No players yet. Be the first to play!</p>
   {% endif %}
 </div>
+
+<script>
+function filterBoard(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const rows = document.querySelectorAll('.player-row');
+  rows.forEach(row => {
+    let show = true;
+    if (filter === 'online') {
+      show = row.dataset.online === 'true';
+    } else if (filter === 'fighters') {
+      show = row.dataset.role !== '';
+    } else if (filter === 'bosses') {
+      show = parseInt(row.querySelector:nth-child(5).textContent) > 0;
+    }
+    row.style.display = show ? '' : 'none';
+  });
+}
+</script>
 </body>
 </html>

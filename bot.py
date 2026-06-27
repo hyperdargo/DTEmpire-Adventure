@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.6",
+        "date": "2026-06-27",
+        "changes": [
+            "🌌 New location: Astral Depths (Lv.27+) — cosmic void beyond dimensions with 4 monsters + Infinity, The Primordial boss",
+            "🗡️ New shop weapons: Astral Blade (+1400 ATK), Stellar Talon (+1600 ATK)",
+            "🛡️ New shop armor: Voidweave Aegis (+1250 DEF), Astral Plate (+1450 DEF)",
+            "🧪 New shop potions: Cosmic Convergence (10000 HP + 10000 XP), Elixir of Infinity (25000 XP + full heal)",
+            "✨ New shop specials: Infinity Fragment (+1800 ATK/DEF, +7500 HP), Cosmic Seed (+2200 ATK/DEF, +10000 HP)",
+            "🔧 Web dashboard + JSON caches synced with all new content",
+        ],
+    },
+    {
         "version": "v3.5",
         "date": "2026-06-26",
         "changes": [
@@ -1570,6 +1582,8 @@ def get_default_shop(guild_id):
                 {"id": "glacial_blade", "name": "🧊 Glacial Blade", "attack": 950, "price": 180000, "desc": "A blade forged in the heart of a glacier. +950 ATK"},
                 {"id": "frostbite_staff", "name": "❄️ Frostbite Staff", "attack": 1050, "price": 220000, "desc": "Channels the biting cold of eternal winter. +1050 ATK"},
                 {"id": "stormsplitter_blade", "name": "🌊 Stormsplitter Blade", "attack": 1200, "price": 300000, "desc": "Cleaves through tidal waves and thunderstorms alike. +1200 ATK"},
+                {"id": "astral_blade", "name": "🌌 Astral Blade", "attack": 1400, "price": 400000, "desc": "Forged from crystallized astral energy. Cuts through dimensions. +1400 ATK"},
+                {"id": "stellar_talon", "name": "⭐ Stellar Talon", "attack": 1600, "price": 500000, "desc": "A claw-like weapon forged from a dying star. +1600 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1598,6 +1612,8 @@ def get_default_shop(guild_id):
                 {"id": "frostweave_cloak", "name": "🧣 Frostweave Cloak", "defense": 820, "price": 170000, "desc": "Woven from threads of pure ice by winter spirits. +820 DEF"},
                 {"id": "aurora_aegis", "name": "🌌 Aurora Aegis", "defense": 950, "price": 210000, "desc": "A shield that captures the northern lights. +950 DEF"},
                 {"id": "tidalwave_barrier", "name": "🌊 Tidalwave Barrier", "defense": 1100, "price": 280000, "desc": "A shield forged from the pressure of the deepest ocean. +1100 DEF"},
+                {"id": "voidweave_aegis", "name": "🌌 Voidweave Aegis", "defense": 1250, "price": 350000, "desc": "Woven from threads of pure void energy. +1250 DEF"},
+                {"id": "astral_plate", "name": "💫 Astral Plate", "defense": 1450, "price": 450000, "desc": "Armor forged from crystallized starlight. +1450 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1618,6 +1634,8 @@ def get_default_shop(guild_id):
                 {"id": "frostfire_mixture", "name": "🧊🔥 Frostfire Mixture", "heal": 7000, "xp_boost": 7000, "price": 30000, "desc": "A paradoxical brew of fire and ice. Restores 7000 HP and 7000 XP"},
                 {"id": "elixir_of_the_aurora", "name": "🌌 Elixir of the Aurora", "xp_boost": 15000, "price": 25000, "desc": "Distilled from the northern lights. Grants 15000 XP"},
                 {"id": "phantom_tide", "name": "🌊 Phantom Tide", "xp_boost": 20000, "price": 45000, "desc": "A ghostly ocean current. Grants 20000 XP and fully restores HP"},
+                {"id": "cosmic_convergence", "name": "🌌 Cosmic Convergence", "heal": 10000, "xp_boost": 10000, "price": 60000, "desc": "Channels cosmic forces. Restores 10000 HP and 10000 XP"},
+                {"id": "elixir_of_infinity", "name": "♾️ Elixir of Infinity", "xp_boost": 25000, "price": 80000, "desc": "Distilled from infinite space. Grants 25000 XP and fully restores HP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1642,6 +1660,8 @@ def get_default_shop(guild_id):
                 {"id": "crystal_of_eternal_frost", "name": "💎 Crystal of Eternal Frost", "price": 160000, "desc": "+1100 ATK & +1100 DEF & +4000 max HP permanently"},
                 {"id": "northern_star", "name": "⭐ Northern Star", "price": 200000, "desc": "+1300 ATK & +1300 DEF & +5000 max HP permanently"},
                 {"id": "indigo_monarch_crown", "name": "👑 Indigo Monarch's Crown", "price": 250000, "desc": "+1500 ATK & +1500 DEF & +6000 max HP permanently"},
+                {"id": "infinity_fragment", "name": "♾️ Infinity Fragment", "price": 350000, "desc": "+1800 ATK & +1800 DEF & +7500 max HP permanently"},
+                {"id": "cosmic_seed", "name": "🌌 Cosmic Seed", "price": 500000, "desc": "+2200 ATK & +2200 DEF & +10000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1932,5 +1952,18 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🐙 The Scarred One", "hp": 6000, "atk": 200, "def": 160, "xp": 4000, "coins": (4000, 7500)},
         "boss_chance": 0.02,
+    },
+    {
+        "name": "🌌 Astral Depths",
+        "description": "Beyond the fabric of reality lies the Astral Depths — an infinite expanse of cosmic energy where stars are born and die in seconds.",
+        "min_level": 27,
+        "monsters": [
+            {"name": "🌀 Astral Phantom", "hp": 1200, "atk": 210, "def": 140, "xp": 520, "coins": (500, 800)},
+            {"name": "⭐ Stellar Construct", "hp": 1500, "atk": 195, "def": 180, "xp": 580, "coins": (550, 850)},
+            {"name": "🌑 Void Wyrm", "hp": 1800, "atk": 225, "def": 160, "xp": 620, "coins": (600, 900)},
+            {"name": "💫 Cosmic Horror", "hp": 1400, "atk": 250, "def": 120, "xp": 560, "coins": (520, 820)},
+        ],
+        "boss": {"name": "♾️ Infinity, The Primordial", "hp": 8000, "atk": 280, "def": 200, "xp": 5000, "coins": (5000, 10000)},
+        "boss_chance": 0.01,
     },
 ]
