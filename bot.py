@@ -64,6 +64,33 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.8",
+        "date": "2026-06-28",
+        "changes": [
+            "🌌 New location: Celestial Abyss (Lv.28+) — rift between galaxies with 4 monsters + Aethera, The Cosmic Architect boss",
+            "🗡️ New shop weapon: Aether Blade (+1900 ATK)",
+            "🛡️ New shop armor: Cosmic Aegis (+1700 DEF)",
+            "🧪 New shop potion: Abyssal Convergence (15000 HP + 15000 XP)",
+            "✨ New shop special: Aether Shard (+2800 ATK/DEF, +14000 HP permanent boost)",
+            "🔧 Fixed guild_shops.json corruption (regenerated 100 items per guild)",
+            "🔧 Added missing celestial_blessing handler to web dashboard buy route",
+            "🔧 Web dashboard + JSON caches synced with all new content",
+        ],
+    },
+    {
+        "version": "v3.7",
+        "date": "2026-06-27",
+        "changes": [
+            "🌌 New location: Astral Depths (Lv.27+) — cosmic void beyond dimensions with 4 monsters + Infinity, The Primordial boss",
+            "🗡️ New shop weapons: Astral Blade (+1400 ATK), Stellar Talon (+1600 ATK)",
+            "🛡️ New shop armor: Voidweave Aegis (+1250 DEF), Astral Plate (+1450 DEF)",
+            "🧪 New shop potions: Cosmic Convergence (10000 HP + 10000 XP), Elixir of Infinity (25000 XP + full heal)",
+            "✨ New shop specials: Infinity Fragment (+1800 ATK/DEF, +7500 HP), Cosmic Seed (+2200 ATK/DEF, +10000 HP)",
+            "🔧 Web-only: Role system, Duel system, Player profiles, Enhanced leaderboard",
+            "🔧 Web dashboard + JSON caches synced with all new content",
+        ],
+    },
+    {
         "version": "v3.6",
         "date": "2026-06-27",
         "changes": [
@@ -1584,6 +1611,7 @@ def get_default_shop(guild_id):
                 {"id": "stormsplitter_blade", "name": "🌊 Stormsplitter Blade", "attack": 1200, "price": 300000, "desc": "Cleaves through tidal waves and thunderstorms alike. +1200 ATK"},
                 {"id": "astral_blade", "name": "🌌 Astral Blade", "attack": 1400, "price": 400000, "desc": "Forged from crystallized astral energy. Cuts through dimensions. +1400 ATK"},
                 {"id": "stellar_talon", "name": "⭐ Stellar Talon", "attack": 1600, "price": 500000, "desc": "A claw-like weapon forged from a dying star. +1600 ATK"},
+                {"id": "aether_blade", "name": "🌌 Aether Blade", "attack": 1900, "price": 700000, "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1614,6 +1642,7 @@ def get_default_shop(guild_id):
                 {"id": "tidalwave_barrier", "name": "🌊 Tidalwave Barrier", "defense": 1100, "price": 280000, "desc": "A shield forged from the pressure of the deepest ocean. +1100 DEF"},
                 {"id": "voidweave_aegis", "name": "🌌 Voidweave Aegis", "defense": 1250, "price": 350000, "desc": "Woven from threads of pure void energy. +1250 DEF"},
                 {"id": "astral_plate", "name": "💫 Astral Plate", "defense": 1450, "price": 450000, "desc": "Armor forged from crystallized starlight. +1450 DEF"},
+                {"id": "cosmic_aegis", "name": "🌌 Cosmic Aegis", "defense": 1700, "price": 600000, "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +1700 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1636,6 +1665,7 @@ def get_default_shop(guild_id):
                 {"id": "phantom_tide", "name": "🌊 Phantom Tide", "xp_boost": 20000, "price": 45000, "desc": "A ghostly ocean current. Grants 20000 XP and fully restores HP"},
                 {"id": "cosmic_convergence", "name": "🌌 Cosmic Convergence", "heal": 10000, "xp_boost": 10000, "price": 60000, "desc": "Channels cosmic forces. Restores 10000 HP and 10000 XP"},
                 {"id": "elixir_of_infinity", "name": "♾️ Elixir of Infinity", "xp_boost": 25000, "price": 80000, "desc": "Distilled from infinite space. Grants 25000 XP and fully restores HP"},
+                {"id": "abyssal_convergence", "name": "🌌 Abyssal Convergence", "heal": 15000, "xp_boost": 15000, "price": 100000, "desc": "Channels the full power of the Celestial Abyss. Restores 15000 HP and 15000 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1662,6 +1692,7 @@ def get_default_shop(guild_id):
                 {"id": "indigo_monarch_crown", "name": "👑 Indigo Monarch's Crown", "price": 250000, "desc": "+1500 ATK & +1500 DEF & +6000 max HP permanently"},
                 {"id": "infinity_fragment", "name": "♾️ Infinity Fragment", "price": 350000, "desc": "+1800 ATK & +1800 DEF & +7500 max HP permanently"},
                 {"id": "cosmic_seed", "name": "🌌 Cosmic Seed", "price": 500000, "desc": "+2200 ATK & +2200 DEF & +10000 max HP permanently"},
+                {"id": "aether_shard", "name": "🌌 Aether Shard", "price": 750000, "desc": "+2800 ATK & +2800 DEF & +14000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -1964,6 +1995,19 @@ ADVENTURE_LOCATIONS = [
             {"name": "💫 Cosmic Horror", "hp": 1400, "atk": 250, "def": 120, "xp": 560, "coins": (520, 820)},
         ],
         "boss": {"name": "♾️ Infinity, The Primordial", "hp": 8000, "atk": 280, "def": 200, "xp": 5000, "coins": (5000, 10000)},
+        "boss_chance": 0.01,
+    },
+    {
+        "name": "🌌 Celestial Abyss",
+        "description": "A rift between galaxies where raw cosmic creation energy swirls into being. Stars sing in frequencies that shatter mortal minds, and the architects of reality itself dwell here as silent overseers.",
+        "min_level": 28,
+        "monsters": [
+            {"name": "🌌 Astral Leviathan", "hp": 2000, "atk": 310, "def": 220, "xp": 750, "coins": (700, 1100)},
+            {"name": "⭐ Stellar Devourer", "hp": 2400, "atk": 290, "def": 260, "xp": 820, "coins": (780, 1200)},
+            {"name": "🌀 Dimensional Riftbeast", "hp": 1800, "atk": 340, "def": 190, "xp": 700, "coins": (650, 1050)},
+            {"name": "✨ Constellation Wraith", "hp": 2200, "atk": 320, "def": 240, "xp": 780, "coins": (720, 1150)},
+        ],
+        "boss": {"name": "🌌 Aethera, The Cosmic Architect", "hp": 10000, "atk": 380, "def": 280, "xp": 7000, "coins": (7000, 14000)},
         "boss_chance": 0.01,
     },
 ]

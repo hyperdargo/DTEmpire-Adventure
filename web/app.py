@@ -609,6 +609,11 @@ def api_buy():
             player["defense"] += 15
             player["max_health"] += 30
             player["health"] += 30
+        elif item["id"] == "celestial_blessing":
+            player["attack"] += 40
+            player["defense"] += 40
+            player["max_health"] += 100
+            player["health"] += 100
         elif item["id"] == "crystal_core":
             player["attack"] += 60
             player["defense"] += 60
@@ -684,6 +689,11 @@ def api_buy():
             player["defense"] += 2200
             player["max_health"] += 10000
             player["health"] += 10000
+        elif item["id"] == "aether_shard":
+            player["attack"] += 2800
+            player["defense"] += 2800
+            player["max_health"] += 14000
+            player["health"] += 14000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
