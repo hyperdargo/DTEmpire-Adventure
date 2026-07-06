@@ -64,6 +64,22 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.10",
+        "date": "2026-07-06",
+        "changes": [
+            "Added 2 new monsters to Dark Forest: Firefly Swarm and Boggart"
+        ],
+    },
+    {
+        "version": "v3.9",
+        "date": "2026-06-29",
+        "changes": [
+            "New monster: Celestial Warden added to Celestial Abyss",
+            "New monster: Nebula Colossus added to Celestial Abyss",
+            "Updated adventure_locations.json and guild_shops.json"
+        ],
+    },
+    {
         "version": "v3.8",
         "date": "2026-06-28",
         "changes": [
@@ -1715,6 +1731,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🌿 Thorn Beast", "hp": 55, "atk": 13, "def": 8, "xp": 24, "coins": (20, 42)},
             {"name": "🦊 Shadow Fox", "hp": 50, "atk": 18, "def": 5, "xp": 26, "coins": (22, 45)},
             {"name": "🌑 Dark Sprite", "hp": 45, "atk": 15, "def": 10, "xp": 22, "coins": (18, 38)},
+            {"name": "🪰 Firefly Swarm", "hp": 20, "atk": 6, "def": 2, "xp": 10, "coins": (5, 15)},
+            {"name": "👹 Boggart", "hp": 40, "atk": 14, "def": 5, "xp": 20, "coins": (12, 30)},
         ],
         "boss": {"name": "🌳 Treant Guardian", "hp": 150, "atk": 20, "def": 10, "xp": 80, "coins": (80, 150)},
         "boss_chance": 0.15,
@@ -2011,3 +2029,41 @@ ADVENTURE_LOCATIONS = [
         "boss_chance": 0.01,
     },
 ]
+# ═══════════════════════════════════════════════════════════════
+# COG LOADING
+# ═══════════════════════════════════════════════════════════════
+
+async def load_extensions():
+    """Load all cogs."""
+    cogs = ["cogs.music"]
+    for cog in cogs:
+        try:
+            await bot.load_extension(cog)
+            logger.info(f"Loaded cog: {cog}")
+        except Exception as e:
+            logger.error(f"Failed to load cog {cog}: {e}")
+
+_started = False
+
+def main():
+    global _started
+    if _started:
+        logger.warning("main() called again — ignoring")
+        return
+    _started = True
+    if not BOT_TOKEN:
+        logger.error("DISCORD_BOT_TOKEN not set!")
+        sys.exit(1)
+    logger.info("Starting HermesBot v2.0...")
+    try:
+        bot.run(BOT_TOKEN, reconnect=True)
+    except Exception as e:
+        logger.error(f"bot.run() exited with error: {e}")
+        import traceback
+        traceback.print_exc()
+    logger.error("bot.run() RETURNED — this should not happen!")
+    import time
+    time.sleep(999)
+
+if __name__ == "__main__":
+    main()
