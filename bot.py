@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v3.11",
+        "date": "2026-07-09",
+        "changes": [
+            "💫 Added 2 new monsters to Nebula Nexus: Pulsar Beast and Meteor Wyrm",
+            "🔧 Fixed Nebula Nexus coin style from [] to () for consistency",
+            "🔧 Fixed web dashboard dragon_heart special item (had abyssal_heart values, +25/+25/+50 now)",
+            "🔧 Added missing abyssal_heart handler to web dashboard buy route",
+            "🔧 Regenerated adventure_locations.json cache from bot.py source of truth",
+            "🔧 Synced web dashboard JSON cache with all locations + new Nebula Nexus monsters",
+        ],
+    },
+    {
         "version": "v3.10",
         "date": "2026-07-06",
         "changes": [
@@ -2027,6 +2039,21 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "🌌 Aethera, The Cosmic Architect", "hp": 10000, "atk": 380, "def": 280, "xp": 7000, "coins": (7000, 14000)},
         "boss_chance": 0.01,
+    },
+    {
+        "name": "🌌 Nebula Nexus",
+        "description": "A convergence point of interstellar gases and energies, where new stars are born and ancient ones die in spectacular explosions.",
+        "min_level": 30,
+        "monsters": [
+            {"name": "🌟 Stellar Nursery", "hp": 2200, "atk": 320, "def": 220, "xp": 750, "coins": (800, 1200)},
+            {"name": "💫 Nova Burst", "hp": 2000, "atk": 350, "def": 200, "xp": 800, "coins": (850, 1250)},
+            {"name": "🌠 Comet Traveller", "hp": 2400, "atk": 300, "def": 240, "xp": 700, "coins": (750, 1150)},
+            {"name": "🪐 Astral Miner", "hp": 2600, "atk": 280, "def": 260, "xp": 850, "coins": (900, 1300)},
+            {"name": "💫 Pulsar Beast", "hp": 2800, "atk": 360, "def": 280, "xp": 850, "coins": (900, 1400)},
+            {"name": "☄️ Meteor Wyrm", "hp": 2600, "atk": 380, "def": 260, "xp": 880, "coins": (950, 1450)},
+        ],
+        "boss": {"name": "🌠 Nebulon, The Star Forger", "hp": 12000, "atk": 420, "def": 320, "xp": 9000, "coins": (9000, 18000)},
+        "boss_chance": 0.008
     },
 ]
 # ═══════════════════════════════════════════════════════════════

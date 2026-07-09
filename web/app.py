@@ -625,6 +625,11 @@ def api_buy():
             player["max_health"] += 250
             player["health"] += 250
         elif item["id"] == "dragon_heart":
+            player["attack"] += 25
+            player["defense"] += 25
+            player["max_health"] += 50
+            player["health"] += 50
+        elif item["id"] == "abyssal_heart":
             player["attack"] += 150
             player["defense"] += 150
             player["max_health"] += 350
