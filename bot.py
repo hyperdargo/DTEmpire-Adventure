@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.1",
+        "date": "2026-07-12",
+        "changes": [
+            "⏳ New location: Chrono Sanctum (Lv.29+) — time-bent dimension with 4 monsters + Chronos, The Time Lord boss",
+            "🗡️ New shop weapon: Chrono Edge (+2100 ATK)",
+            "🛡️ New shop armor: Temporal Aegis (+1900 DEF)",
+            "🧪 New shop potion: Elixir of Forever (20000 HP + 20000 XP)",
+            "⏳ New shop special: Chrono Core (+3500 ATK/DEF, +18000 HP permanent boost)",
+            "🔧 JSON caches synced with all new content",
+        ],
+    },
+    {
         "version": "v3.11",
         "date": "2026-07-09",
         "changes": [
@@ -1640,6 +1652,7 @@ def get_default_shop(guild_id):
                 {"id": "astral_blade", "name": "🌌 Astral Blade", "attack": 1400, "price": 400000, "desc": "Forged from crystallized astral energy. Cuts through dimensions. +1400 ATK"},
                 {"id": "stellar_talon", "name": "⭐ Stellar Talon", "attack": 1600, "price": 500000, "desc": "A claw-like weapon forged from a dying star. +1600 ATK"},
                 {"id": "aether_blade", "name": "🌌 Aether Blade", "attack": 1900, "price": 700000, "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"},
+                {"id": "chrono_edge", "name": "⏳ Chrono Edge", "attack": 2100, "price": 850000, "desc": "A blade that cuts through time itself. +2100 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1671,6 +1684,7 @@ def get_default_shop(guild_id):
                 {"id": "voidweave_aegis", "name": "🌌 Voidweave Aegis", "defense": 1250, "price": 350000, "desc": "Woven from threads of pure void energy. +1250 DEF"},
                 {"id": "astral_plate", "name": "💫 Astral Plate", "defense": 1450, "price": 450000, "desc": "Armor forged from crystallized starlight. +1450 DEF"},
                 {"id": "cosmic_aegis", "name": "🌌 Cosmic Aegis", "defense": 1700, "price": 600000, "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +1700 DEF"},
+                {"id": "temporal_aegis", "name": "⏳ Temporal Aegis", "defense": 1900, "price": 750000, "desc": "Woven from the fabric of frozen time. Stops attacks before they land. +1900 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1694,6 +1708,7 @@ def get_default_shop(guild_id):
                 {"id": "cosmic_convergence", "name": "🌌 Cosmic Convergence", "heal": 10000, "xp_boost": 10000, "price": 60000, "desc": "Channels cosmic forces. Restores 10000 HP and 10000 XP"},
                 {"id": "elixir_of_infinity", "name": "♾️ Elixir of Infinity", "xp_boost": 25000, "price": 80000, "desc": "Distilled from infinite space. Grants 25000 XP and fully restores HP"},
                 {"id": "abyssal_convergence", "name": "🌌 Abyssal Convergence", "heal": 15000, "xp_boost": 15000, "price": 100000, "desc": "Channels the full power of the Celestial Abyss. Restores 15000 HP and 15000 XP"},
+                {"id": "elixir_of_forever", "name": "♾️ Elixir of Forever", "heal": 20000, "xp_boost": 20000, "price": 120000, "desc": "A timeless brew from the Chrono Sanctum. Restores 20000 HP and 20000 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1721,6 +1736,7 @@ def get_default_shop(guild_id):
                 {"id": "infinity_fragment", "name": "♾️ Infinity Fragment", "price": 350000, "desc": "+1800 ATK & +1800 DEF & +7500 max HP permanently"},
                 {"id": "cosmic_seed", "name": "🌌 Cosmic Seed", "price": 500000, "desc": "+2200 ATK & +2200 DEF & +10000 max HP permanently"},
                 {"id": "aether_shard", "name": "🌌 Aether Shard", "price": 750000, "desc": "+2800 ATK & +2800 DEF & +14000 max HP permanently"},
+                {"id": "chrono_core", "name": "⏳ Chrono Core", "price": 900000, "desc": "+3500 ATK & +3500 DEF & +18000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -2055,7 +2071,23 @@ ADVENTURE_LOCATIONS = [
         "boss": {"name": "🌠 Nebulon, The Star Forger", "hp": 12000, "atk": 420, "def": 320, "xp": 9000, "coins": (9000, 18000)},
         "boss_chance": 0.008
     },
+    {
+        "name": "⏳ Chrono Sanctum",
+        "description": "A realm where time fractures and folds upon itself. Past, present, and future collide in an endless loop, guarded by temporal wardens who have seen the birth and death of a thousand timelines.",
+        "min_level": 29,
+        "monsters": [
+            {"name": "⏳ Temporal Shade", "hp": 3000, "atk": 380, "def": 300, "xp": 950, "coins": (1000, 1500)},
+            {"name": "🕰️ Chrono Guardian", "hp": 3500, "atk": 350, "def": 350, "xp": 1000, "coins": (1100, 1600)},
+            {"name": "🔮 Time Weaver", "hp": 2800, "atk": 420, "def": 280, "xp": 920, "coins": (950, 1450)},
+            {"name": "🌀 Paradox Warden", "hp": 4000, "atk": 360, "def": 380, "xp": 1050, "coins": (1150, 1700)},
+        ],
+        "boss": {"name": "♾️ Chronos, The Time Lord", "hp": 15000, "atk": 450, "def": 360, "xp": 11000, "coins": (11000, 22000)},
+        "boss_chance": 0.008,
+    },
 ]
+
+# ═══════════════════════════════════════════════════════════════
+# COG LOADING
 # ═══════════════════════════════════════════════════════════════
 # COG LOADING
 # ═══════════════════════════════════════════════════════════════

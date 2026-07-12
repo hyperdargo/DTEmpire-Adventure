@@ -699,6 +699,11 @@ def api_buy():
             player["defense"] += 2800
             player["max_health"] += 14000
             player["health"] += 14000
+        elif item["id"] == "chrono_core":
+            player["attack"] += 3500
+            player["defense"] += 3500
+            player["max_health"] += 18000
+            player["health"] += 18000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
