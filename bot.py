@@ -64,6 +64,19 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.2",
+        "date": "2026-07-13",
+        "changes": [
+            "🫧 2 new monsters in Abyssal Trench: Void Anglerfish (+195 ATK) and Megalodon Breacher (+210 ATK)",
+            "🔱 New shop weapon: Abyssal Trident (+2300 ATK)",
+            "🌊 New shop armor: Abyssal Mantle (+2100 DEF)",
+            "💠 New shop special: Trench Treasure (+1600 ATK/DEF, +6500 HP permanent boost)",
+            "🧪 New shop potion: Deep Tide Potion (18000 HP + 18000 XP)",
+            "🔧 Regenerated adventure_locations.json cache from bot.py source of truth",
+            "🔧 Synced web dashboard with all new items (trench_treasure handler)",
+        ],
+    },
+    {
         "version": "v4.1",
         "date": "2026-07-12",
         "changes": [
@@ -1653,6 +1666,7 @@ def get_default_shop(guild_id):
                 {"id": "stellar_talon", "name": "⭐ Stellar Talon", "attack": 1600, "price": 500000, "desc": "A claw-like weapon forged from a dying star. +1600 ATK"},
                 {"id": "aether_blade", "name": "🌌 Aether Blade", "attack": 1900, "price": 700000, "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"},
                 {"id": "chrono_edge", "name": "⏳ Chrono Edge", "attack": 2100, "price": 850000, "desc": "A blade that cuts through time itself. +2100 ATK"},
+                {"id": "abyssal_trident", "name": "🔱 Abyssal Trident", "attack": 2300, "price": 950000, "desc": "Forged in the deepest ocean trench. Strikes with the pressure of the abyss. +2300 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1685,6 +1699,7 @@ def get_default_shop(guild_id):
                 {"id": "astral_plate", "name": "💫 Astral Plate", "defense": 1450, "price": 450000, "desc": "Armor forged from crystallized starlight. +1450 DEF"},
                 {"id": "cosmic_aegis", "name": "🌌 Cosmic Aegis", "defense": 1700, "price": 600000, "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +1700 DEF"},
                 {"id": "temporal_aegis", "name": "⏳ Temporal Aegis", "defense": 1900, "price": 750000, "desc": "Woven from the fabric of frozen time. Stops attacks before they land. +1900 DEF"},
+                {"id": "abyssal_mantle", "name": "🌊 Abyssal Mantle", "defense": 2100, "price": 880000, "desc": "Armor woven from the crushing pressure of the deepest ocean trench. +2100 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1709,6 +1724,7 @@ def get_default_shop(guild_id):
                 {"id": "elixir_of_infinity", "name": "♾️ Elixir of Infinity", "xp_boost": 25000, "price": 80000, "desc": "Distilled from infinite space. Grants 25000 XP and fully restores HP"},
                 {"id": "abyssal_convergence", "name": "🌌 Abyssal Convergence", "heal": 15000, "xp_boost": 15000, "price": 100000, "desc": "Channels the full power of the Celestial Abyss. Restores 15000 HP and 15000 XP"},
                 {"id": "elixir_of_forever", "name": "♾️ Elixir of Forever", "heal": 20000, "xp_boost": 20000, "price": 120000, "desc": "A timeless brew from the Chrono Sanctum. Restores 20000 HP and 20000 XP"},
+                {"id": "deep_tide_potion", "name": "🌊 Deep Tide Potion", "heal": 18000, "xp_boost": 18000, "price": 130000, "desc": "Bottled pressure from the Abyssal Trench. Restores 18000 HP and 18000 XP"},
             ],
             "special": [
                 {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
@@ -1737,6 +1753,7 @@ def get_default_shop(guild_id):
                 {"id": "cosmic_seed", "name": "🌌 Cosmic Seed", "price": 500000, "desc": "+2200 ATK & +2200 DEF & +10000 max HP permanently"},
                 {"id": "aether_shard", "name": "🌌 Aether Shard", "price": 750000, "desc": "+2800 ATK & +2800 DEF & +14000 max HP permanently"},
                 {"id": "chrono_core", "name": "⏳ Chrono Core", "price": 900000, "desc": "+3500 ATK & +3500 DEF & +18000 max HP permanently"},
+                {"id": "trench_treasure", "name": "💠 Trench Treasure", "price": 200000, "desc": "+1600 ATK & +1600 DEF & +6500 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -2026,6 +2043,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "⛆ Deep Sea Wraith", "hp": 1100, "atk": 175, "def": 110, "xp": 420, "coins": (400, 600)},
             {"name": "🦞 Predator Croc Requiem", "hp": 1300, "atk": 170, "def": 130, "xp": 470, "coins": (450, 680)},
             {"name": "🕷️ Trench Digger Amalgam", "hp": 1000, "atk": 190, "def": 85, "xp": 400, "coins": (380, 580)},
+            {"name": "🫧 Void Anglerfish", "hp": 950, "atk": 195, "def": 100, "xp": 390, "coins": (370, 560)},
+            {"name": "🦈 Megalodon Breacher", "hp": 1200, "atk": 210, "def": 120, "xp": 450, "coins": (420, 650)},
         ],
         "boss": {"name": "🐙 The Scarred One", "hp": 6000, "atk": 200, "def": 160, "xp": 4000, "coins": (4000, 7500)},
         "boss_chance": 0.02,
