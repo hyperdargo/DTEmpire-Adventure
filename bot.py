@@ -64,6 +64,18 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.3",
+        "date": "2026-07-14",
+        "changes": [
+            "🕳️ 2 new monsters in Celestial Abyss: Singularity Worm (+360 ATK) and Cosmic Remnant (+380 ATK)",
+            "🌌 New shop weapon: Celestial Scepter (+2500 ATK, 1,100,000 coins)",
+            "🌌 New shop armor: Cosmic Mantle (+2300 DEF, 1,000,000 coins)",
+            "💫 New shop special: Astral Convergence (+4000 ATK/DEF, +22000 HP permanent boost, 1,200,000 coins)",
+            "🔧 Regenerated adventure_locations.json cache from bot.py source of truth",
+            "🔧 Synced web dashboard buy handler with astral_convergence special item",
+        ],
+    },
+    {
         "version": "v4.2",
         "date": "2026-07-13",
         "changes": [
@@ -1667,6 +1679,7 @@ def get_default_shop(guild_id):
                 {"id": "aether_blade", "name": "🌌 Aether Blade", "attack": 1900, "price": 700000, "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"},
                 {"id": "chrono_edge", "name": "⏳ Chrono Edge", "attack": 2100, "price": 850000, "desc": "A blade that cuts through time itself. +2100 ATK"},
                 {"id": "abyssal_trident", "name": "🔱 Abyssal Trident", "attack": 2300, "price": 950000, "desc": "Forged in the deepest ocean trench. Strikes with the pressure of the abyss. +2300 ATK"},
+                {"id": "celestial_scepter", "name": "🌌 Celestial Scepter", "attack": 2500, "price": 1100000, "desc": "Forged from collapsed star matter. Channels cosmic energy. +2500 ATK"},
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
@@ -1700,6 +1713,7 @@ def get_default_shop(guild_id):
                 {"id": "cosmic_aegis", "name": "🌌 Cosmic Aegis", "defense": 1700, "price": 600000, "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +1700 DEF"},
                 {"id": "temporal_aegis", "name": "⏳ Temporal Aegis", "defense": 1900, "price": 750000, "desc": "Woven from the fabric of frozen time. Stops attacks before they land. +1900 DEF"},
                 {"id": "abyssal_mantle", "name": "🌊 Abyssal Mantle", "defense": 2100, "price": 880000, "desc": "Armor woven from the crushing pressure of the deepest ocean trench. +2100 DEF"},
+                {"id": "cosmic_mantle", "name": "🌌 Cosmic Mantle", "defense": 2300, "price": 1000000, "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +2300 DEF"},
             ],
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
@@ -1754,6 +1768,7 @@ def get_default_shop(guild_id):
                 {"id": "aether_shard", "name": "🌌 Aether Shard", "price": 750000, "desc": "+2800 ATK & +2800 DEF & +14000 max HP permanently"},
                 {"id": "chrono_core", "name": "⏳ Chrono Core", "price": 900000, "desc": "+3500 ATK & +3500 DEF & +18000 max HP permanently"},
                 {"id": "trench_treasure", "name": "💠 Trench Treasure", "price": 200000, "desc": "+1600 ATK & +1600 DEF & +6500 max HP permanently"},
+                {"id": "astral_convergence", "name": "🌌 Astral Convergence", "price": 1200000, "desc": "+4000 ATK & +4000 DEF & +22000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)
@@ -2071,6 +2086,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "⭐ Stellar Devourer", "hp": 2400, "atk": 290, "def": 260, "xp": 820, "coins": (780, 1200)},
             {"name": "🌀 Dimensional Riftbeast", "hp": 1800, "atk": 340, "def": 190, "xp": 700, "coins": (650, 1050)},
             {"name": "✨ Constellation Wraith", "hp": 2200, "atk": 320, "def": 240, "xp": 780, "coins": (720, 1150)},
+            {"name": "🕳️ Singularity Worm", "hp": 2600, "atk": 360, "def": 210, "xp": 800, "coins": (750, 1180)},
+            {"name": "🌠 Cosmic Remnant", "hp": 2100, "atk": 380, "def": 170, "xp": 760, "coins": (710, 1130)},
         ],
         "boss": {"name": "🌌 Aethera, The Cosmic Architect", "hp": 10000, "atk": 380, "def": 280, "xp": 7000, "coins": (7000, 14000)},
         "boss_chance": 0.01,

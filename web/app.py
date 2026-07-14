@@ -709,6 +709,11 @@ def api_buy():
             player["defense"] += 1600
             player["max_health"] += 6500
             player["health"] += 6500
+        elif item["id"] == "astral_convergence":
+            player["attack"] += 4000
+            player["defense"] += 4000
+            player["max_health"] += 22000
+            player["health"] += 22000
         msg = f"Bought {item['name']}! {item['desc']}"
 
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
