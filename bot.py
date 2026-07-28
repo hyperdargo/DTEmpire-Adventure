@@ -64,6 +64,15 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.4",
+        "date": "2026-07-28",
+        "changes": [
+            "🌪️ 2 new monsters in Storm Peaks: Cyclone Wraith (+52 ATK) and Hailstorm Golem (+32 DEF)",
+            "🔧 Fixed guild_shops.json drift: real guild ID was missing 11 shop items present in bot.py (chrono_edge, abyssal_trident, celestial_scepter, temporal_aegis, abyssal_mantle, cosmic_mantle, elixir_of_forever, deep_tide_potion, chrono_core, trench_treasure, astral_convergence)",
+            "🔧 Regenerated adventure_locations.json and guild_shops.json caches from bot.py source of truth for all guild keys",
+        ],
+    },
+    {
         "version": "v4.3",
         "date": "2026-07-14",
         "changes": [
@@ -1924,6 +1933,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🦅 Thunder Roc", "hp": 160, "atk": 42, "def": 28, "xp": 90, "coins": (70, 110)},
             {"name": "🌩️ Lightning Sprite", "hp": 100, "atk": 55, "def": 15, "xp": 80, "coins": (60, 100)},
             {"name": "⛈️ Tempest Hound", "hp": 140, "atk": 45, "def": 22, "xp": 88, "coins": (68, 108)},
+            {"name": "🌀 Cyclone Wraith", "hp": 150, "atk": 52, "def": 24, "xp": 92, "coins": (72, 112)},
+            {"name": "🌨️ Hailstorm Golem", "hp": 175, "atk": 40, "def": 32, "xp": 95, "coins": (75, 118)},
         ],
         "boss": {"name": "🌪️ Storm Tyrant", "hp": 750, "atk": 68, "def": 38, "xp": 380, "coins": (380, 750)},
         "boss_chance": 0.08,
