@@ -36,7 +36,7 @@ load_dotenv(Path.home() / ".hermes" / ".env", override=True)  # fallback
 import smtplib
 from email.message import EmailMessage
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, Response
 DATA_DIR = BASE_DIR / "data"
 PLAYER_FILE = DATA_DIR / "players.json"
 PLAYER_LOCK_FILE = DATA_DIR / "players.json.lock"
@@ -1130,6 +1130,60 @@ def placeholder_pages():
     tmpl = template_map.get(path, "coming_soon.html")
     return render_template(tmpl, player=player, username=session.get("username", "Player"),
         avatar_url=get_avatar_url(session.get("user_id", ""), ""), now=time.time())
+
+@app.route("/robots.txt")
+def robots_txt():
+    robots = """User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /callback
+Disallow: /dashboard
+Disallow: /adventure
+Disallow: /inventory
+Disallow: /settings
+Disallow: /pet
+Disallow: /mail
+Disallow: /tower
+Disallow: /dungeon
+Disallow: /temple
+Disallow: /skills
+Disallow: /guild
+Disallow: /jobs
+Disallow: /blacksmith
+Disallow: /auction
+Disallow: /lucky-roll
+Disallow: /shop
+Disallow: /story
+Disallow: /updates
+Disallow: /achievements
+Disallow: /roles
+Disallow: /otp
+Disallow: /setup
+Disallow: /logout
+
+Sitemap: https://adventure.ankitgupta.com.np/sitemap.xml
+"""
+    return Response(robots, mimetype="text/plain")
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    pages = [
+        ("/", "1.0", "daily"),
+        ("/login", "0.8", "monthly"),
+        ("/register", "0.8", "monthly"),
+        ("/leaderboard", "0.6", "daily"),
+    ]
+    urls = "\n".join(
+        f"  <url>\n    <loc>https://adventure.ankitgupta.com.np{p}</loc>\n"
+        f"    <priority>{pri}</priority>\n    <changefreq>{freq}</changefreq>\n  </url>"
+        for p, pri, freq in pages
+    )
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}
+</urlset>
+"""
+    return Response(xml, mimetype="application/xml")
 
 @app.route("/")
 @app.route("/")
