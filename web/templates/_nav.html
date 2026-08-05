@@ -1,0 +1,423 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen&display=swap" rel="stylesheet">
+<script src="/static/js/duel_sfx.js"></script>
+<script src="/static/js/duel_notify.js"></script>
+<script src="/static/js/retro_audio.js"></script>
+
+<style>
+/* ── Global retro theme ─────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html,body{background:#050505!important;color:#e8e8e8;font-family:'VT323','Courier New',monospace!important;font-size:19px;line-height:1.45;margin:0;padding:0;letter-spacing:0.3px}
+a{color:#e8e8e8;text-decoration:none;transition:color .12s,text-shadow .12s}
+a:hover{color:#ffd54a;text-shadow:0 0 6px #ffd54a}
+img{image-rendering:pixelated}
+h1,h2,h3,h4,.pixel{font-family:'Press Start 2P','Silkscreen',monospace!important;letter-spacing:1px;line-height:1.5;text-shadow:2px 2px 0 #000,0 0 12px rgba(255,213,74,0.35)}
+h1{font-size:15px}h2{font-size:13px}h3{font-size:11px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.20) 0px,rgba(0,0,0,0.20) 1px,transparent 1px,transparent 3px);z-index:9998;mix-blend-mode:multiply}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 180px rgba(0,0,0,0.85);z-index:9997}
+.pxl,.card,fieldset,.stat-card,.item-card{background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #ffd54a;box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,4px 4px 0 #000,0 0 18px rgba(255,213,74,0.15);padding:14px;color:#e8e8e8}
+button,.btn,input[type=submit]{font-family:'Press Start 2P',monospace!important;font-size:10px;letter-spacing:1px;text-transform:uppercase;background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#ffd54a;border:2px solid #ffd54a;padding:10px 16px;cursor:pointer;box-shadow:inset 0 -3px 0 rgba(0,0,0,0.6),3px 3px 0 #000;transition:transform .06s,box-shadow .06s,background .12s}
+button:hover,.btn:hover,input[type=submit]:hover{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;text-shadow:none}
+button:active,.btn:active{transform:translate(3px,3px);box-shadow:inset 0 -1px 0 rgba(0,0,0,0.6),0 0 0 #000}
+input[type=text],input[type=number],input[type=password],select,textarea{background:#0a0a0f;color:#ffd54a;border:2px solid #444;padding:8px 10px;font-family:'VT323',monospace;font-size:18px;box-shadow:inset 0 0 0 1px #000}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#ffd54a;box-shadow:0 0 8px rgba(255,213,74,0.4)}
+.hp-bar,.xp-bar,progress{height:14px;background:#111;border:2px solid #000;box-shadow:inset 0 0 0 1px #333;overflow:hidden}
+.hp-fill{background:linear-gradient(180deg,#ff4757,#8b0000);height:100%;box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+.xp-fill{background:linear-gradient(180deg,#ffd54a,#c99a1a);height:100%;box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+.mp-fill{background:linear-gradient(180deg,#4a9eff,#1a4a8b);height:100%;box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+.rarity-common{color:#bbb;text-shadow:0 0 4px #666}
+.rarity-uncommon{color:#4ade80;text-shadow:0 0 6px #4ade80}
+.rarity-rare{color:#4a9eff;text-shadow:0 0 8px #4a9eff}
+.rarity-epic{color:#c084fc;text-shadow:0 0 10px #c084fc}
+.rarity-legendary{color:#ffd54a;text-shadow:0 0 14px #ffd54a;animation:legendaryGlow 1.6s ease-in-out infinite}
+@keyframes legendaryGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:#0a0a0a;border-left:1px solid #222}
+::-webkit-scrollbar-thumb{background:#ffd54a;border:2px solid #000}
+::-webkit-scrollbar-thumb:hover{background:#fff}
+
+/* ── Nav bar ────────────────────────────────────── */
+.nav-wrap{
+  position:sticky;top:0;z-index:9990;
+  background:linear-gradient(180deg,#12121a 0%,#0a0a12 50%,#050510 100%);
+  border-bottom:3px solid #ffd54a;
+  box-shadow:0 3px 0 #000,0 6px 20px rgba(0,0,0,0.9),inset 0 -1px 0 rgba(255,213,74,0.4);
+  padding:0;
+}
+/* animated gold underline */
+.nav-wrap::after{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent 0%,#ffd54a 20%,#fff 50%,#ffd54a 80%,transparent 100%);background-size:200% 100%;animation:navPulse 4s linear infinite;opacity:0.6}
+@keyframes navPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1400px;margin:0 auto;padding:8px 20px;
+  font-family:'Press Start 2P',monospace;font-size:10px;gap:16px;
+}
+
+.nav-left{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+.nav-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Brand block: title + tagline */
+.brand-block{display:flex;flex-direction:column;line-height:1.1}
+.brand-title{
+  color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:14px;letter-spacing:2px;
+  text-shadow:2px 2px 0 #000,0 0 12px #ffd54a;text-transform:uppercase;
+}
+.brand-sub{
+  color:#e8e8e8;font-family:'VT323',monospace;font-size:14px;letter-spacing:2px;
+  margin-top:2px;
+}
+.brand-sub .amp{color:#ff4757;animation:blink 1.2s steps(2) infinite}
+
+/* Pixel fight scene */
+.fight-scene{
+  position:relative;width:140px;height:52px;
+  background:linear-gradient(180deg,#080810 0%,#0d0d18 60%,#1a0a0a 100%);
+  border:2px solid #ffd54a;
+  box-shadow:inset 0 0 0 1px #000,inset 0 -8px 0 rgba(0,0,0,0.8),2px 2px 0 #000;
+  overflow:hidden;image-rendering:pixelated;
+}
+.fight-scene .sky{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,rgba(255,74,74,0.04) 20px 21px);}
+.fight-scene .ground{position:absolute;bottom:0;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,#2a1a0a 0 6px,#1a0a00 6px 12px);}
+.fight-scene .ground::before{content:'';position:absolute;top:-2px;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,transparent 0 4px,#4a2a10 4px 6px);}
+
+.hero{position:absolute;bottom:7px;left:10px;width:18px;height:26px;animation:heroAttack 1s steps(2) infinite}
+.zombie{
+  position:absolute;bottom:7px;
+  width:16px;height:24px;
+  animation:zombieWalk 2.5s linear infinite;
+}
+.z1{right:28px;animation-delay:0s}
+.z2{right:6px;animation-delay:1.2s}
+.z3{right:50px;animation-delay:2s;opacity:0.7}
+
+.slash{position:absolute;bottom:18px;left:20px;width:30px;height:14px;opacity:0;animation:slashFlash .6s ease-out infinite}
+.splat{position:absolute;width:16px;height:14px;opacity:0;animation:splatPop .7s ease-out infinite}
+.splat1{bottom:12px;left:50px;animation-delay:.1s}
+.splat2{bottom:18px;left:44px;animation-delay:.5s}
+
+@keyframes heroAttack{50%{transform:translateX(4px) scaleX(-1)}}
+@keyframes zombieWalk{0%{transform:translateX(80px)}100%{transform:translateX(-30px)}}
+@keyframes slashFlash{0%,50%{opacity:0}70%,90%{opacity:1}100%{opacity:0}}
+@keyframes splatPop{0%,60%{opacity:0;transform:scale(.5)}75%,85%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8)}}
+
+@media (max-width:640px){
+  .brand-sub{display:none}
+  .fight-scene{display:none}
+}
+
+/* dropdown pills */
+.nav-drop{position:relative}
+.nav-drop > button{
+  background:linear-gradient(180deg,#2a2a35,#0d0d15);
+  border:2px solid #ffd54a;color:#ffd54a;
+  padding:7px 14px 6px;cursor:pointer;
+  font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,0.7),2px 2px 0 #000;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all .1s;
+}
+.nav-drop > button .caret{font-size:8px;transition:transform .2s}
+.nav-drop.open > button{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;transform:translate(1px,1px);box-shadow:inset 0 -1px 0 rgba(0,0,0,0.4),1px 1px 0 #000}
+.nav-drop.open > button .caret{transform:rotate(180deg)}
+.nav-drop > button:hover{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000}
+
+.nav-menu{
+  display:none;position:absolute;top:calc(100% + 8px);right:0;left:auto;
+  min-width:200px;
+  background:linear-gradient(180deg,#12121a,#050510);
+  border:3px solid #ffd54a;
+  box-shadow:5px 5px 0 #000,0 0 24px rgba(255,213,74,0.35);
+  z-index:10000;padding:6px;
+}
+.nav-drop.open .nav-menu{display:block;animation:menuIn .18s ease-out}
+@keyframes menuIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+.nav-menu a{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  color:#e8e8e8;font-family:'VT323',monospace;font-size:18px;letter-spacing:1px;
+  border-left:3px solid transparent;
+  transition:background .12s,border-color .12s,color .12s;
+}
+.nav-menu a:hover{background:rgba(255,213,74,0.12);border-left-color:#ffd54a;color:#ffd54a;text-shadow:0 0 8px #ffd54a}
+.nav-menu a .ico{font-size:16px;width:22px;text-align:center;filter:drop-shadow(0 0 4px rgba(255,213,74,0.4))}
+.nav-menu a .kbd{margin-left:auto;color:#555;font-size:12px;letter-spacing:0}
+
+/* icon buttons on right */
+.nav-icon{
+  position:relative;width:34px;height:34px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#0a0a10;border:2px solid #ffd54a;color:#ffd54a;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,0.6),2px 2px 0 #000;
+  font-size:16px;text-decoration:none;
+  transition:all .1s;
+}
+.nav-icon:hover{background:#ffd54a;color:#000;text-shadow:none}
+.nav-icon .badge{
+  position:absolute;top:-6px;right:-6px;
+  min-width:18px;height:18px;padding:0 4px;
+  background:#ff4757;color:#fff;border:2px solid #000;
+  font-family:'Press Start 2P',monospace;font-size:8px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 8px rgba(255,71,87,0.7);
+  animation:badgePulse 1.6s ease-in-out infinite;
+}
+@keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
+.nav-logout{
+  padding:8px 12px;
+  background:linear-gradient(180deg,#3a1010,#1a0505);
+  border:2px solid #ff4757;color:#ff4757;
+  font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1.5px;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,0.6),2px 2px 0 #000;
+  transition:all .1s;
+}
+.nav-logout:hover{background:#ff4757;color:#000;text-shadow:none}
+
+/* mobile toggle */
+.nav-toggle{display:none;background:#0a0a10;border:2px solid #ffd54a;color:#ffd54a;padding:6px 10px;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.6),2px 2px 0 #000}
+
+@media (max-width:820px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;font-size:18px}
+  body::after{box-shadow:inset 0 0 70px rgba(0,0,0,.7)}
+  .nav-inner{width:100%;padding:8px 10px;gap:8px;flex-wrap:wrap}
+  .nav-toggle{display:inline-flex;min-height:44px;align-items:center;justify-content:center}
+  .nav-left{display:none;width:100%;order:3;flex-direction:column;align-items:stretch;padding-top:10px;border-top:2px dashed rgba(255,213,74,0.3);margin-top:4px}
+  .nav-wrap.open .nav-left{display:flex}
+  .nav-right{margin-left:auto;gap:5px;flex-wrap:nowrap}
+  .nav-drop,.brand,.brand-block{width:100%}
+  .nav-drop > button{width:100%;min-height:46px;justify-content:space-between}
+  .nav-menu{position:static;width:100%;min-width:0;box-shadow:none;border:2px solid #333;margin-top:4px}
+  .nav-menu a{min-height:44px;display:flex;align-items:center}
+  .fight-scene{display:none}
+  .brand-title{font-size:12px}.brand-sub{font-size:13px}
+
+  /* Shared phone layout: no page can force desktop width. */
+  main,.container,.page,.content,.wrapper,.dashboard,.game-container{
+    width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important;
+    padding-left:10px!important;padding-right:10px!important;
+  }
+  .pxl,.card,fieldset,.stat-card,.item-card{min-width:0;padding:11px}
+  [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  [style*="display:flex"]{max-width:100%}
+  table{display:block;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  img,svg,canvas,video{max-width:100%;height:auto}
+  input,select,textarea{max-width:100%;width:100%;font-size:16px!important}
+  button,.btn,input[type=submit]{min-height:44px;max-width:100%;white-space:normal;line-height:1.35}
+  h1{font-size:13px}h2{font-size:12px}
+}
+
+@media (max-width:430px){
+  .nav-inner{padding:6px 8px}
+  .nav-right .nav-user-name{display:none}
+  .pxl,.card,fieldset,.stat-card,.item-card{padding:9px;border-width:2px}
+  button,.btn,input[type=submit]{font-size:9px;padding:10px 11px}
+}
+</style>
+
+<div class="nav-wrap" id="navWrap">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="/dashboard" class="brand-block" style="text-decoration:none;">
+        <span class="brand-title">DTEmpire</span>
+        <span class="brand-sub">Adventure <span class="amp">⚔</span> RPG</span>
+      </a>
+      <div class="fight-scene" aria-hidden="true">
+        <div class="sky"></div>
+        <!-- Hero: knight slaying zombies -->
+        <svg class="hero" viewBox="0 0 18 26" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- helmet -->
+          <rect x="5" y="0" width="8" height="6" fill="#888"/>
+          <rect x="5" y="0" width="8" height="3" fill="#555"/>
+          <rect x="7" y="1" width="2" height="2" fill="#ff4757"/>
+          <rect x="10" y="1" width="2" height="2" fill="#ff4757"/>
+          <!-- crest -->
+          <rect x="7" y="3" width="4" height="1" fill="#ffd54a"/>
+          <!-- body armor -->
+          <rect x="4" y="6" width="10" height="8" fill="#3a5cff"/>
+          <rect x="4" y="6" width="10" height="2" fill="#4a7cff"/>
+          <!-- belt -->
+          <rect x="4" y="12" width="10" height="2" fill="#c99a1a"/>
+          <rect x="8" y="12" width="2" height="2" fill="#ffd54a"/>
+          <!-- arms -->
+          <rect x="2" y="7" width="2" height="7" fill="#f4c290"/>
+          <rect x="14" y="7" width="2" height="7" fill="#f4c290"/>
+          <!-- shield -->
+          <rect x="0" y="7" width="3" height="8" fill="#8b0000"/>
+          <rect x="0" y="9" width="3" height="2" fill="#ffd54a"/>
+          <!-- sword (held by right arm) -->
+          <rect x="15" y="2" width="1" height="12" fill="#e0e0e0"/>
+          <rect x="16" y="1" width="1" height="1" fill="#ffd54a"/>
+          <rect x="14" y="12" width="3" height="1" fill="#c99a1a"/>
+          <!-- legs -->
+          <rect x="5" y="14" width="3" height="8" fill="#4a2810"/>
+          <rect x="10" y="14" width="3" height="8" fill="#4a2810"/>
+          <rect x="5" y="22" width="3" height="2" fill="#2a1808"/>
+          <rect x="10" y="22" width="3" height="2" fill="#2a1808"/>
+        </svg>
+
+        <!-- Zombie 1 (closest) -->
+        <svg class="zombie z1" viewBox="0 0 16 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- head -->
+          <rect x="4" y="0" width="8" height="6" fill="#4a7a4a"/>
+          <rect x="4" y="0" width="8" height="2" fill="#2a5a2a"/>
+          <!-- eyes -- blanked out -->
+          <rect x="5" y="2" width="2" height="2" fill="#ff4757"/>
+          <rect x="9" y="2" width="2" height="2" fill="#ff4757"/>
+          <rect x="5" y="2" width="2" height="1" fill="#000"/>
+          <rect x="9" y="3" width="2" height="1" fill="#000"/>
+          <!-- body -->
+          <rect x="3" y="6" width="10" height="8" fill="#3a5a3a"/>
+          <rect x="3" y="6" width="10" height="2" fill="#2a4a2a"/>
+          <!-- arms -->
+          <rect x="1" y="7" width="2" height="6" fill="#4a7a4a"/>
+          <rect x="13" y="7" width="2" height="6" fill="#4a7a4a"/>
+          <!-- blood stains -->
+          <rect x="6" y="8" width="2" height="1" fill="#8b0000"/>
+          <rect x="9" y="10" width="1" height="2" fill="#8b0000"/>
+          <!-- legs -->
+          <rect x="4" y="14" width="3" height="7" fill="#2a4a2a"/>
+          <rect x="9" y="14" width="3" height="7" fill="#2a4a2a"/>
+          <rect x="3" y="21" width="4" height="2" fill="#1a3a1a"/>
+          <rect x="9" y="21" width="4" height="2" fill="#1a3a1a"/>
+        </svg>
+
+        <!-- Zombie 2 -->
+        <svg class="zombie z2" viewBox="0 0 16 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="4" y="0" width="8" height="6" fill="#5a3a2a"/>
+          <rect x="5" y="2" width="2" height="2" fill="#ff6600"/>
+          <rect x="9" y="2" width="2" height="2" fill="#ff6600"/>
+          <rect x="6" y="5" width="1" height="1" fill="#ff4757"/>
+          <rect x="3" y="6" width="10" height="8" fill="#3a2a1a"/>
+          <rect x="1" y="8" width="2" height="5" fill="#5a3a2a"/>
+          <rect x="13" y="8" width="2" height="5" fill="#5a3a2a"/>
+          <rect x="8" y="9" width="2" height="2" fill="#8b0000"/>
+          <rect x="4" y="14" width="3" height="7" fill="#2a1a0a"/>
+          <rect x="9" y="14" width="3" height="7" fill="#2a1a0a"/>
+        </svg>
+
+        <!-- Zombie 3 (far) -->
+        <svg class="zombie z3" viewBox="0 0 16 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="4" y="0" width="8" height="6" fill="#6a5a4a"/>
+          <rect x="5" y="2" width="2" height="2" fill="#888"/>
+          <rect x="9" y="2" width="2" height="2" fill="#888"/>
+          <rect x="3" y="6" width="10" height="8" fill="#4a3a2a"/>
+          <rect x="1" y="8" width="2" height="5" fill="#6a5a4a"/>
+          <rect x="13" y="8" width="2" height="5" fill="#6a5a4a"/>
+          <rect x="4" y="14" width="3" height="7" fill="#3a2a1a"/>
+          <rect x="9" y="14" width="3" height="7" fill="#3a2a1a"/>
+        </svg>
+
+        <!-- Slash effect -->
+        <svg class="slash" viewBox="0 0 30 14" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="0" y="6" width="4" height="2" fill="#fff"/>
+          <rect x="4" y="5" width="3" height="1" fill="#ffd54a"/>
+          <rect x="7" y="4" width="3" height="1" fill="#fff"/>
+          <rect x="10" y="3" width="4" height="1" fill="#ffd54a"/>
+          <rect x="14" y="2" width="3" height="1" fill="#fff"/>
+          <rect x="17" y="3" width="4" height="1" fill="#ffd54a"/>
+          <rect x="21" y="4" width="3" height="1" fill="#fff"/>
+          <rect x="24" y="5" width="3" height="1" fill="#ffd54a"/>
+          <rect x="27" y="6" width="3" height="2" fill="#fff"/>
+        </svg>
+
+        <!-- Blood splats -->
+        <svg class="splat splat1" viewBox="0 0 16 14" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="4" y="2" width="2" height="2" fill="#8b0000"/>
+          <rect x="8" y="1" width="2" height="2" fill="#ff4757"/>
+          <rect x="2" y="5" width="3" height="2" fill="#8b0000"/>
+          <rect x="10" y="4" width="3" height="2" fill="#ff4757"/>
+          <rect x="5" y="6" width="1" height="3" fill="#8b0000"/>
+          <rect x="12" y="7" width="2" height="2" fill="#aa0000"/>
+        </svg>
+        <svg class="splat splat2" viewBox="0 0 16 14" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect x="3" y="3" width="2" height="2" fill="#8b0000"/>
+          <rect x="7" y="2" width="2" height="2" fill="#ff4757"/>
+          <rect x="1" y="6" width="3" height="2" fill="#aa0000"/>
+          <rect x="9" y="5" width="3" height="2" fill="#8b0000"/>
+          <rect x="4" y="7" width="1" height="3" fill="#ff4757"/>
+          <rect x="11" y="8" width="2" height="2" fill="#8b0000"/>
+        </svg>
+        <div class="ground"></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <div class="nav-drop">
+        <button onclick="td(this)">🎮 Game Hub <span class="caret">▼</span></button>
+        <div class="nav-menu">
+          <a href="/dashboard"><span class="ico">🏠</span>Dashboard</a>
+          <a href="/adventure"><span class="ico">🗺️</span>Adventure</a>
+          <a href="/tower"><span class="ico">🏰</span>Tower Climb</a>
+          <a href="/dungeon"><span class="ico">🏚️</span>Dungeon</a>
+          <a href="/duels"><span class="ico">⚔️</span>Duels</a>
+          <a href="/pet"><span class="ico">🐾</span>Pets</a>
+          <a href="/temple"><span class="ico">🏛️</span>Temple</a>
+          <a href="/missions"><span class="ico">📜</span>Missions</a>
+        </div>
+      </div>
+
+      <div class="nav-drop">
+        <button onclick="td(this)">💰 Economy <span class="caret">▼</span></button>
+        <div class="nav-menu">
+          <a href="/shop/normal"><span class="ico">🏪</span>Shops</a>
+          <a href="/inventory"><span class="ico">🎒</span>Inventory</a>
+          <a href="/jobs"><span class="ico">⚒️</span>Jobs</a>
+          <a href="/blacksmith"><span class="ico">🔨</span>Blacksmith</a>
+          <a href="/auction"><span class="ico">💎</span>Auction</a>
+          <a href="/lucky-roll"><span class="ico">🎲</span>Lucky Roll</a>
+        </div>
+      </div>
+
+      <div class="nav-drop">
+        <button onclick="td(this)">👥 Social <span class="caret">▼</span></button>
+        <div class="nav-menu">
+          <a href="/leaderboard"><span class="ico">🏆</span>Leaderboard</a>
+          <a href="/profile/{{ session.get('user_id','') }}"><span class="ico">🪪</span>My Profile</a>
+          <a href="/chat"><span class="ico">💬</span>World Chat</a>
+          <a href="/guild"><span class="ico">🛡️</span>Guild</a>
+          <a href="/guild-tasks"><span class="ico">🏰</span>Guild Tasks</a>
+          <a href="/skills"><span class="ico">⚡</span>Skills</a>
+          <a href="/roles"><span class="ico">🎭</span>Roles</a>
+        </div>
+      </div>
+
+      <a href="/mail" class="nav-icon" title="Mail">
+        ✉
+        {% if mail_count and mail_count > 0 %}<span class="badge">{{ mail_count }}</span>{% endif %}
+      </a>
+      <a href="/updates" class="nav-icon" title="Updates">📋</a>
+      <a href="/settings" class="nav-icon" title="Settings">⚙️</a>
+      <a href="/logout" class="nav-logout">LOGOUT</a>
+      <button class="nav-toggle" onclick="document.getElementById('navWrap').classList.toggle('open')">☰</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function td(btn){
+  var parent = btn.parentElement;
+  var open = parent.classList.contains('open');
+  document.querySelectorAll('.nav-drop.open').forEach(function(d){d.classList.remove('open')});
+  if(!open) parent.classList.add('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.nav-drop')){
+    document.querySelectorAll('.nav-drop.open').forEach(function(d){d.classList.remove('open')});
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') document.querySelectorAll('.nav-drop.open').forEach(function(d){d.classList.remove('open')});
+});
+// ── Online heartbeat: marks this player online (5-min window) ──
+if(document.querySelector('.nav-logout')){
+  function beat(){fetch('/api/ping',{method:'POST'}).catch(function(){});}
+  beat(); setInterval(beat, 60000);
+}
+</script>

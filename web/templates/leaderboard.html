@@ -1,67 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Leaderboard</title>
+<title>DTEmpire Adventure — Leaderboard</title>
 <style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;border-radius:8px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:900px;margin:0 auto;padding:24px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{padding:14px 12px;text-align:left;border-bottom:1px solid #222}
-th{color:#a855f7;font-size:0.8em;text-transform:uppercase;letter-spacing:0.5px}
-tr:hover{background:rgba(168,85,247,0.05)}
-tr{cursor:pointer;transition:background 0.2s}
-.rank-col{width:50px;text-align:center}
-.medal{font-size:1.4em}
-.player-col{display:flex;align-items:center;gap:10px}
-.player-avatar{width:32px;height:32px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:1.1em}
-.player-name{font-weight:600;color:#e0e0e0;text-decoration:none}
-.player-name:hover{color:#a855f7}
-.role-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:600;margin-left:8px}
-.rank-colors{display:flex;align-items:center;gap:6px;font-size:0.85em}
-.value-col{color:#fbbf24;font-weight:600;text-align:right}
-.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
-.stat-pill{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:8px;padding:10px 18px;display:flex;align-items:center;gap:8px}
-.stat-pill .pill-label{color:#888;font-size:0.85em}
-.stat-pill .pill-value{font-weight:700;color:#a855f7}
+body{font-family:'VT323',monospace;background:#050505;color:#e8e8e8;min-height:100vh}
+.container{max-width:920px;margin:0 auto;padding:24px 16px}
+.lb-title{font-family:'Press Start 2P',monospace;font-size:14px;color:#ffd54a;margin-bottom:6px;text-shadow:2px 2px 0 #000}
+.lb-sub{color:#888;font-size:15px;margin-bottom:20px}
 .filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.filter-btn{padding:8px 16px;border:1px solid #333;border-radius:8px;background:transparent;color:#888;cursor:pointer;font-size:0.85em;transition:all 0.3s}
-.filter-btn:hover,.filter-btn.active{border-color:#a855f7;color:#a855f7;background:rgba(168,85,247,0.1)}
+.filter-btn{padding:8px 14px;border:2px solid #333;border-radius:0;background:transparent;color:#aaa;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:8px;transition:all 0.15s;box-shadow:3px 3px 0 #000}
+.filter-btn:hover{color:#fff;border-color:#888}
+.filter-btn.active{border-color:#ffd54a;color:#ffd54a;background:#0d0d0d;box-shadow:3px 3px 0 #ffd54a33}
+.lb-table{width:100%;border-collapse:collapse;background:#0a0a0a;border:2px solid #333;box-shadow:6px 6px 0 #000}
+th{font-family:'Press Start 2P',monospace;font-size:8px;color:#ffd54a;text-transform:uppercase;letter-spacing:1px;text-align:left;padding:12px 10px;border-bottom:2px solid #333;background:#0d0d0d}
+td{padding:11px 10px;border-bottom:1px solid #1c1c1c;font-size:16px;color:#ccc}
+tbody tr{cursor:pointer;transition:background 0.12s}
+tbody tr:hover{background:#111}
+tbody tr:last-child td{border-bottom:none}
+.rank-col{width:52px;text-align:center;font-family:'Press Start 2P',monospace;font-size:10px;color:#888}
+.medal{font-size:18px}
+.player-col{display:flex;align-items:center;gap:10px}
+.player-avatar{width:36px;height:36px;border:2px solid #333;background:#0d0d0d;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:2px 2px 0 #000}
+.player-name{font-weight:600;color:#fff;text-decoration:none;font-size:17px}
+.player-name:hover{color:#ffd54a}
+.online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.online-dot.on{background:#4ade80;box-shadow:0 0 6px #4ade80}
+.online-dot.off{background:#444}
+.role-badge{display:inline-block;padding:2px 8px;font-size:12px;margin-left:8px;border:1px solid;font-family:'VT323',monospace}
+.value-col{text-align:right;font-family:'Press Start 2P',monospace;font-size:9px;color:#fff}
+.rank-colors{display:flex;align-items:center;gap:6px;justify-content:flex-end;font-size:14px;color:#aaa}
+.empty{text-align:center;color:#666;padding:40px;font-size:18px}
 </style>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Join DTEmpire Adventure, the ultimate browser-based RPG. Climb the tower, hatch mythic pets, battle bosses, forge epic gear, and dominate the leaderboard.">
+<meta name="keywords" content="DTEmpire, adventure game, browser RPG, idle RPG, tower climbing, gacha pets, mmorpg, discord bot game">
+<meta name="author" content="Dargo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://adventure.ankitgupta.com.np/">
+
+<!-- Open Graph / Social -->
+<meta property="og:title" content="DTEmpire Adventure - The Ultimate Browser RPG">
+<meta property="og:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta property="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+<meta property="og:url" content="https://adventure.ankitgupta.com.np/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DTEmpire Adventure">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DTEmpire Adventure">
+<meta name="twitter:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta name="twitter:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+
 </head>
 <body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/adventure">Adventure</a>
-    <a href="/shop">Shop</a>
-    <a href="/inventory">Inventory</a>
-    <a href="/duels">⚔️ Duels</a>
-    <a href="/leaderboard" class="active">Leaderboard</a>
-    <a href="/roles">Roles</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
+{% include '_nav.html' %}
+
 <div class="container">
-  <h2 style="margin-bottom:16px">🏆 Leaderboard</h2>
-  
+  <div class="lb-title">🏆 LEADERBOARD</div>
+  <div class="lb-sub">Top 30 players of DTEmpire — {{ players|length }} ranked</div>
+
   <div class="filter-bar">
-    <button class="filter-btn active" onclick="filterBoard('all')">All Players</button>
-    <button class="filter-btn" onclick="filterBoard('online')">🟢 Online</button>
-    <button class="filter-btn" onclick="filterBoard('fighters')">⚔️ Fighters</button>
-    <button class="filter-btn" onclick="filterBoard('bosses')">👑 Boss Slayers</button>
+    <button class="filter-btn active" onclick="filterBoard('all')">ALL PLAYERS</button>
+    <button class="filter-btn" onclick="filterBoard('online')">🟢 ONLINE</button>
+    <button class="filter-btn" onclick="filterBoard('fighters')">⚔️ FIGHTERS</button>
+    <button class="filter-btn" onclick="filterBoard('bosses')">👑 BOSS SLAYERS</button>
   </div>
 
-  <table id="leaderboardTable">
+  <table class="lb-table" id="leaderboardTable">
     <thead>
       <tr>
         <th class="rank-col">#</th>
@@ -74,7 +87,7 @@ tr{cursor:pointer;transition:background 0.2s}
     </thead>
     <tbody>
       {% for p in players %}
-      <tr class="player-row" 
+      <tr class="player-row"
           data-user-id="{{ p.user_id }}"
           data-online="{{ 'true' if (now - p.get('last_seen', 0)) < 300 else 'false' }}"
           data-role="{{ p.get('role', '') }}"
@@ -88,12 +101,13 @@ tr{cursor:pointer;transition:background 0.2s}
         <td>
           <div class="player-col">
             <div class="player-avatar">
-              {% if p.role_data %}{{ p.role_data.emoji }}{% else %}👤{% endif %}
+              {% if p.avatar_url %}<img src="{{ p.avatar_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">{% elif p.role_data %}{{ p.role_data.emoji }}{% else %}👤{% endif %}
             </div>
             <div>
+              <span class="online-dot {{ 'on' if (now - p.get('last_seen', 0)) < 300 else 'off' }}"></span>
               <span class="player-name">{{ p.name or ('User#' + (p.user_id|string)[-4:]) }}</span>
               {% if p.role_data %}
-              <span class="role-badge" style="background:rgba(168,85,247,0.1);color:{{ p.role_data.color }};border:1px solid {{ p.role_data.color }}40">
+              <span class="role-badge" style="color:{{ p.role_data.color }};border-color:{{ p.role_data.color }}40">
                 {{ p.role_data.name }}
               </span>
               {% endif %}
@@ -106,7 +120,7 @@ tr{cursor:pointer;transition:background 0.2s}
         <td>
           <div class="rank-colors">
             <span>{{ p.duel_rank_emoji }}</span>
-            <span style="font-size:0.85em;color:#888">{{ p.duel_rank }}</span>
+            <span>{{ p.duel_rank }}</span>
           </div>
         </td>
       </tr>
@@ -114,7 +128,7 @@ tr{cursor:pointer;transition:background 0.2s}
     </tbody>
   </table>
   {% if not players %}
-  <p style="text-align:center;color:#666;padding:40px">No players yet. Be the first to play!</p>
+  <div class="empty">No players yet. Be the first to play!</div>
   {% endif %}
 </div>
 
@@ -122,7 +136,7 @@ tr{cursor:pointer;transition:background 0.2s}
 function filterBoard(filter) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  
+
   const rows = document.querySelectorAll('.player-row');
   rows.forEach(row => {
     let show = true;
@@ -131,11 +145,48 @@ function filterBoard(filter) {
     } else if (filter === 'fighters') {
       show = row.dataset.role !== '';
     } else if (filter === 'bosses') {
-      show = parseInt(row.querySelector:nth-child(5).textContent) > 0;
+      show = parseInt(row.cells[4].textContent) > 0;
     }
     row.style.display = show ? '' : 'none';
   });
 }
 </script>
+<script>
+function updateMailCount() {
+  fetch('/api/mail/count').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('mail-count');
+    if(el){el.textContent=d.unclaimed||0;el.style.background=d.unclaimed>0?'#ef4444':'#374151'}
+  }).catch(()=>{});
+}
+updateMailCount();
+setInterval(updateMailCount,30000);
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all others first
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+
+    // Close dropdowns if clicking anywhere else
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
 </body>
+
 </html>

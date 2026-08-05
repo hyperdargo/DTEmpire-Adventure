@@ -1,0 +1,57 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:900px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;margin-bottom:4px;">🏰 GUILD TASKS</h2>
+    <p style="color:#888;font-size:15px;font-family:'VT323',monospace;">3 daily cooperative missions — reset at midnight. Complete them to earn guild XP!</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+    {% for task in tasks %}
+    {% set done = task.id in completed %}
+    {% set raw = player.get(task.req_key, 0) if task.req_key in player else 0 %}
+    {% set pg = raw|length if raw is sequence else raw %}
+    {% set pct = [100, (pg * 100 // task.req_val)]|min %}
+    <div class="pxl" style="border-color:{% if done %}#4ade80{% else %}#333{% endif %};position:relative;overflow:hidden;">
+      {% if done %}<div style="position:absolute;top:8px;right:8px;color:#4ade80;font-family:'VT323',monospace;font-size:20px;">✓ DONE</div>{% endif %}
+      <div style="font-size:2.2em;margin-bottom:8px;">{{ task.icon }}</div>
+      <div class="pixel" style="font-size:8px;color:#ffd54a;margin-bottom:4px;">{{ task.title }}</div>
+      <div style="color:#aaa;font-family:'VT323',monospace;font-size:15px;margin-bottom:10px;">{{ task.desc }}</div>
+      <!-- Progress bar -->
+      <div style="background:#111;border:1px solid #333;height:8px;margin-bottom:8px;">
+        <div style="background:{% if done %}#4ade80{% else %}#ffd54a{% endif %};height:100%;width:{{ pct }}%;transition:width 0.4s;"></div>
+      </div>
+      <div style="color:#888;font-family:'VT323',monospace;font-size:13px;margin-bottom:10px;">
+        {{ [pg, task.req_val]|min }} / {{ task.req_val }} &nbsp;·&nbsp; 🪙{{ task.coins }} &nbsp;·&nbsp; ⭐{{ task.xp }} XP
+      </div>
+      {% if not done %}
+      <button class="pxl-btn" onclick="claimTask('{{ task.id }}')"
+        {% if pg < task.req_val %}disabled style="opacity:0.4;cursor:not-allowed;"{% endif %}
+        style="padding:6px 14px;font-size:8px;width:100%;">CLAIM REWARD</button>
+      {% else %}
+      <div style="color:#4ade80;font-family:'VT323',monospace;font-size:14px;">✅ Reward Claimed!</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="pxl" style="margin-top:20px;text-align:center;">
+    <p style="color:#555;font-family:'VT323',monospace;font-size:14px;">Tasks reset daily at midnight. Guild XP earned by members is added to your guild's total.</p>
+  </div>
+</div>
+
+<script>
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+function claimTask(id){
+  fetch('/api/guild/task/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  }).catch(()=>showToast('Error','err'));
+}
+</script>

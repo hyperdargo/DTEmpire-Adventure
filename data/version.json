@@ -1,0 +1,13 @@
+{
+  "name": "DTEmpire Adventure",
+  "version": "5.3.0",
+  "updated": "2026-08-04",
+  "changelog": [
+    "Added 18 non-unique starter classes across five rarity tiers",
+    "Starter assignment now rolls rarity first with 40/30/18/9/3 tier weights",
+    "UNIQUE classes remain globally scarce progression rewards and cannot be rolled at signup",
+    "Verified sell, pet, equipment, guild, and jobs routes",
+    "Added encrypted Cloudflare R2 disaster-recovery backups for Adventure JSON state"
+  ],
+  "author": "Hermes"
+}

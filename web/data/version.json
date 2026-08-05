@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "name": "The Awakening",
+  "changelog": [
+    "🏰 Tower system with level gating, pets, and mail rewards",
+    "🐾 Pet party — up to 5 pets boost your stats",
+    "📬 Mail box with floor-based loot rewards",
+    "⚔️ 18 classes across 5 rarities",
+    "🛠️ Crafting & blacksmith (coming soon)",
+    "🎣 Fishing, gambling & daily bonuses (coming soon)"
+  ],
+  "updated": "2026-07-27"
+}

@@ -1,52 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Inventory</title>
+<title>DTEmpire Adventure — Inventory</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle;border:1px solid #000}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
+body{font-family:'VT323',monospace;background:#050505;color:#ccc;min-height:100vh;image-rendering:pixelated;overflow-x:hidden}
+.pixel{font-family:'Press Start 2P',monospace;color:#ffd54a}
+
+.nav{background:#0d0d13;border-bottom:2px solid #ffd54a;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd54a;text-transform:uppercase}
+.nav-links{display:flex;gap:4px;flex-wrap:wrap}
+.nav a{font-family:'Press Start 2P',monospace;color:#ccc;text-decoration:none;padding:8px 12px;border:2px solid #ffd54a;font-size:9px;text-transform:uppercase;background:linear-gradient(180deg,#3a3a4a,#1a1a22)}
+.nav a:hover,.nav a.active{background:#ffd54a;color:#000}
+.nav .logout{border-color:#ff6b00;color:#ff6b00}
+.nav .logout:hover{background:#ff6b00;color:#000}
+
 .container{max-width:800px;margin:0 auto;padding:24px}
-.equipped-area{background:rgba(20,20,40,0.8);border:1px solid #6c3ce0;border-radius:12px;padding:20px;margin-bottom:24px}
-.equipped-area h3{margin-bottom:12px;color:#a855f7}
-.equipped-items{display:flex;gap:16px;flex-wrap:wrap}
-.equipped-item{background:rgba(168,85,247,0.1);border:1px solid #a855f7;border-radius:8px;padding:12px 16px;font-size:0.95em}
-.empty{color:#666;font-style:italic;padding:20px;text-align:center}
-.item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.item{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:10px;padding:16px;display:flex;justify-content:space-between;align-items:center}
-.item .name{font-weight:600}
-.item .count{color:#888;font-size:0.85em}
-.btn{padding:8px 16px;border:none;border-radius:6px;font-size:0.85em;font-weight:600;cursor:pointer;transition:all 0.3s}
-.btn-equip{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
-.btn-equip:hover{box-shadow:0 2px 10px rgba(168,85,247,0.4)}
-.btn-heal{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;margin-top:16px}
+h2{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:12px;text-transform:uppercase;margin-bottom:20px}
+h3{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:9px;text-transform:uppercase;margin-bottom:12px}
+
+.equipped-area{border:2px solid #ffd54a;padding:20px;margin-bottom:24px;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.equipped-items{display:flex;gap:12px;flex-wrap:wrap}
+.equipped-item{border:2px solid #ffd54a;padding:10px 14px;font-family:'VT323',monospace;font-size:15px;color:#ffd54a;background:linear-gradient(180deg,#1a1a22,#0d0d13);text-transform:uppercase}
+
+.empty{color:#666;padding:20px;text-align:center;font-size:17px;border:2px dashed #333;font-family:'VT323',monospace}
+
+.item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.item{border:2px solid #ffd54a;padding:16px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.item .name{font-family:'Press Start 2P',monospace;font-size:9px;text-transform:uppercase;color:#ffd54a;letter-spacing:1px}
+.item .count{color:#888;font-family:'VT323',monospace;font-size:15px;margin-top:4px}
+.item .info-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.item .btn-row{display:flex;gap:8px;margin-top:12px}
+
+.btn{padding:10px 16px;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;image-rendering:pixelated}
+
+/* Gold buttons */
+.btn-equip{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;border:2px solid #000;box-shadow:3px 3px 0 #000}
+.btn-equip:hover{background:linear-gradient(180deg,#ffe57a,#daaa2a)}
+.btn-equip:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+.btn-equip.unequip{background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#ffd54a;border:2px solid #ffd54a;box-shadow:3px 3px 0 #000}
+.btn-equip.unequip:hover{background:linear-gradient(180deg,#4a4a5a,#2a2a32)}
+
+/* Dark buttons */
+.btn-sell{border:2px solid #ff6b00;color:#ff6b00;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
+.btn-sell:hover{background:#ff6b00;color:#000}
+.btn-sell:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.btn-heal{border:2px solid #4ade80;color:#4ade80;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000;margin-top:0}
+.btn-heal:hover{background:#4ade80;color:#000}
+.btn-heal:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.btn-claim{border:2px solid #8b5cf6;color:#8b5cf6;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
+.btn-claim:hover{background:#8b5cf6;color:#000}
+.btn-claim:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;border-bottom:2px solid #333;padding-bottom:16px}
+.tab{padding:8px 16px;border:2px solid #333;background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#888;font-family:'Press Start 2P',monospace;font-size:9px;text-transform:uppercase;cursor:pointer;letter-spacing:1px}
+.tab.active{border-color:#ffd54a;color:#ffd54a;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.tab:hover:not(.active){border-color:#ffd54a;color:#ffd54a}
+
+/* Rarity colors */
+.rarity-common{color:#ccc}
+.rarity-uncommon{color:#22c55e}
+.rarity-unique{color:#ffd54a}
+.rarity-rare{color:#4ade80}
+.rarity-epic{color:#a855f7}
+.rarity-legendary{color:#ff6b00}
+.rarity-mythic{color:#dc143c}
+.rarity-divine{color:#8b5cf6}
 </style>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Join DTEmpire Adventure, the ultimate browser-based RPG. Climb the tower, hatch mythic pets, battle bosses, forge epic gear, and dominate the leaderboard.">
+<meta name="keywords" content="DTEmpire, adventure game, browser RPG, idle RPG, tower climbing, gacha pets, mmorpg, discord bot game">
+<meta name="author" content="Dargo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://adventure.ankitgupta.com.np/">
+
+<!-- Open Graph / Social -->
+<meta property="og:title" content="DTEmpire Adventure - The Ultimate Browser RPG">
+<meta property="og:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta property="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+<meta property="og:url" content="https://adventure.ankitgupta.com.np/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DTEmpire Adventure">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DTEmpire Adventure">
+<meta name="twitter:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta name="twitter:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+
 </head>
 <body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/adventure">Adventure</a>
-    <a href="/shop">Shop</a>
-    <a href="/inventory" class="active">Inventory</a>
-    <a href="/leaderboard">Leaderboard</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
+{% include '_nav.html' %}
+
 <div class="container">
-  <h2 style="margin-bottom:20px">🎒 Inventory</h2>
+  <h2>🎒 Inventory</h2>
 
   <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
     <button class="btn btn-heal" onclick="heal()">💚 Heal (10 coins)</button>
-    <button class="btn btn-equip" onclick="claimDaily()">🎁 Claim Daily</button>
+    <button class="btn btn-claim" onclick="claimDaily()">🎁 Claim Daily</button>
   </div>
 
   {% if equipped %}
@@ -60,16 +120,62 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
   </div>
   {% endif %}
 
-  <h3 style="margin-bottom:12px">Items ({{ items|length }})</h3>
+    <h3>Your Bag</h3>
+  
+  <div class="tabs">
+    <div class="tab active" data-filter="all" onclick="filterItems('all', this)">All</div>
+    <div class="tab" data-filter="weapon" onclick="filterItems('weapon', this)">Weapons</div>
+    <div class="tab" data-filter="armor" onclick="filterItems('armor', this)">Armor</div>
+    <div class="tab" data-filter="helmet" onclick="filterItems('helmet', this)">Helmets</div>
+    <div class="tab" data-filter="potion" onclick="filterItems('potion', this)">Potions</div>
+    <div class="tab" data-filter="material" onclick="filterItems('material', this)">Materials</div>
+  </div>
+
   {% if items %}
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <label style="font-family:'Press Start 2P',monospace;font-size:8px;color:#888;text-transform:uppercase">Sort:</label>
+    <select id="sortSel" onchange="sortItems()" style="background:#1a1a22;color:#ffd54a;border:2px solid #333;font-family:'Press Start 2P',monospace;font-size:8px;text-transform:uppercase;padding:6px 8px;cursor:pointer">
+      <option value="rarity">Rarity — Unique First</option>
+      <option value="power">Power — High First</option>
+      <option value="name">Name — A to Z</option>
+    </select>
+    <span style="font-family:'VT323',monospace;font-size:14px;color:#666">Automatically sorted high → low</span>
+  </div>
   <div class="item-list">
     {% for item in items %}
-    <div class="item">
+    {% set st = item.get('stats') or {} %}
+    <div class="item" data-category="{{ item.get('category') }}" data-rarity="{{ item.get('rarity','common') }}" data-power="{{ st.get('attack',0) + st.get('defense',0) + st.get('hp',0) }}" data-name="{{ item.get('name','')|lower }}">
       <div>
-        <div class="name">{{ item.name }}</div>
-        {% if item.count > 1 %}<div class="count">x{{ item.count }}</div>{% endif %}
+        <div class="name">
+          {% if item.get('rarity') == 'legendary' %}🔥{% elif item.get('rarity') == 'epic' %}👻{% elif item.get('rarity') == 'rare' %}🐉{% elif item.get('rarity') == 'uncommon' %}🦊{% elif item.get('rarity') == 'unique' %}☄️{% elif item.get('rarity') == 'mythic' %}🌟{% else %}🟢{% endif %}
+          <span class="rarity-{{ item.get('rarity') }}">{{ item.get('name') }}</span>
+        </div>
+        {% if item.get('count', 0) > 1 %}<div class="count">x{{ item.get('count') }}</div>{% endif %}
+        <div class="info-row">
+          <span style="font-family:'VT323',monospace;font-size:15px;color:#666;text-transform:uppercase;letter-spacing:1px">{{ item.get('rarity') }} {{ item.get('category') }}</span>
+          {% if item.get('category') == 'potion' %}<span style="font-family:'VT323',monospace;font-size:15px;color:#4ade80;">💊 +{{ item.get('heal_amt') or 50 }} HP</span>{% elif item.get('stats') and item['stats'].get('heal') %}<span style="font-family:'VT323',monospace;font-size:15px;color:#4ade80;">💊 +{{ item['stats']['heal'] }} HP</span>{% endif %}
+        </div>
+        {% if st.get('attack') or st.get('defense') or st.get('hp') %}
+        <div class="info-row" style="border-top:1px dashed #333;padding-top:6px;margin-top:6px;">
+          {% if st.get('attack') %}<span style="font-family:'VT323',monospace;font-size:15px;color:#ffd54a;">⚔️ +{{ st.get('attack') }} ATK</span>{% endif %}
+          {% if st.get('defense') %}<span style="font-family:'VT323',monospace;font-size:15px;color:#4ade80;">🛡️ +{{ st.get('defense') }} DEF</span>{% endif %}
+          {% if st.get('hp') %}<span style="font-family:'VT323',monospace;font-size:15px;color:#ff6b6b;">❤️ +{{ st.get('hp') }} HP</span>{% endif %}
+          <span style="font-family:'VT323',monospace;font-size:15px;color:#8b5cf6;">⚡ {{ st.get('attack',0) + st.get('defense',0) + st.get('hp',0) }} POW</span>
+        </div>
+        {% endif %}
       </div>
-      <button class="btn btn-equip" onclick="equipItem('{{ item.id }}')">Equip</button>
+      <div class="btn-row">
+        {% if item.get('category') == 'potion' %}
+        <button class="btn btn-heal" onclick="drinkItem('{{ item.get('id') }}')" style="flex:2">🧪 Drink</button>
+        {% elif item.get('category') == 'egg' %}
+        <a class="btn btn-claim" href="/pet" style="flex:2;text-decoration:none;text-align:center">🥚 Hatch</a>
+        {% else %}
+        <button class="btn btn-equip {% if item.get('equipped') %}unequip{% endif %}" onclick="equipItem('{{ item.get('id') }}')" style="flex:2">
+          {% if item.get('equipped') %}Unequip{% else %}Equip{% endif %}
+        </button>
+        {% endif %}
+        <button class="btn btn-sell" onclick="sellItem('{{ item.get('id') }}')" style="flex:1" title="Sell Item">Sell</button>
+      </div>
     </div>
     {% endfor %}
   </div>
@@ -78,8 +184,71 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
   {% endif %}
 </div>
 
+
 <script>
+function filterItems(category, clickedTab) {
+  sessionStorage.setItem('inventoryFilter', category);
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const activeTab = clickedTab || document.querySelector(`.tab[data-filter="${category}"]`);
+  if (activeTab) activeTab.classList.add('active');
+
+  document.querySelectorAll('.item').forEach(item => {
+    item.style.display = (category === 'all' || item.dataset.category === category) ? 'flex' : 'none';
+  });
+}
+
+// ── Inventory sorting: always apply selected order immediately ──
+const RARITY_RANK = {unique:0, mythic:1, legendary:2, epic:3, rare:4, uncommon:5, common:6};
+function sortItems() {
+  const mode = document.getElementById('sortSel').value;
+  const list = document.querySelector('.item-list');
+  if (!list) return;
+  const items = Array.from(list.querySelectorAll('.item'));
+  items.sort((a, b) => {
+    const powerA = parseInt(a.dataset.power, 10) || 0;
+    const powerB = parseInt(b.dataset.power, 10) || 0;
+    if (mode === 'power') {
+      return (powerB - powerA) || ((RARITY_RANK[a.dataset.rarity] ?? 99) - (RARITY_RANK[b.dataset.rarity] ?? 99)) || a.dataset.name.localeCompare(b.dataset.name);
+    }
+    if (mode === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+    return ((RARITY_RANK[a.dataset.rarity] ?? 99) - (RARITY_RANK[b.dataset.rarity] ?? 99)) || (powerB - powerA) || a.dataset.name.localeCompare(b.dataset.name);
+  });
+  items.forEach(el => list.appendChild(el));
+}
+// Default rarity sort runs on every page load. Preserve selected inventory tab
+// through equip/sell reloads so Weapons stays Weapons, Armor stays Armor, etc.
+sortItems();
+filterItems(sessionStorage.getItem('inventoryFilter') || 'all');
+
+function sellItem(itemId) {
+  if (!confirm("Are you sure you want to sell this item?")) return;
+  fetch('/api/sell', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: itemId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) alert(data.message);
+    else alert(data.error);
+    location.reload();
+  });
+}
 function equipItem(itemId) {
+  fetch('/api/equip', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: itemId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) alert(data.message);
+    else alert(data.error);
+    location.reload();
+  });
+}
+
+function drinkItem(itemId) {
   fetch('/api/equip', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -117,5 +286,66 @@ function claimDaily() {
   });
 }
 </script>
+
+<script>
+function filterItems(category, clickedTab) {
+  sessionStorage.setItem('inventoryFilter', category);
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const activeTab = clickedTab || document.querySelector(`.tab[data-filter="${category}"]`);
+  if (activeTab) activeTab.classList.add('active');
+
+  document.querySelectorAll('.item').forEach(item => {
+    item.style.display = (category === 'all' || item.dataset.category === category) ? 'flex' : 'none';
+  });
+}
+
+function updateMailCount() {
+  fetch('/api/mail/count').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('mail-count');
+    if(el){el.textContent=d.unclaimed||0;el.style.background=d.unclaimed>0?'#ef4444':'#374151'}
+  }).catch(()=>{});
+}
+updateMailCount();
+setInterval(updateMailCount,30000);
+</script>
+
+
+<script>
+function filterItems(category, clickedTab) {
+  sessionStorage.setItem('inventoryFilter', category);
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const activeTab = clickedTab || document.querySelector(`.tab[data-filter="${category}"]`);
+  if (activeTab) activeTab.classList.add('active');
+
+  document.querySelectorAll('.item').forEach(item => {
+    item.style.display = (category === 'all' || item.dataset.category === category) ? 'flex' : 'none';
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all others first
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close dropdowns if clicking anywhere else
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
 </body>
+
 </html>

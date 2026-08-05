@@ -1,338 +1,441 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Adventure</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:1100px;margin:0 auto;padding:24px}
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:1200px;margin:0 auto;padding:16px;">
 
-/* Top bar: Level left, Player right */
-.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px}
-.level-box{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;flex:0 0 auto}
-.level-box .level-num{font-size:2.4em;font-weight:800;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-.level-box .level-label{font-size:0.75em;color:#888;text-transform:uppercase;letter-spacing:1px}
-.level-box .xp-bar{width:160px;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-top:4px}
-.level-bar-fill{height:100%;background:linear-gradient(90deg,#6c3ce0,#a855f7);border-radius:4px;transition:width 0.5s}
-.player-quick{display:flex;gap:16px;align-items:center;background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:16px 24px}
-.stat-pill{display:flex;align-items:center;gap:6px;font-size:0.95em}
-.stat-pill .icon{font-size:1.2em}
-.stat-pill .val{font-weight:700}
-
-/* Main 2-column layout */
-.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
-.panel{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:16px;padding:24px}
-.panel h2{font-size:1.3em;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #333}
-
-/* Location cards */
-.location-card{background:rgba(30,30,60,0.6);border:1px solid #444;border-radius:10px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.3s}
-.location-card:hover{border-color:#a855f7;transform:translateX(4px);background:rgba(40,40,80,0.6)}
-.location-card.locked{opacity:0.4;cursor:not-allowed}
-.location-card.locked:hover{border-color:#444;transform:none}
-.location-card.selected{border-color:#a855f7;background:rgba(108,60,224,0.15)}
-.location-card h3{font-size:1.1em;margin-bottom:4px}
-.location-card p{color:#888;font-size:0.85em}
-.location-card .req{color:#f97316;font-size:0.8em;margin-top:4px}
-
-/* Combat area */
-.combat-area{border:1px solid #6c3ce0;border-radius:16px;padding:32px}
-.combat-header{text-align:center;margin-bottom:24px}
-.combat-header h2{font-size:1.6em;margin-bottom:8px}
-.vs-display{display:flex;align-items:center;justify-content:center;gap:32px;margin:24px 0}
-.fighter{text-align:center}
-.fighter .emoji{font-size:4em;display:block;margin-bottom:8px}
-.fighter .name{font-size:1.2em;font-weight:600}
-.fighter .stats{color:#888;font-size:0.85em;margin-top:4px}
-.vs{font-size:2em;font-weight:700;color:#a855f7}
-.combat-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;max-height:200px;overflow-y:auto;margin:16px 0;font-size:0.9em;line-height:1.6}
-.combat-log .win{color:#22c55e}
-.combat-log .dmg{color:#f97316}
-.result{text-align:center;padding:24px}
-.result h2{font-size:2em;margin-bottom:12px}
-.result .rewards{font-size:1.2em;color:#a855f7}
-
-/* Buttons */
-.btn{padding:12px 28px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all 0.3s}
-.btn-primary{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(168,85,247,0.4)}
-.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-danger{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff}
-.btn-big{padding:18px 40px;font-size:1.2em;width:100%;margin-top:16px}
-
-/* Play again with cooldown */
-.play-again-wrap{text-align:center;margin-top:20px}
-.play-again-wrap .cooldown-text{color:#f97316;font-size:1.1em;margin-bottom:8px}
-.play-again-wrap .cooldown-num{font-size:2em;font-weight:800;color:#f97316}
-
-/* Cooldown overlay on locations */
-.cooldown-overlay{text-align:center;color:#f97316;font-size:1.1em;padding:40px 20px}
-
-/* Selected location header in combat panel */
-.selected-loc-name{font-size:1.4em;font-weight:700;color:#a855f7;margin-bottom:4px}
-.selected-loc-desc{color:#888;font-size:0.9em;margin-bottom:16px}
-
-/* Responsive */
-@media(max-width:768px){
-  .main-grid{grid-template-columns:1fr}
-  .top-bar{flex-direction:column}
-  .player-quick{flex-wrap:wrap}
-}
-</style>
-</head>
-<body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/adventure" class="active">Adventure</a>
-    <a href="/shop">Shop</a>
-    <a href="/inventory">Inventory</a>
-    <a href="/leaderboard">Leaderboard</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
-
-<div class="container">
-  <!-- Top bar: Level left, Player stats right -->
-  <div class="top-bar">
-    <div class="level-box">
-      <div>
-        <div class="level-label">Level</div>
-        <div class="level-num" id="levelNum">{{ player.level }}</div>
-      </div>
-      <div style="margin-left:8px">
-        <div style="font-size:0.8em;color:#888" id="xpText">{{ player.xp }} / {{ player.level * 50 }} XP</div>
-        <div class="xp-bar"><div class="level-bar-fill" id="xpBar" style="width:{{ (player.xp / (player.level * 50)) * 100 }}%"></div></div>
-      </div>
-    </div>
-    <div class="player-quick">
-      <div class="stat-pill"><span class="icon">❤️</span><span class="val" id="statHp">{{ player.health }}/{{ player.max_health }}</span></div>
-      <div class="stat-pill"><span class="icon">⚔️</span><span class="val" id="statAtk">{{ player.attack }}</span></div>
-      <div class="stat-pill"><span class="icon">🛡️</span><span class="val" id="statDef">{{ player.defense }}</span></div>
-      <div class="stat-pill"><span class="icon">🪙</span><span class="val" id="statCoins">{{ player.coins }}</span></div>
-    </div>
+  <!-- Header -->
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;margin-bottom:4px;">🗺️ ADVENTURE</h2>
+    <p style="color:#888;font-size:16px;letter-spacing:1px;">Choose your path — each dungeon has a boss at the end.</p>
   </div>
 
-  <!-- Main 2-column: Locations left, Combat right -->
-  <div class="main-grid">
-    <!-- LEFT: Location picker -->
-    <div class="panel">
-      <h2>🗺️ Locations</h2>
-      <div id="locationsList">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <!-- ── LEFT: Dungeon Map ── -->
+    <div class="pxl">
+      <h3 class="pixel" style="color:#ffd54a;margin-bottom:14px;text-align:center;">📜 DUNGEON MAP</h3>
+
+      <!-- Mini map nodes -->
+      <div style="position:relative;padding:10px 0;display:flex;flex-direction:column;gap:0;">
+
         {% for loc in locations %}
-        <div class="location-card {% if player.level < loc.min_level %}locked{% endif %}"
-             onclick="selectLocation('{{ loc.name }}', {{ loc.min_level }})"
-             id="loc-{{ loop.index }}">
-          <h3>{{ loc.name }} {% if player.level < loc.min_level %}🔒{% endif %}</h3>
-          <p>{{ loc.description }}</p>
-          <div class="req">Req Lvl {{ loc.min_level }} | Monsters: {{ loc.monsters|length }} | Boss: {{ loc.boss.name }}</div>
+        {% set can_enter = player.level >= loc.get('min_level', 1) %}
+        {% set phase = loop.index0 %}
+        <div style="display:flex;align-items:stretch;gap:0;position:relative;">
+
+          <!-- Node circle + connector line -->
+          <div style="display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;">
+            {% if not loop.first %}
+            <div style="width:3px;height:20px;background:{% if can_enter %}#ffd54a{% else %}#333{% endif %};"></div>
+            {% endif %}
+            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:{% if can_enter %}linear-gradient(180deg,#ffd54a,#c99a1a){% else %}#1a1a22{% endif %};border:2px solid {% if can_enter %}#000{% else %}#444{% endif %};box-shadow:{% if can_enter %}3px 3px 0 #000,0 0 12px rgba(255,213,74,0.4){% else %}inset 0 0 0 1px #000{% endif %};color:{% if can_enter %}#000{% else %}#666{% endif %};{% if can_enter %}animation:nodePulse 2s ease-in-out infinite{% endif %}">
+              {{ loc.get('icon', '🏰') }}
+            </div>
+            {% if not loop.last %}
+            <div style="width:3px;height:20px;background:{% if can_enter %}#ffd54a{% else %}#333{% endif %};"></div>
+            {% endif %}
+          </div>
+
+          <!-- Location card -->
+          <div style="flex:1;margin-left:12px;padding:10px 14px;background:linear-gradient(180deg,#1a1a22,#0d0d13);border:2px solid {% if can_enter %}#ffd54a{% else %}#333{% endif %};box-shadow:3px 3px 0 #000;margin-bottom:6px;opacity:{% if can_enter %}1{% else %}0.45{% endif %};{% if can_enter %}cursor:pointer;transition:transform 0.1s;{% endif %}" onmouseover="this.style.borderColor='#ffd54a'" onmouseout="this.style.borderColor='{% if can_enter %}#ffd54a{% else %}#333{% endif %}'" onclick="{% if can_enter %}startAdventure('{{ loc.name }}'){% else %}showToast('Requires level {{ loc.min_level }}','err'){% endif %}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:8px;">{{ loc.get('name', 'Unknown') }}</span>
+                <span style="color:#888;font-size:12px;margin-left:8px;">Lv.{{ loc.get('min_level', 1) }}+</span>
+              </div>
+              <div style="color:#666;font-size:11px;">🎯 {{ loc.get('monsters', [])|length }} waves</div>
+            </div>
+            <div style="color:#666;font-size:14px;margin-top:4px;">{{ loc.get('description', loc.get('desc', ''))[:60] }}{% if (loc.get('description', loc.get('desc', ''))|length) > 60 %}…{% endif %}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+              {% for m in loc.get('monsters', [])[:3] %}
+              <span style="background:#222;color:#aaa;padding:2px 6px;font-size:11px;border:1px solid #444;">{{ m }}</span>
+              {% endfor %}
+            </div>
+          </div>
         </div>
         {% endfor %}
       </div>
-      <div id="locCooldown" class="cooldown-overlay" style="display:none">
-        <div class="cooldown-num" id="locCooldownNum">3</div>
-        <div>Cooldown — wait before next battle!</div>
+
+      <!-- ── LOOT PANEL: last drop, flies to inventory ── -->
+      <div id="lootPanel" style="margin-top:10px;padding:10px 12px;background:#080808;border:2px solid #333;box-shadow:inset 0 0 0 1px #000;min-height:44px;">
+        <div style="color:#888;font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:6px;">🎒 LAST LOOT</div>
+        <div id="lootQueue" style="font-family:'VT323',monospace;font-size:16px;color:#aaa;min-height:20px;">— nothing yet —</div>
       </div>
     </div>
 
-    <!-- RIGHT: Combat area -->
-    <div class="panel combat-area" id="combatPanel">
-      <div id="combatPlaceholder" style="text-align:center;color:#666;padding:60px 20px">
-        <div style="font-size:3em;margin-bottom:16px">⚔️</div>
-        <p>Select a location on the left to begin your adventure!</p>
-      </div>
+    <!-- ── RIGHT: Combat Arena ── -->
+    <div class="pxl" id="combatPanel" style="position:sticky;top:90px;">
+      <h3 class="pixel" style="color:#ffd54a;margin-bottom:4px;text-align:center;">⚔️ COMBAT ARENA</h3>
+      <div id="zoneName" style="text-align:center;color:#888;font-size:13px;font-family:'VT323',monospace;margin-bottom:10px;"></div>
 
-      <div id="combatContent" style="display:none">
-        <div class="combat-header">
-          <div class="selected-loc-name" id="selectedLocName"></div>
-          <div class="selected-loc-desc" id="selectedLocDesc"></div>
-          <button class="btn btn-primary btn-big" id="fightBtn" onclick="startAdventure()">⚔️ FIGHT!</button>
-        </div>
+      <!-- Battle backdrop -->
+      <div id="battleScene" style="position:relative;width:100%;height:240px;background:linear-gradient(180deg,#0a0a12 0%,#1a0a0a 60%,#2a1a0a 100%);border:2px solid #ffd54a;box-shadow:inset 0 0 0 1px #000,inset 0 -10px 0 rgba(0,0,0,0.6),4px 4px 0 #000;overflow:hidden;">
+        <!-- Ground -->
+        <div style="position:absolute;bottom:0;left:0;right:0;height:14px;background:repeating-linear-gradient(90deg,#3a2a1a 0 6px,#2a1a0a 6px 12px);z-index:2;"></div>
+        <div style="position:absolute;bottom:14px;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,transparent 0 4px,#5a3a2a 4px 6px);z-index:2;"></div>
 
-        <div id="battleArea" style="display:none">
-          <div class="vs-display">
-            <div class="fighter">
-              <span class="emoji">🧙</span>
-              <div class="name" id="playerName">{{ username }}</div>
-              <div class="stats" id="playerStats">ATK: {{ player.attack }} | DEF: {{ player.defense }}</div>
-              <div class="stats" id="playerHpDisplay">HP: {{ player.health }}/{{ player.max_health }}</div>
-            </div>
-            <div class="vs">VS</div>
-            <div class="fighter">
-              <span class="emoji" id="enemyEmoji">👹</span>
-              <div class="name" id="enemyName">Enemy</div>
-              <div class="stats" id="enemyStats">ATK: ? | DEF: ?</div>
-              <div class="stats" id="enemyHpDisplay">HP: ?/?</div>
-            </div>
+        <!-- Player sprite -->
+        <svg class="arena-hero" viewBox="0 0 20 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="position:absolute;bottom:16px;left:25%;width:48px;height:auto;z-index:5;animation:heroAttack 1s steps(2) infinite;">
+          <rect x="6" y="0" width="8" height="6" fill="#888"/>
+          <rect x="6" y="0" width="8" height="3" fill="#555"/>
+          <rect x="8" y="1" width="2" height="2" fill="#ffd54a"/>
+          <rect x="11" y="1" width="2" height="2" fill="#ffd54a"/>
+          <rect x="8" y="3" width="4" height="1" fill="#ff4757"/>
+          <rect x="5" y="6" width="10" height="9" fill="#3a5cff"/>
+          <rect x="5" y="6" width="10" height="2" fill="#4a7cff"/>
+          <rect x="5" y="13" width="10" height="2" fill="#c99a1a"/>
+          <rect x="3" y="7" width="2" height="8" fill="#f4c290"/>
+          <rect x="15" y="7" width="2" height="8" fill="#f4c290"/>
+          <rect x="1" y="7" width="2" height="9" fill="#8b0000"/>
+          <rect x="1" y="9" width="2" height="2" fill="#ffd54a"/>
+          <rect x="16" y="5" width="2" height="2" fill="#e0e0e0"/>
+          <rect x="18" y="3" width="1" height="4" fill="#e0e0e0"/>
+          <rect x="6" y="15" width="4" height="8" fill="#4a2810"/>
+          <rect x="11" y="15" width="4" height="8" fill="#4a2810"/>
+        </svg>
+
+        <!-- Enemy sprite -->
+        <svg id="enemySprite" viewBox="0 0 16 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="position:absolute;bottom:16px;right:25%;width:44px;height:auto;z-index:5;animation:mobIdle 1.5s linear infinite;">
+          <rect x="4" y="0" width="8" height="6" fill="#4a7a4a"/>
+          <rect x="4" y="0" width="8" height="2" fill="#2a5a2a"/>
+          <rect x="5" y="2" width="2" height="2" fill="#ff4757"/>
+          <rect x="9" y="2" width="2" height="2" fill="#ff4757"/>
+          <rect x="3" y="6" width="10" height="8" fill="#3a5a3a"/>
+          <rect x="1" y="7" width="2" height="6" fill="#4a7a4a"/>
+          <rect x="13" y="7" width="2" height="6" fill="#4a7a4a"/>
+          <rect x="4" y="14" width="3" height="7" fill="#2a4a2a"/>
+          <rect x="9" y="14" width="3" height="7" fill="#2a4a2a"/>
+        </svg>
+
+        <!-- Slash FX -->
+        <svg id="slashFx" viewBox="0 0 30 14" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="position:absolute;bottom:40%;left:38%;width:60px;height:auto;z-index:10;opacity:0;">
+          <rect x="0" y="6" width="4" height="2" fill="#fff"/>
+          <rect x="4" y="5" width="3" height="1" fill="#ffd54a"/>
+          <rect x="7" y="4" width="3" height="1" fill="#fff"/>
+          <rect x="10" y="3" width="4" height="1" fill="#ffd54a"/>
+          <rect x="14" y="2" width="3" height="1" fill="#fff"/>
+          <rect x="17" y="3" width="4" height="1" fill="#ffd54a"/>
+          <rect x="21" y="4" width="3" height="1" fill="#fff"/>
+          <rect x="24" y="5" width="3" height="1" fill="#ffd54a"/>
+          <rect x="27" y="6" width="3" height="2" fill="#fff"/>
+        </svg>
+
+        <!-- HP bars -->
+        <div style="position:absolute;top:8px;left:10px;z-index:10;">
+          <div style="color:#888;font-size:9px;font-family:'Press Start 2P',monospace;margin-bottom:2px;">{{ username }} <span style="color:#ffd54a;">LV{{ player.level }}</span></div>
+          <div id="playerHpBar" style="width:100px;height:12px;background:#111;border:2px solid #000;box-shadow:inset 0 0 0 1px #333;">
+            <div id="playerHpFill" style="width:100%;height:100%;background:linear-gradient(180deg,#4ade80,#166534);box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4);transition:width 0.3s;"></div>
           </div>
-          <div class="combat-log" id="combatLog"></div>
-          <div id="resultArea"></div>
+          <div id="playerHpText" style="color:#888;font-size:10px;">❤️ {{ player.health }}/{{ player.max_health }}</div>
+          <div id="playerXpBar" style="width:100px;height:6px;background:#111;border:1px solid #333;margin-top:2px;">
+            <div id="playerXpFill" style="width:{{ (player.xp / xp_for_level(player.level) * 100) if player.level else 0 }}%;height:100%;background:#ffd54a;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.3);transition:width 0.3s;"></div>
+          </div>
+          <div id="playerXpText" style="color:#888;font-size:9px;">⭐ {{ player.xp }}/{{ xp_for_level(player.level) }}</div>
+        </div>
+        <div style="position:absolute;top:8px;right:10px;z-index:10;text-align:right;">
+          <div id="enemyNameLabel" style="color:#ffd54a;font-size:9px;font-family:'Press Start 2P',monospace;margin-bottom:2px;">???</div>
+          <div id="enemyHpBar" style="width:100px;height:12px;background:#111;border:2px solid #000;margin-left:auto;box-shadow:inset 0 0 0 1px #333;">
+            <div id="enemyHpFill" style="width:100%;height:100%;background:linear-gradient(180deg,#ff4757,#8b0000);box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4);transition:width 0.3s;"></div>
+          </div>
+          <div id="enemyHpText" style="color:#888;font-size:10px;">❤️ ??/??</div>
+        </div>
+
+        <!-- Damage numbers -->
+        <div id="dmgPlayer" style="position:absolute;bottom:55%;left:30%;z-index:15;font-family:'Press Start 2P',monospace;font-size:16px;color:#ff4757;opacity:0;text-shadow:0 0 10px #ff4757;transition:all 0.4s;"></div>
+        <div id="dmgEnemy" style="position:absolute;bottom:55%;right:30%;z-index:15;font-family:'Press Start 2P',monospace;font-size:16px;color:#ffd54a;opacity:0;text-shadow:0 0 10px #ffd54a;transition:all 0.4s;"></div>
+      </div>
+
+      <!-- Combat log -->
+      <div style="margin-top:10px;">
+        <div id="combatLog" style="background:#0a0a0a;border:2px solid #333;padding:10px;height:100px;overflow-y:auto;font-size:13px;color:#aaa;box-shadow:inset 0 0 0 1px #000;font-family:'VT323',monospace;"></div>
+      </div>
+
+      <!-- Action buttons -->
+      <div id="autoGrindBox" style="margin-top:10px;padding:12px;background:#080808;border:2px solid #ffd54a;box-shadow:3px 3px 0 #000;text-align:center;">
+        <div class="pixel" style="color:#ffd54a;font-size:9px;">🤖 AUTO BOSS GRIND</div>
+        <div style="color:#aaa;margin:7px 0;font-size:14px;">Auto-fights bosses for 1 hour. Adventure tab must stay open.</div>
+        <button id="buyAutoBtn" class="pxl-btn" onclick="buyAutoGrind()" style="background:#ffd54a;color:#000;">🪙 ACTIVATE — 5,000</button>
+        <div id="autoStatus" style="display:none;margin-top:8px;color:#4ade80;font-family:'Press Start 2P',monospace;font-size:7px;line-height:1.8;">
+          ACTIVE — <span id="autoTimer">60:00</span><br><span id="autoStats" style="color:#aaa;">0 bosses fought</span>
         </div>
       </div>
+      <div id="preFight" style="text-align:center;padding:12px;margin-top:8px;">
+        <div style="color:#888;font-size:14px;">Click a dungeon above to begin ⬆️</div>
+      </div>
+      <div id="postFight" style="display:none;margin-top:10px;gap:8px;text-align:center;">
+        <button class="pxl-btn" onclick="closeCombat()" style="margin-right:8px;">Close</button>
+        <button class="pxl-btn" id="reExploreBtn" onclick="exploreAgain()" style="background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;">⚔️ Fight Again</button>
+        <div id="cooldownDisplay" style="display:none;color:#ffd54a;font-size:16px;margin-top:6px;font-family:'Press Start 2P',monospace;">Cooldown <span id="cdSec">3</span></div>
+      </div>
     </div>
+
   </div>
 </div>
 
+<style>
+@keyframes heroAttack{50%{transform:translateX(6px)}}
+@keyframes mobIdle{50%{transform:translateX(-2px)}}
+@keyframes nodePulse{0%,100%{box-shadow:3px 3px 0 #000,0 0 12px rgba(255,213,74,0.4)}50%{box-shadow:3px 3px 0 #000,0 0 24px rgba(255,213,74,0.7)}}
+@keyframes lootIn{0%{transform:translateX(-18px);opacity:0}100%{transform:translateX(0);opacity:1}}
+@keyframes lootFly{0%{transform:translate(0,0) scale(1);opacity:1}70%{transform:translate(60px,-140px) scale(0.6);opacity:0.9}100%{transform:translate(110px,-260px) scale(0.3);opacity:0}}
+@media(max-width:768px){.arena-hero{width:32px}#enemySprite{width:32px}}
+</style>
+
 <script>
-const locations = {{ locations|tojson }};
-let PLAYER_LEVEL = {{ player.level }};
-let selectedLoc = null;
 let inCombat = false;
-let cooldownTimer = null;
+let currentLoc = "";
+let autoUntil = {{ adventure_auto_until|default(0, true)|tojson }} * 1000;
+let autoBosses = 0;
+let autoLoop = null;
+let autoClock = null;
 
-function selectLocation(locName, minLevel) {
-  if (inCombat) return;
-  if (PLAYER_LEVEL < minLevel) return;
+function autoActive() { return autoUntil > Date.now(); }
 
-  // Deselect all
-  document.querySelectorAll('.location-card').forEach(c => c.classList.remove('selected'));
-
-  // Select this one
-  const loc = locations.find(l => l.name === locName);
-  if (!loc) return;
-  selectedLoc = loc;
-
-  const card = document.getElementById('loc-' + (locations.indexOf(loc) + 1));
-  if (card) card.classList.add('selected');
-
-  // Show combat panel with selected loc info
-  document.getElementById('combatPlaceholder').style.display = 'none';
-  document.getElementById('combatContent').style.display = 'block';
-  document.getElementById('selectedLocName').textContent = loc.name;
-  document.getElementById('selectedLocDesc').textContent = loc.description;
-  document.getElementById('fightBtn').style.display = 'block';
-  document.getElementById('fightBtn').disabled = false;
-  document.getElementById('fightBtn').textContent = '⚔️ FIGHT!';
-  document.getElementById('battleArea').style.display = 'none';
+function renderAutoStatus() {
+  var active = autoActive();
+  document.getElementById('buyAutoBtn').style.display = active ? 'none' : 'inline-block';
+  document.getElementById('autoStatus').style.display = active ? 'block' : 'none';
+  if (!active) return;
+  var seconds = Math.max(0, Math.ceil((autoUntil - Date.now()) / 1000));
+  var minutes = Math.floor(seconds / 60);
+  document.getElementById('autoTimer').textContent = String(minutes).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
+  document.getElementById('autoStats').textContent = autoBosses + ' bosses fought';
 }
 
-function startAdventure() {
-  if (inCombat || !selectedLoc) return;
-  inCombat = true;
-
-  const fightBtn = document.getElementById('fightBtn');
-  fightBtn.disabled = true;
-  fightBtn.textContent = '⏳ Fighting...';
-
-  document.getElementById('battleArea').style.display = 'block';
-  document.getElementById('combatLog').innerHTML = '';
-  document.getElementById('resultArea').innerHTML = '';
-
-  fetch('/api/adventure', {method:'POST', headers:{'Content-Type':'application/json'}})
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById('combatLog').innerHTML = `<div style="color:#f97316;text-align:center;padding:20px">⏳ ${data.error}</div>`;
-
-        // Show cooldown then let them fight again
-        showPostCombatCooldown();
-        return;
-      }
-
-      document.getElementById('enemyEmoji').textContent = data.enemy.name.split(' ')[0];
-      document.getElementById('enemyName').textContent = data.enemy.name;
-      document.getElementById('enemyStats').textContent = `ATK: ${data.enemy.atk} | DEF: ${data.enemy.def}`;
-      document.getElementById('enemyHpDisplay').textContent = `HP: ${data.enemy.hp}/${data.enemy.hp}`;
-
-      // Update all player stats from server response
-      updatePlayerStats(data.player);
-      PLAYER_LEVEL = data.player.level;
-
-      let log = '';
-      data.combat_log.forEach((line, i) => {
-        setTimeout(() => {
-          const div = document.createElement('div');
-          div.textContent = line;
-          if (line.includes('You deal')) div.className = 'win';
-          else div.className = 'dmg';
-          document.getElementById('combatLog').appendChild(div);
-          document.getElementById('combatLog').scrollTop = 99999;
-        }, i * 600);
-      });
-
-      setTimeout(() => {
-        const resultDiv = document.getElementById('resultArea');
-        if (data.won) {
-          let html = `<div class="result"><h2 style="color:#22c55e">🎉 Victory!</h2>`;
-          html += `<p>You defeated ${data.enemy.name} in ${data.rounds} rounds!</p>`;
-          html += `<p class="rewards">⭐ +${data.xp_gain} XP | 🪙 +${data.coin_gain} Coins</p>`;
-          if (data.leveled_up) html += `<p style="color:#fbbf24;font-size:1.2em;margin-top:8px">🎉 LEVEL UP! You are now Level ${data.player.level}!</p>`;
-          html += `<p style="margin-top:12px;color:#888">Monsters: ${data.player.monsters_killed} | Bosses: ${data.player.bosses_killed}</p>`;
-          resultDiv.innerHTML = html;
-        } else {
-          let html = `<div class="result"><h2 style="color:#ef4444">💀 Defeated!</h2>`;
-          html += `<p>You were slain by ${data.enemy.name}...</p>`;
-          html += `<p class="rewards">🪙 Lost 20 coins | ❤️ Respawned with half HP</p>`;
-          resultDiv.innerHTML = html;
-        }
-
-        // Show play again with live cooldown
-        showPostCombatCooldown();
-      }, data.combat_log.length * 600 + 500);
-    })
-    .catch(err => {
-      document.getElementById('combatLog').innerHTML = `<div style="color:#ef4444;text-align:center;padding:20px">Error: ${err.message}</div>`;
-      showPostCombatCooldown();
-    });
+function buyAutoGrind() {
+  if (!confirm('Spend 5,000 coins for 1 hour of Auto Boss Grind? This only runs while this Adventure tab stays open.')) return;
+  var btn = document.getElementById('buyAutoBtn');
+  btn.disabled = true;
+  fetch('/api/adventure/auto', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    btn.disabled = false;
+    if (data.error) { showToast(data.error, 'err'); return; }
+    autoUntil = data.active_until * 1000;
+    autoBosses = 0;
+    showToast(data.message, 'ok');
+    beginAutoGrind();
+  }).catch(function(){ btn.disabled=false; showToast('Network error', 'err'); });
 }
 
-function showPostCombatCooldown() {
-  const fightBtn = document.getElementById('fightBtn');
-  fightBtn.style.display = 'block';
-  fightBtn.disabled = true;
-
-  let secs = 3;
-  fightBtn.textContent = `⏳ ${secs}s`;
-
-  cooldownTimer = setInterval(() => {
-    secs--;
-    if (secs <= 0) {
-      clearInterval(cooldownTimer);
-      fightBtn.textContent = '⚔️ Play Again!';
-      fightBtn.disabled = false;
-      inCombat = false;
-    } else {
-      fightBtn.textContent = `⏳ ${secs}s`;
-    }
+function beginAutoGrind() {
+  clearInterval(autoClock);
+  clearTimeout(autoLoop);
+  renderAutoStatus();
+  autoClock = setInterval(function(){
+    renderAutoStatus();
+    if (!autoActive()) stopAutoGrind('Auto Boss Grind finished.');
   }, 1000);
+  queueAutoFight(100);
 }
 
-function updatePlayerStats(p) {
-  // Update top bar
-  document.getElementById('levelNum').textContent = p.level;
-  document.getElementById('xpText').textContent = `${p.xp} / ${p.level * 50} XP`;
-  document.getElementById('xpBar').style.width = `${(p.xp / (p.level * 50)) * 100}%`;
-  document.getElementById('statHp').textContent = `${p.health}/${p.max_health}`;
-  document.getElementById('statAtk').textContent = p.attack;
-  document.getElementById('statDef').textContent = p.defense;
-  document.getElementById('statCoins').textContent = p.coins;
+function queueAutoFight(delay) {
+  clearTimeout(autoLoop);
+  if (!autoActive()) { stopAutoGrind('Auto Boss Grind finished.'); return; }
+  autoLoop = setTimeout(function(){
+    if (inCombat) { queueAutoFight(500); return; }
+    startAdventure('AUTO BOSS', true);
+  }, delay);
+}
 
-  // Update battle area player stats
-  document.getElementById('playerStats').textContent = `ATK: ${p.attack} | DEF: ${p.defense}`;
-  document.getElementById('playerHpDisplay').textContent = `HP: ${p.health}/${p.max_health}`;
+function stopAutoGrind(message) {
+  clearTimeout(autoLoop);
+  clearInterval(autoClock);
+  autoLoop = null;
+  autoClock = null;
+  if (!autoActive()) autoUntil = 0;
+  renderAutoStatus();
+  if (message) showToast(message, 'ok');
+}
 
-  // Update locked/unlocked locations
-  document.querySelectorAll('.location-card').forEach((card, i) => {
-    if (i < locations.length) {
-      const loc = locations[i];
-      if (p.level < loc.min_level) {
-        card.classList.add('locked');
-        card.querySelector('h3').textContent = loc.name + ' 🔒';
-      } else {
-        card.classList.remove('locked');
-        card.querySelector('h3').textContent = loc.name;
+function exploreAgain() { if(currentLoc) startAdventure(currentLoc, false); }
+
+function startAdventure(locName, isAuto) {
+  if(inCombat) return;
+  inCombat = true;
+  currentLoc = locName;
+  document.getElementById('zoneName').textContent = '📍 ' + locName;
+  document.getElementById('preFight').style.display = 'none';
+  document.getElementById('postFight').style.display = 'none';
+  document.getElementById('combatLog').innerHTML = '<div style="color:#ffd54a;">⚔️ Entering ' + locName + '...</div>';
+  document.getElementById('enemyNameLabel').textContent = '???';
+  document.getElementById('enemyHpText').textContent = '❤️ ??/??';
+  document.getElementById('enemyHpFill').style.width = '100%';
+
+  fetch('/api/adventure', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({auto:isAuto === true})})
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.error) {
+      document.getElementById('combatLog').innerHTML = '<div style="color:#ff4757;">' + data.error + '</div>';
+      inCombat = false;
+      document.getElementById('preFight').style.display = 'block';
+      if (isAuto) {
+        if (data.auto_expired) { autoUntil = 0; stopAutoGrind('Auto Boss Grind expired.'); }
+        else { queueAutoFight(3200); }
       }
+      return;
     }
+    var e = data.enemy;
+    document.getElementById('enemyNameLabel').textContent = e.name;
+    document.getElementById('enemyHpText').textContent = '❤️ ' + e.hp + '/' + e.hp;
+
+    // Set enemy sprite based on type
+    var sprites = [document.getElementById('enemySprite')];
+    sprites.forEach(function(s){ s.style.display='block'; });
+    if(e.name.includes('Goblin')||e.name.includes('Slime')) { /* default green */ }
+    else if(e.name.includes('Skeleton')) { setEnemyPalette('#ccc','#888'); }
+    else if(e.name.includes('Dragon')||e.name.includes('Boss')) { setEnemyPalette('#ff4757','#8b0000'); }
+    else if(e.name.includes('Zombie')) { /* default green stays */ }
+
+    var log = data.combat_log || [];
+    document.getElementById('combatLog').innerHTML = log.map(function(l){
+      return '<div>' + l.replace(/\*\*(.*?)\*\*/g, '<span style="color:#ffd54a;font-weight:bold">$1</span>') + '</div>';
+    }).join('');
+
+    // Animate!
+    animateCombat();
+
+    // Update player HP
+    document.getElementById('playerHpFill').style.width = (data.player.health / data.player.max_health * 100) + '%';
+    document.getElementById('playerHpText').textContent = '❤️ ' + data.player.health + '/' + data.player.max_health;
+
+    // Update player XP bar
+    var xpTotal = data.xp_total || data.player.xp || 0;
+    var xpNext = data.xp_next;
+    var xpPct = Math.min(100, xpTotal / xpNext * 100);
+    document.getElementById('playerXpFill').style.width = xpPct + '%';
+    document.getElementById('playerXpText').textContent = '⭐ ' + xpTotal + '/' + xpNext;
+
+    if(data.leveled_up) {
+      showToast('⬆️ LEVEL UP! You are now Level ' + data.player.level + '!', 'ok');
+      var lvLabel = document.querySelector('#playerHpBar').previousElementSibling;
+      if(lvLabel) lvLabel.innerHTML = '{{ username }} <span style="color:#ffd54a;">LV' + data.player.level + '</span>';
+      document.getElementById('playerXpText').textContent = '⭐ ' + xpTotal + '/' + data.xp_next;
+    }
+    if (isAuto && e.is_boss) {
+      autoBosses++;
+      renderAutoStatus();
+    }
+
+    // ── Loot drop: show in panel, then fly to inventory ──
+    if (data.loot) {
+      var q = document.getElementById('lootQueue');
+      var row = document.createElement('div');
+      row.style.cssText = 'color:#ffd54a;animation:lootIn 0.5s steps(3);';
+      row.textContent = '✨ ' + data.loot.replace(/\*\*(.*?)\*\*/g, '$1');
+      q.prepend(row);
+      while (q.children.length > 4) q.removeChild(q.lastChild);
+      var fly = document.createElement('div');
+      fly.textContent = '🎒';
+      fly.style.cssText = 'position:fixed;left:45%;bottom:45%;font-size:30px;z-index:9999;pointer-events:none;animation:lootFly 1.1s ease-in forwards;';
+      document.body.appendChild(fly);
+      setTimeout(function(){ fly.remove(); }, 1200);
+      setTimeout(function(){ row.style.color = '#888'; }, 2200);
+    }
+
+    // Cooldown
+    document.getElementById('postFight').style.display = 'block';
+    var cBtn = document.getElementById('reExploreBtn');
+    cBtn.disabled = true;
+    cBtn.style.opacity = '0.5';
+    document.getElementById('cooldownDisplay').style.display = 'block';
+    var cd = 3;
+    document.getElementById('cdSec').textContent = cd;
+    var iv = setInterval(function(){
+      cd--;
+      document.getElementById('cdSec').textContent = cd;
+      if(cd <= 0) {
+        clearInterval(iv);
+        document.getElementById('cooldownDisplay').style.display = 'none';
+        cBtn.disabled = false;
+        cBtn.style.opacity = '1';
+        inCombat = false;
+        if (isAuto) queueAutoFight(100);
+      }
+    }, 1000);
+  })
+  .catch(function(err){
+    document.getElementById('combatLog').innerHTML = '<div style="color:#ff4757;">Error: ' + err + '</div>';
+    inCombat = false;
+    document.getElementById('preFight').style.display = 'block';
+    if (isAuto) queueAutoFight(3200);
   });
 }
+
+function animateCombat() {
+  // Flash slash
+  var slash = document.getElementById('slashFx');
+  slash.style.opacity = '1';
+  slash.style.animation = 'none';
+  slash.offsetHeight;
+  slash.style.animation = 'slashFlash .6s ease-out forwards';
+  setTimeout(function(){ slash.style.opacity = '0'; }, 600);
+
+  // Shake enemy
+  var es = document.getElementById('enemySprite');
+  es.style.animation = 'none';
+  es.offsetHeight;
+  es.style.animation = 'hitShake .3s ease-out';
+  setTimeout(function(){ es.style.animation = 'mobIdle 1.5s linear infinite'; }, 300);
+
+  // Damage numbers
+  var de = document.getElementById('dmgEnemy');
+  de.style.opacity = '1';
+  de.textContent = '-⚔️';
+  setTimeout(function(){ de.style.opacity = '0'; }, 800);
+}
+
+function setEnemyPalette(body, head) {
+  var svg = document.getElementById('enemySprite');
+  var rects = svg.querySelectorAll('rect');
+  rects.forEach(function(r){
+    var f = r.getAttribute('fill');
+    if(f === '#4a7a4a' || f === '#2a5a2a' || f === '#3a5a3a' || f === '#2a4a2a') r.setAttribute('fill', body);
+    if(f === '#ff4757' && r.x && parseInt(r.x) < 8) r.setAttribute('fill', '#ff6600');
+  });
+}
+
+function closeCombat() {
+  document.getElementById('postFight').style.display = 'none';
+  document.getElementById('preFight').style.display = 'block';
+  document.getElementById('combatLog').innerHTML = '';
+  document.getElementById('zoneName').textContent = '';
+}
+
+function showToast(msg, type) {
+  var x = document.createElement('div');
+  x.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid ' + (type==='err'?'#ff4757':'#4ade80') + ';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  x.textContent = msg;
+  document.body.appendChild(x);
+  setTimeout(function(){ x.remove(); }, 2500);
+}
+
+// Hero idle animation
+var heroEl = document.querySelector('.arena-hero');
+if(heroEl) {
+  heroEl.style.animation = 'heroAttack 1s steps(2) infinite';
+}
+renderAutoStatus();
+if (autoActive()) beginAutoGrind();
 </script>
-</body>
-</html>
+{% if true %}
+<div id="healWidget" style="position:fixed;right:12px;bottom:12px;z-index:999;display:flex;gap:8px;align-items:center;{% if player.health >= player.max_health %}opacity:0.65;{% endif %}">
+  <span style="color:#888;font-family:'VT323',monospace;font-size:14px;">❤️ {{ player.health }}/{{ player.max_health }}</span>
+  <button class="pxl-btn" onclick="doHeal('full')" style="padding:7px 12px;font-size:8px;background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;" title="Spend coins to fully heal">⚡ FULL HEAL (COINS)</button>
+  <button class="pxl-btn" onclick="doHeal('coins')" style="padding:7px 12px;font-size:8px;" title="10 coins for +30 HP">🪙 HEAL (10)</button>
+</div>
+{% endif %}
+<script>
+function doHeal(mode){
+  fetch('/api/heal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){ healToast(d.message,false); setTimeout(function(){location.reload()},700); }
+    else { healToast(d.error||'Failed',true); }
+  }).catch(function(){healToast('Network error',true);});
+}
+function healToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:60px;right:12px;z-index:9999;padding:9px 18px;font-family:VT323,monospace;font-size:17px;border:2px solid '+(t?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2600);
+}
+</script>

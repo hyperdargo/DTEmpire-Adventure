@@ -1,0 +1,98 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:980px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:16px;">
+    <h2 class="pixel" style="color:#ffd54a;">📜 MISSIONS — 150 DAYS</h2>
+    <p style="color:#888;font-size:14px;font-family:'VT323',monospace;">A personal 150-day mission calendar. 3 missions per day — random for every player. Complete them on time, claim the rewards.</p>
+  </div>
+
+  <!-- Day strip -->
+  <div class="pxl" style="margin-bottom:16px;">
+    <div style="display:flex;gap:6px;overflow-x:auto;padding:6px 2px;" id="dayStrip">
+      {% for d in days %}
+      <button class="day-btn {{ 'today' if d.today }}{{ ' locked' if d.day > today }}"
+              style="min-width:46px;height:44px;border:2px solid #333;background:#0d0d0d;color:#e8e8e8;font-family:'VT323',monospace;font-size:16px;cursor:pointer;flex-shrink:0;
+              {{ 'border-color:#ffd54a;color:#ffd54a;box-shadow:0 0 8px rgba(255,213,74,.4);' if d.today }}
+              {{ 'opacity:.45;cursor:not-allowed;' if d.day > today }}"
+              data-day="{{ d.day }}" onclick="selectDay({{ d.day }})">
+        D{{ d.day + 1 }}
+        {% if d.claimed > 0 %}<div style="font-size:9px;color:#4ade80;">✓{{ d.claimed }}</div>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+    <div style="color:#666;font-size:12px;font-family:'VT323',monospace;margin-top:6px;">
+      🟡 = today &nbsp;•&nbsp; 🔒 = locked (future) &nbsp;•&nbsp; ✓N = claimed missions
+    </div>
+  </div>
+
+  <!-- Detail card -->
+  <div class="pxl" id="detailCard" style="min-height:180px;">
+    <div style="color:#888;font-family:'VT323',monospace;font-size:15px;">Select a day…</div>
+  </div>
+</div>
+
+<script>
+var DAYS = {{ days | tojson }};
+var PROGRESS = {{ player.mission_progress | default({}) | tojson }};
+var CLAIMED = {{ player.missions_claimed | default([]) | tojson }};
+var TODAY = {{ today }};
+var ICONS = {adventure:'🗺️',kill:'⚔️',boss:'👹',duel:'🥊',daily:'🎁',coins:'🪙',tower:'🏯',shop:'🛒',hatch:'🐣',sell:'💰',guildtask:'🏰',heal:'🧪',craft:'🔨'};
+
+function selectDay(d){
+  var day = DAYS[d];
+  if(!day) return;
+  var el = document.getElementById('detailCard');
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'+
+    '<h3 class="pixel" style="color:#ffd54a;font-size:10px;margin:0;">📅 DAY '+(d+1)+(day.today?' <span style="color:#4ade80;">— TODAY</span>':'')+'</h3>'+
+    (d > TODAY ? '<span style="color:#888;font-size:13px;font-family:VT323,monospace;">🔒 LOCKED</span>'
+               : '<span style="color:#888;font-size:13px;font-family:VT323,monospace;">'+day.claimed+'/3 claimed</span>')+
+    '</div><div style="display:grid;gap:10px;">';
+  day.missions.forEach(function(m){
+    var key = 'd'+d+'_'+m.type;
+    var prog = PROGRESS[key] || 0;
+    var isClaimed = CLAIMED.indexOf(key) !== -1;
+    var pct = Math.min(100, Math.round(prog/m.goal*100));
+    var canClaim = !isClaimed && d <= TODAY && prog >= m.goal;
+    html += '<div style="border:2px solid #333;padding:12px;background:#0d0d0d;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<span style="font-family:VT323,monospace;font-size:19px;color:#e8e8e8;">'+(ICONS[m.type]||'📌')+' '+m.name+'</span>'+
+        '<span style="color:#888;font-size:13px;font-family:VT323,monospace;">🪙 '+m.coins+' &nbsp; ⭐ '+m.xp+'</span>'+
+      '</div>'+
+      '<div style="color:#888;font-size:13px;font-family:VT323,monospace;margin:4px 0 8px;">'+m.desc+'</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="flex:1;height:16px;border:2px solid #333;background:#0a0a0a;position:relative;">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+(pct>=100?'#4ade80':'#ffd54a')+';"></div>'+
+        '</div>'+
+        '<span style="color:#aaa;font-family:VT323,monospace;font-size:14px;min-width:52px;text-align:right;">'+prog+'/'+m.goal+'</span>'+
+        (isClaimed
+          ? '<span style="color:#4ade80;font-family:VT323,monospace;font-size:15px;">✓ CLAIMED</span>'
+          : d > TODAY
+            ? '<span style="color:#666;font-family:VT323,monospace;font-size:15px;">🔒</span>'
+            : canClaim
+              ? '<button class="pxl-btn" onclick="claimMission('+d+',\''+m.type+'\')" style="padding:5px 14px;font-size:8px;">CLAIM</button>'
+              : '<span style="color:#666;font-family:VT323,monospace;font-size:15px;">'+prog+'/'+m.goal+'</span>')+
+      '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+function claimMission(d, type){
+  fetch('/api/mission/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({day:d,type:type})})
+  .then(r=>r.json()).then(res=>{
+    if(res.success){
+      CLAIMED.push('d'+d+'_'+type);
+      PROGRESS['d'+d+'_'+type] = PROGRESS['d'+d+'_'+type]||0;
+      selectDay(d);
+      showToast(res.message,'ok');
+    } else showToast(res.error||'Failed','err');
+  });
+}
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+// auto-select today
+selectDay(TODAY);
+</script>

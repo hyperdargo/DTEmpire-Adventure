@@ -1,0 +1,24 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:600px;margin:80px auto;padding:16px;text-align:center;">
+  <div class="pxl" style="padding:40px;">
+    <div style="font-size:4em;margin-bottom:16px;">🔒</div>
+    <h2 class="pixel" style="color:#ff4757;font-size:11px;margin-bottom:12px;">CONTENT LOCKED</h2>
+    <p style="font-family:'VT323',monospace;font-size:20px;color:#aaa;margin-bottom:8px;">
+      <span style="color:#ffd54a;">{{ page | upper }}</span> unlocks at Level <span style="color:#ffd54a;">{{ required }}</span>
+    </p>
+    <p style="font-family:'VT323',monospace;font-size:17px;color:#888;">You are Level {{ player.level|default(1) }}</p>
+    {% set xp_needed = xp_for_level(player.level|default(1)) %}
+    {% set pct = [100, (player.xp|default(0) * 100 // (xp_needed if xp_needed > 0 else 1))]|min %}
+    <div style="background:#111;border:1px solid #333;height:10px;margin:16px 0;">
+      <div style="background:#ffd54a;height:100%;width:{{ pct }}%;"></div>
+    </div>
+    <p style="font-family:'VT323',monospace;font-size:15px;color:#555;">{{ player.xp|default(0) }} / {{ xp_needed }} XP to next level</p>
+    <p style="font-family:'VT323',monospace;font-size:14px;color:#444;margin-top:8px;">Keep fighting to level up and unlock new content!</p>
+    <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="/adventure" class="pxl-btn" style="padding:10px 22px;font-size:9px;text-decoration:none;">⚔️ GO FIGHT</a>
+      <a href="/dungeon" class="pxl-btn" style="padding:10px 22px;font-size:9px;text-decoration:none;background:#111;">🏚️ DUNGEON</a>
+      <a href="/tower" class="pxl-btn" style="padding:10px 22px;font-size:9px;text-decoration:none;background:#111;">🗼 TOWER</a>
+    </div>
+  </div>
+</div>

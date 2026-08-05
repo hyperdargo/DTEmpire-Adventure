@@ -1,0 +1,360 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:1200px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;margin-bottom:4px;">🏰 THE TOWER OF ETERNITY</h2>
+    <p style="color:#888;font-size:16px;letter-spacing:1px;">One day, without warning, a colossal tower pierced the sky. Monsters poured forth. Humanity's last hope — <strong style="color:#ffd54a;">you</strong>.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <!-- ── LEFT: Tower Visual ── -->
+    <div class="pxl">
+      <h3 class="pixel" style="color:#ffd54a;margin-bottom:14px;text-align:center;">
+        TOWER ASCENT — Floor <span id="floorDisplay">{{ player.tower_floor|default(1) }}</span>
+      </h3>
+
+      <!-- Tower fortress visual -->
+      <div class="tower-scene">
+        <div class="tower-stars"></div>
+        <div class="tower-moon"></div>
+        <div class="tower-cloud cloud-a"></div>
+        <div class="tower-cloud cloud-b"></div>
+
+        <div id="towerVis" class="tower-fortress">
+          <div class="tower-spire"></div>
+          <div class="tower-battlements">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="tower-turret turret-left"><span></span></div>
+          <div class="tower-turret turret-right"><span></span></div>
+
+          <div class="tower-facade">
+            <div class="tower-banner">ETERNITY</div>
+            <div class="tower-floors">
+              {% set cur_floor = player.tower_floor|default(1, true) %}
+              {% set cur_decade = ((cur_floor - 1) // 10) %}
+              {% set section_start = cur_decade * 10 + 1 %}
+              {% set section_end = [section_start + 9, 100]|min %}
+              {% for floor_no in range(section_end, section_start - 1, -1) %}
+              {% set is_current = floor_no == cur_floor %}
+              <div class="tower-floor sec-{{ cur_decade }}{% if is_current %} current-floor{% endif %}">
+                <span class="floor-range">{{ floor_no }}</span>
+                <span class="tower-window"></span>
+                {% if is_current %}<span class="current-marker">▶ CURRENT FLOOR</span>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            <div class="tower-gate"><span></span></div>
+          </div>
+        </div>
+
+        <div class="tower-ground"></div>
+        <div class="tower-hero" aria-label="Your hero">⚔️</div>
+        <div id="bossIndicator" class="tower-threat">
+          <div id="bossEmoji">👹</div>
+          <div id="bossName">FLOOR BOSS</div>
+        </div>
+        <div id="bossClearFx" class="boss-clear-fx" aria-live="polite">
+          <div class="boss-clear-burst">✦</div>
+          <strong>BOSS DEFEATED</strong>
+          <span id="bossClearName"></span>
+        </div>
+        <div class="tower-floor-plaque">FLOOR {{ player.tower_floor|default(1, true) }} / 100</div>
+      </div>
+
+      <!-- Story text -->
+      <div id="storyText" class="pxl" style="font-size:15px;color:#ccc;text-align:center;margin-top:14px;">
+        <span id="storyLine">The tower looms before you. Every floor brings a new trial.</span>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Combat + Controls ── -->
+    <div class="pxl" style="position:sticky;top:90px;">
+      <h3 class="pixel" style="color:#ffd54a;margin-bottom:14px;text-align:center;">⚔️ FLOOR <span id="rightFloor">{{ player.tower_floor|default(1) }}</span></h3>
+
+      <!-- Info cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div class="pxl" style="text-align:center;padding:8px;">
+          <div style="font-size:10px;color:#888;font-family:'Press Start 2P',monospace;">YOUR LV</div>
+          <div id="yourLvDisplay" style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:14px;margin-top:4px;">{{ player.level|default(1) }}</div>
+        </div>
+        <div class="pxl" style="text-align:center;padding:8px;">
+          <div style="font-size:10px;color:#888;font-family:'Press Start 2P',monospace;">FLOOR</div>
+          <div style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:14px;margin-top:4px;">{{ player.tower_floor|default(1) }}</div>
+        </div>
+        <div class="pxl" style="text-align:center;padding:8px;">
+          <div style="font-size:10px;color:#888;font-family:'Press Start 2P',monospace;">WIN %</div>
+          <div id="winPercentDisplay" style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:14px;margin-top:4px;">???</div>
+        </div>
+      </div>
+
+      <!-- "Level gate" message -->
+      <div id="levelGateMsg" style="display:none;" class="pxl">
+        <div style="text-align:center;padding:12px;">
+          <div style="font-size:2em;">🏰</div>
+          <div style="color:#888;font-size:16px;margin-top:8px;">The tower has <strong style="color:#ffd54a;">100 floors</strong> — a boss every 5th. Floor {{ player.tower_floor|default(1) }} needs <strong style="color:#ffd54a;">Level {{ [player.tower_floor|default(1) * 2, 100]|min }}</strong>. Keep grinding!</div>
+        </div>
+      </div>
+
+      <!-- Battle scene -->
+      <div style="position:relative;width:100%;height:180px;background:linear-gradient(180deg,#0a0a12 0%,#1a0a0a 60%,#2a1a0a 100%);border:2px solid #ffd54a;box-shadow:inset 0 0 0 1px #000,inset 0 -10px 0 rgba(0,0,0,0.6),3px 3px 0 #000;overflow:hidden;">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,#3a2a1a 0 6px,#2a1a0a 6px 12px);z-index:2;"></div>
+        <!-- Hero -->
+        <svg viewBox="0 0 20 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="position:absolute;bottom:14px;left:20%;width:40px;height:auto;z-index:5;" id="towerHero">
+          <rect x="6" y="0" width="8" height="6" fill="#888"/>
+          <rect x="6" y="0" width="8" height="3" fill="#555"/>
+          <rect x="8" y="1" width="2" height="2" fill="#ffd54a"/>
+          <rect x="11" y="1" width="2" height="2" fill="#ffd54a"/>
+          <rect x="5" y="6" width="10" height="9" fill="#3a5cff"/>
+          <rect x="5" y="13" width="10" height="2" fill="#c99a1a"/>
+          <rect x="1" y="7" width="2" height="9" fill="#8b0000"/>
+          <rect x="16" y="4" width="2" height="3" fill="#e0e0e0"/>
+          <rect x="6" y="15" width="4" height="8" fill="#4a2810"/>
+          <rect x="11" y="15" width="4" height="8" fill="#4a2810"/>
+        </svg>
+        <!-- Monster -->
+        <svg id="towerMonster" viewBox="0 0 16 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="position:absolute;bottom:14px;right:20%;width:36px;height:auto;z-index:5;">
+          <rect x="4" y="0" width="8" height="6" fill="#8b0000"/>
+          <rect x="5" y="2" width="2" height="2" fill="#ffd54a"/>
+          <rect x="9" y="2" width="2" height="2" fill="#ffd54a"/>
+          <rect x="3" y="6" width="10" height="8" fill="#4a0000"/>
+          <rect x="1" y="7" width="2" height="6" fill="#8b0000"/>
+          <rect x="13" y="7" width="2" height="6" fill="#8b0000"/>
+          <rect x="4" y="14" width="3" height="7" fill="#3a0000"/>
+          <rect x="9" y="14" width="3" height="7" fill="#3a0000"/>
+        </svg>
+        <div style="position:absolute;top:6px;left:6px;z-index:10;">
+          <div style="width:80px;height:10px;background:#111;border:2px solid #000;">
+            <div id="towerPlayerHp" style="width:100%;height:100%;background:linear-gradient(180deg,#4ade80,#166534);transition:width 0.3s;"></div>
+          </div>
+        </div>
+        <div style="position:absolute;top:6px;right:6px;z-index:10;text-align:right;">
+          <div style="width:80px;height:10px;background:#111;border:2px solid #000;margin-left:auto;">
+            <div id="towerMonsterHp" style="width:100%;height:100%;background:linear-gradient(180deg,#ff4757,#8b0000);transition:width 0.3s;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="towerLog" style="margin-top:10px;background:#0a0a0a;border:2px solid #333;padding:8px;height:80px;overflow-y:auto;font-size:13px;color:#aaa;font-family:'VT323',monospace;box-shadow:inset 0 0 0 1px #000;"></div>
+
+      <div style="margin-top:14px;text-align:center;">
+        <button id="climbBtn" class="pxl-btn" onclick="climbTower()" style="background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;padding:12px 32px;font-size:11px;">⬆ CLIMB NEXT FLOOR</button>
+        <div id="towerCooldown" style="display:none;color:#ffd54a;font-size:12px;margin-top:6px;font-family:'Press Start 2P',monospace;">Resting... <span id="towerCdSec">3</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.tower-scene{position:relative;width:100%;height:440px;background:linear-gradient(180deg,#050505 0%,#0a0a0a 58%,#160b08 100%);border:3px solid #ffd54a;box-shadow:inset 0 0 0 1px #000,inset 0 0 55px #000,4px 4px 0 #000;overflow:hidden;isolation:isolate}
+.tower-stars{position:absolute;inset:0;background-image:radial-gradient(2px 2px at 10% 14%,#fff,transparent),radial-gradient(1px 1px at 26% 8%,#ffd54a,transparent),radial-gradient(1px 1px at 42% 23%,#fff,transparent),radial-gradient(2px 2px at 72% 11%,#ffd54a,transparent),radial-gradient(1px 1px at 88% 26%,#fff,transparent),radial-gradient(1px 1px at 16% 44%,#777,transparent),radial-gradient(1px 1px at 94% 52%,#ffd54a,transparent);opacity:.85}
+.tower-moon{position:absolute;right:38px;top:34px;width:58px;height:58px;border-radius:50%;background:#e8e8e8;box-shadow:0 0 25px rgba(232,232,232,.3)}
+.tower-moon:after{content:'';position:absolute;width:58px;height:58px;border-radius:50%;background:#050505;left:17px;top:-7px}
+.tower-cloud{position:absolute;height:8px;background:#292929;box-shadow:12px -6px #292929,25px 0 #292929,38px -5px #292929;opacity:.7;animation:towerCloud 13s linear infinite}
+.cloud-a{top:100px;left:-50px;width:38px}.cloud-b{top:175px;left:-90px;width:58px;animation-duration:19s;animation-delay:-8s;opacity:.45}
+.tower-fortress{position:absolute;z-index:3;left:50%;bottom:29px;width:252px;height:373px;transform:translateX(-50%);filter:drop-shadow(8px 9px 0 #000)}
+.tower-spire{position:absolute;z-index:0;top:0;left:50%;width:24px;height:42px;background:#242424;border:3px solid #000;transform:translateX(-50%);clip-path:polygon(50% 0,100% 55%,85% 100%,15% 100%,0 55%)}
+.tower-battlements{position:absolute;z-index:3;top:35px;left:28px;width:196px;height:24px;background:#313131;border:3px solid #000;display:flex;justify-content:space-between;align-items:flex-start;padding:0 8px;box-sizing:border-box}
+.tower-battlements i{display:block;width:25px;height:18px;margin-top:-14px;background:#383838;border:3px solid #000;border-bottom:0}
+.tower-facade{position:absolute;z-index:2;top:53px;left:42px;width:168px;height:314px;background:repeating-linear-gradient(0deg,transparent 0 20px,#141414 20px 22px),repeating-linear-gradient(90deg,#292929 0 32px,#333 32px 34px);border:4px solid #111;box-shadow:inset 0 0 25px #000}
+.tower-facade:before,.tower-facade:after{content:'';position:absolute;top:22px;bottom:0;width:18px;background:#222;border:3px solid #111}.tower-facade:before{left:-21px}.tower-facade:after{right:-21px}
+.tower-turret{position:absolute;z-index:1;top:75px;width:50px;height:292px;background:repeating-linear-gradient(0deg,#222 0 20px,#111 20px 23px);border:4px solid #0b0b0b}.turret-left{left:0}.turret-right{right:0}
+.tower-turret:before{content:'';position:absolute;left:-8px;top:-18px;width:60px;height:20px;background:#333;border:3px solid #000;clip-path:polygon(0 100%,0 35%,16% 35%,16% 0,34% 0,34% 35%,66% 35%,66% 0,84% 0,84% 35%,100% 35%,100% 100%)}
+.tower-turret span{position:absolute;top:54px;left:17px;width:10px;height:25px;background:#050505;border:2px solid #444;border-radius:8px 8px 0 0;box-shadow:0 95px #050505,0 190px #050505}
+.tower-banner{position:absolute;z-index:4;top:12px;left:50%;transform:translateX(-50%);padding:5px 7px;background:#111;border:2px solid #ffd54a;color:#ffd54a;font:6px 'Press Start 2P',monospace;letter-spacing:1px}
+.tower-floors{position:absolute;inset:41px 12px 48px;display:flex;flex-direction:column;gap:1px}
+.tower-floor{position:relative;flex:1;min-height:18px;border-bottom:2px solid #111;color:#777;font:5px 'Press Start 2P',monospace;transition:all .3s}
+.floor-range{position:absolute;left:5px;top:7px;color:#8a8a8a}
+.tower-window{position:absolute;left:50%;top:4px;width:12px;height:14px;transform:translateX(-50%);background:#050505;border:2px solid #555;border-radius:6px 6px 0 0}
+/* ── Ten decades, ten styles ── */
+.sec-0{background:repeating-linear-gradient(90deg,#292929 0 32px,#333 32px 34px);border-left:3px solid #555}
+.sec-1{background:repeating-linear-gradient(90deg,#242424 0 26px,#2a2320 26px 28px);border-left:3px solid #8b5e3c}
+.sec-2{background:repeating-linear-gradient(90deg,#1f1a14 0 30px,#2b2115 30px 32px);border-left:3px solid #a67c00}
+.sec-3{background:repeating-linear-gradient(90deg,#333 0 24px,#3a3a3a 24px 26px);border-left:3px solid #c9c9c9}
+.sec-4{background:repeating-linear-gradient(90deg,#20261c 0 28px,#2a3326 28px 30px);border-left:3px solid #4ade80}
+.sec-5{background:repeating-linear-gradient(90deg,#331a1a 0 26px,#401f1f 26px 28px);border-left:3px solid #ff4757}
+.sec-6{background:repeating-linear-gradient(90deg,#0d0d0d 0 30px,#141414 30px 32px);border-left:3px solid #e8e8e8}
+.sec-7{background:repeating-linear-gradient(90deg,#3f3f3f 0 24px,#484848 24px 26px);border-left:3px solid #b0b0b0}
+.sec-8{background:repeating-linear-gradient(90deg,#3a2f14 0 28px,#4a3c18 28px 30px);border-left:3px solid #ffd54a}
+.sec-9{background:repeating-linear-gradient(90deg,#555 0 26px,#666 26px 28px);border-left:3px solid #fff}
+.sec-9 .tower-window{background:#ffd54a;border-color:#fff}
+.current-floor{margin:0 -9px;background:rgba(255,213,74,.16) !important;border:2px solid #ffd54a;box-shadow:0 0 13px rgba(255,213,74,.55);color:#ffd54a;animation:floorPulse 1.4s steps(2) infinite;z-index:3}
+.current-floor .floor-range{color:#ffd54a}
+.current-floor .tower-window{background:#ffd54a;border-color:#fff;box-shadow:0 0 12px #ffd54a}.current-marker{position:absolute;right:4px;top:7px;font-size:4px;color:#ffd54a}
+.tower-gate{position:absolute;z-index:5;bottom:-1px;left:50%;width:44px;height:43px;transform:translateX(-50%);background:#050505;border:4px solid #555;border-bottom:0;border-radius:22px 22px 0 0;box-shadow:inset 0 0 12px #000}.tower-gate span{position:absolute;inset:8px 7px 0;border:2px solid #ffd54a;border-bottom:0;border-radius:14px 14px 0 0}
+.tower-ground{position:absolute;z-index:4;left:0;right:0;bottom:0;height:31px;background:repeating-linear-gradient(90deg,#1d140e 0 14px,#2b1c10 14px 28px);border-top:4px solid #090909}
+.tower-floor-plaque{position:absolute;z-index:8;left:12px;top:12px;padding:7px 8px;background:#050505;border:2px solid #ffd54a;color:#ffd54a;font:7px 'Press Start 2P',monospace;box-shadow:3px 3px 0 #000}
+.tower-hero{position:absolute;z-index:7;left:12%;bottom:32px;font-size:33px;filter:drop-shadow(3px 3px 0 #000);animation:heroIdle 1.2s steps(2) infinite}
+.tower-threat{position:absolute;z-index:7;right:10%;bottom:34px;text-align:center}.tower-threat #bossEmoji{font-size:34px;filter:drop-shadow(0 0 9px #ff4757);animation:threatIdle 1.3s steps(2) infinite}.tower-threat #bossName{color:#ff4757;font:6px 'Press Start 2P',monospace;text-shadow:2px 2px #000}
+.boss-clear-fx{display:none;position:absolute;z-index:20;inset:0;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.82);color:#ffd54a;text-align:center;font-family:'Press Start 2P',monospace;animation:bossClearFlash 1.8s steps(4)}
+.boss-clear-fx.show{display:flex}.boss-clear-fx strong{font-size:17px;text-shadow:4px 4px #7a160f}.boss-clear-fx span{margin-top:14px;color:#fff;font-size:7px}.boss-clear-burst{font-size:70px;line-height:1;color:#fff;animation:bossBurst 1.1s steps(6)}
+@keyframes towerCloud{from{transform:translateX(0)}to{transform:translateX(650px)}}
+@keyframes floorPulse{50%{box-shadow:0 0 21px rgba(255,213,74,.8)}}
+@keyframes heroIdle{50%{transform:translateY(-4px)}}
+@keyframes threatIdle{50%{transform:translateY(3px)}}
+@keyframes bossBurst{0%{transform:scale(.1) rotate(0);opacity:0}55%{transform:scale(1.4) rotate(135deg);opacity:1}100%{transform:scale(.7) rotate(220deg);opacity:.2}}
+@keyframes bossClearFlash{0%,100%{box-shadow:inset 0 0 0 #ffd54a}45%{box-shadow:inset 0 0 90px #ffd54a}}
+@keyframes heroSwing{50%{transform:rotate(8deg)}}
+@keyframes monsterHit{25%{transform:translateX(-4px) rotate(-3deg)}50%{transform:translateX(4px) rotate(3deg)}}
+@media(max-width:850px){
+  .tower-scene{height:400px;overflow:hidden}
+  .tower-fortress{transform:translateX(-50%) scale(.92);transform-origin:bottom center}
+  .tower-hero{left:5%}.tower-threat{right:4%}
+}
+@media(max-width:430px){
+  .tower-scene{height:330px}
+  .tower-fortress{transform:translateX(-50%) scale(.72);transform-origin:bottom center}
+  .tower-floor{min-height:25px}
+  .floor-range{font-size:10px}
+  .current-marker{font-size:6px;white-space:nowrap}
+  .tower-hero{font-size:27px;bottom:20px}.tower-threat{bottom:22px}
+}
+</style>
+
+<script>
+var inTowerCombat = false;
+
+function climbTower() {
+  if(inTowerCombat) return;
+  inTowerCombat = true;
+  var btn = document.getElementById('climbBtn');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  document.getElementById('towerCooldown').style.display = 'block';
+  document.getElementById('towerCdSec').textContent = '3';
+  document.getElementById('towerLog').innerHTML = '<div style="color:#ffd54a;">⚔️ Ascending to Floor ' + (parseInt(document.getElementById('floorDisplay').textContent) + 1) + '...</div>';
+
+  // Animate player attacking
+  var hero = document.getElementById('towerHero');
+  var mob = document.getElementById('towerMonster');
+  hero.style.animation = 'heroSwing 0.3s ease-out';
+  mob.style.animation = 'monsterHit 0.3s ease-out';
+  setTimeout(function(){ hero.style.animation = ''; mob.style.animation = ''; }, 400);
+
+  fetch('/api/tower/combat', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.error) {
+      document.getElementById('towerLog').innerHTML = '<div style="color:#ff4757;">' + data.error + '</div>';
+      inTowerCombat = false;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      document.getElementById('towerCooldown').style.display = 'none';
+      return;
+    }
+    var log = data.log || [];
+    var won = data.won;
+    document.getElementById('towerLog').innerHTML = log.map(function(l){
+      return '<div>' + l.replace(/\*\*(.*?)\*\*/g, '<span style="color:#ffd54a;font-weight:bold">$1</span>') + '</div>';
+    }).join('');
+
+    // Update HP bars
+    var hpRatio = data.player_hp / data.player_max_hp;
+    document.getElementById('towerPlayerHp').style.width = Math.max(0, hpRatio * 100) + '%';
+
+    if(data.player && data.player.level) {
+      document.getElementById('yourLvDisplay').textContent = data.player.level;
+    }
+
+    if(won) {
+      document.getElementById('floorDisplay').textContent = data.new_floor || (parseInt(document.getElementById('floorDisplay').textContent) + 1);
+      document.getElementById('rightFloor').textContent = data.new_floor || document.getElementById('floorDisplay').textContent;
+      document.getElementById('towerLog').innerHTML += '<div style="color:#4ade80;">✅ Floor cleared! +' + data.xp + ' XP +' + data.coins + ' coins</div>';
+      if((data.new_floor || 0) >= 100) document.getElementById('towerLog').innerHTML += '<div style="color:#ffd54a;font-weight:bold;">🏆 TOWER COMPLETE! All 100 floors conquered — you are an Ascendant!</div>';
+      if(data.leveled_up) document.getElementById('towerLog').innerHTML += '<div style="color:#ffd54a;">⬆ LEVEL UP!</div>';
+      if(data.is_boss) {
+        var fx = document.getElementById('bossClearFx');
+        document.getElementById('bossClearName').textContent = data.enemy_name || 'TOWER GUARDIAN';
+        fx.classList.add('show');
+        setTimeout(function(){ fx.classList.remove('show'); }, 1800);
+        if(data.mail_reward) document.getElementById('towerLog').innerHTML += '<div style="color:#ffd54a;font-weight:bold;">👑 BOSS CACHE: ' + data.mail_reward.emoji + ' ' + data.mail_reward.type + ' x' + data.mail_reward.qty + '</div>';
+      }
+      // Story
+      var stories = [
+        'The first floors are littered with slimes and weak spirits. You press on.',
+        'Ancient armor lines the walls. The air grows cold. Dark shapes stir.',
+        'You hear whispers in the stone. The tower is alive — and it knows you\'re here.',
+        'Flames gutter in braziers along the walls. The heat is unbearable.',
+        'A massive gate bars your path. Beyond it, something ancient stirs.',
+        'The walls weep a black ichor. The tower\'s corruption deepens.',
+        'You feel eyes on you. Always watching. The tower remembers every challenger.',
+        'The floors twist in on themselves. Space bends. You are deep now.',
+        'A terrible roar shakes the foundations. The end is near.',
+        'The summit. One final door. Beyond it — the source of the invasion.',
+        'Mist swallows the stairs. Whispers echo with your own name. The tower\'s second half begins.',
+        'Gears as tall as houses turn around you. The tower itself is a machine — and it is ticking.',
+        'A drowned cathedral opens before you. Gods forgotten, prayers unanswered.',
+        'An ashen kingdom stretches to the horizon. A throne still stands, waiting.',
+        'Mirrors reflect every path you never took. Each one bears a blade.',
+        'A court of shadows convenes. The verdict is delivered in steel.',
+        'A frozen battlefield holds a fallen army, still standing mid-charge.',
+        'The realm of echoes repeats your own voice back — and then speaks in a voice you do not know.',
+        'Reality frays at the edges. Ideas hunt here. The tower\'s raw heart beats.',
+        'The Void Gate. One hundred floors, one final door. The tower remembers you.'
+      ];
+      var storyIdx = Math.min((data.new_floor || 1) - 1, stories.length - 1);
+      document.getElementById('storyLine').textContent = stories[storyIdx] || 'The tower continues upward into the unknown.';
+    } else {
+      document.getElementById('towerLog').innerHTML += '<div style="color:#ff4757;">❌ You were defeated! Rest and try again.</div>';
+    }
+
+    // Cooldown
+    var cd = 3;
+    document.getElementById('towerCdSec').textContent = cd;
+    var iv = setInterval(function(){
+      cd--;
+      document.getElementById('towerCdSec').textContent = cd;
+      if(cd <= 0) {
+        clearInterval(iv);
+        if(won) { location.reload(); return; }
+        document.getElementById('towerCooldown').style.display = 'none';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        inTowerCombat = false;
+      }
+    }, 1000);
+  })
+  .catch(function(err){
+    document.getElementById('towerLog').innerHTML = '<div style="color:#ff4757;">Error: ' + err + '</div>';
+    inTowerCombat = false;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    document.getElementById('towerCooldown').style.display = 'none';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var floor = parseInt(document.getElementById('floorDisplay').textContent) || 1;
+  var pLvl = parseInt('{{ player.level|default(1) }}') || 1;
+  // HARD tower: 50/50 at the required level (2×floor), +10% per 5 extra levels
+  var req = Math.min(floor * 2, 100);
+  var winChance = Math.min(95, Math.max(5, 50 + (pLvl - req) * 2));
+  document.getElementById('winPercentDisplay').textContent = winChance + '%';
+  document.getElementById('winPercentDisplay').style.color = winChance >= 60 ? '#4ade80' : (winChance >= 30 ? '#ffd54a' : '#ff4757');
+});
+</script>
+{% if true %}
+<div id="healWidget" style="position:fixed;right:12px;bottom:12px;z-index:999;display:flex;gap:8px;align-items:center;">
+  <span style="color:#888;font-family:'VT323',monospace;font-size:14px;">❤️ {{ player.health }}/{{ player.max_health }}</span>
+  <button class="pxl-btn" onclick="doHeal('full')" style="padding:7px 12px;font-size:8px;background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;" title="Spend coins to fully heal">⚡ FULL HEAL (COINS)</button>
+  <button class="pxl-btn" onclick="doHeal('coins')" style="padding:7px 12px;font-size:8px;" title="10 coins for +30 HP">🪙 HEAL (10)</button>
+</div>
+{% endif %}
+<script>
+function doHeal(mode){
+  fetch('/api/heal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){ healToast(d.message,false); setTimeout(function(){location.reload()},700); }
+    else { healToast(d.error||'Failed',true); }
+  }).catch(function(){healToast('Network error',true);});
+}
+function healToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:60px;right:12px;z-index:9999;padding:9px 18px;font-family:VT323,monospace;font-size:17px;border:2px solid '+(t?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2600);
+}
+</script>

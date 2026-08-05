@@ -1,0 +1,182 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="pxl" style="max-width:800px;margin:0 auto;padding:20px;">
+  <h2 class="pixel" style="color:#ffd54a;text-align:center;margin-bottom:20px;font-size:14px;">📰 UPDATE LOG</h2>
+
+  {% set updates = [
+    {"ver":"5.3.0","date":"Aug 4","title":"🎲 18-class rarity-weighted starter roll","author":"Hermes","changes":["Added 18 non-unique starter classes across five rarity tiers.","Starter assignment now rolls rarity first (40/30/18/9/3) and excludes UNIQUE classes.","Verified sell, pet, equipment, guild, and jobs routes after deployment."]},
+    {"ver":"5.2.0","date":"Aug 3","title":"🤖 Auto Pets & Auto Smith — one-time 50k unlocks, forever","author":"Hermes","changes":[
+      "🤖 AUTO PETS (Pets page): one-time 50,000 coin unlock — HATCH ALL hatches every egg at once, COMBINE ALL auto rank-ups every pet & egg until nothing is left",
+      "⚒️ AUTO SMITH (Blacksmith page): one-time 50,000 coin unlock — AUTO FORGE ALL merges every same-rarity, same-type gear pair automatically; results keep forging until nothing is left",
+      "🔓 Unlocks are PERMANENT — pay once, never expires. Equipped pets are skipped by Combine All"
+    ]},
+    {"ver":"5.1.0","date":"Aug 1","title":"📱 Mobile Play, ETERNITY Tower Sections, One-Time Reward Sets, Equipment & Docker","author":"Hermes","changes":[
+      "📱 PHONE PLAY: responsive navigation, single-column game layouts, readable controls and 44px touch targets — play on any phone",
+      "🏰 ETERNITY TOWER: the current 10-floor section now follows your progress with dedicated section styles",
+      "🎁 ONE-TIME REWARDS: first account gets the Rare Founder's set · first time at leaderboard rank 1 gets the Epic Champion set · first to Lv.100 gets the Legendary Centurion set",
+      "⛑️ EQUIPMENT: helmet and boots shops, equipping, inventory display and stat bonuses work end to end",
+      "🧪 POTIONS: XP potions stay consumable and apply XP instead of turning into equipment",
+      "🐳 DOCKER: persistent data/uploads mounts, restart policy and reloader-free deployment prevent database resets",
+      "🛡️ PLAYER DATA: atomic locked writes plus players.json.bak recovery protect progress",
+      "🪙 AUTO-REVIVE: die during Auto Boss Grind and the game pays coins to revive you at full HP — grind never stops (cost scales with level, potions are tried first)",
+      "⚡ FULL HEAL NOW COSTS COINS: the full-heal button spends coins (max 50, level×10) instead of XP — keep your XP for leveling",
+      "📊 XP BAR FIXED: level-up progress now uses the real XP curve — no more ⭐ 2370/1200 (the old level×100 display understated your progress)",
+      "👤 USERNAME SAVE FIXED: set your name without needing a password (accounts without one) — no more 'User#4803' placeholders",
+      "⚒️ FORGE FIXED: Mythic gear now forges properly (no more crash), the button lights up when you pick 2 same-rarity items, and rank caps are labeled correctly",
+      "🔮 PET COMBINE: merge 2 pets of the same kind into ONE pet one rank higher — same name, 75% stronger stats",
+      "🥚 NORMAL EGG RATES RESTORED: Mystery Egg 200 coins, Golden Egg 1000, fishing chance 15%, normal loot weights — collect, combine, hatch, or sell freely",
+      "🥚 EGG COMBINE: merge 3 eggs of the same rank into 1 egg one rank higher (common→uncommon→rare→epic→legendary→mythic→unique)",
+      "⚡ CLASS RANK HINT FIXED: the rank-up hint now matches your actual rank — each rank advances every level (same cadence as the first rank); the next-stage goal only shows at Rank 10",
+      "🏛️ GUILD HALL CLEARED: fresh start — the old DTEmpire guild record was removed with the reset"
+    ]},
+    {"ver":"5.0.1","date":"Aug 1","title":"🛡️ Player Recovery & Adventure Bot Cleanup","author":"Hermes","changes":[
+      "♻️ DargoTamber progression recovered from the last verified Lv.71 session snapshot after the requested database reset",
+      "🛡️ Player saves now use unique atomic temp files, reject unreadable JSON instead of treating it as an empty database, and keep players.json.bak",
+      "⚔️ Adventure bot now has /adventure; misleading >fish and >daily text was removed from general bot help",
+      "🔒 Disabled the legacy Adventure cog in the general bot so it cannot write to the website player database"
+    ]},
+    {"ver":"5.0.0","date":"Aug 1","title":"🏪 Three Stores, Daily Inflation, Harder Progression, 🏆 First to Lv.100 & 🧪 Auto-Heal Potions","author":"Hermes","changes":[
+      "🧪 HEALING POTIONS NOW WORK: every potion heals for its value (dropped potions default to +50 HP) — click DRINK in your Inventory to chug one, or let the game auto-drink at 50% HP or below after Tower, Dungeon, Adventure and Duel damage",
+      "🛒 SHOP SPLIT: Normal Shop (Common/Uncommon/Rare), Premium Store (Rare/Epic/Unique), VIP Store (Unique/Legendary/Mythical) — all three in the Economy menu",
+      "💎 PREMIUM PASS: 10,000 coins for 24h access to the Premium Store",
+      "👑 VIP PASS: 50,000 coins for 24h access to the VIP Store — passes never stack, so access can't compound",
+      "📈 ALL BASE PRICES +25% — one-time increase on every item",
+      "📊 DAILY ECONOMY INDEX: prices drift up with the median player balance — max +2% per day, hard-capped at 3×, new players stay safe in the Normal Store",
+      "⚔️ MASTER RANKS come from the TOWER now — climb floors, not duel wins, to advance Rank 1→10",
+      "🎓 LEVELING GETS HARDER AT Lv.20: XP needed becomes level²×20 (Lv.20 = 8,000 XP, Lv.30 = 18,000) — auto-grinding slows down, endgame stays earned",
+      "🔀 DUAL CLASS extended: Lv.25 cap, Circle VII — rarity milestones Lv.5/10/15/20/25, UNIQUE class still one-owner",
+      "🎭 Changing role/class resets that class's rank ladder to Rank 1 — every path starts fresh",
+      "🏆 FIRST TO LEVEL 100: the very first adventurer to hit Lv.100 earns the exclusive 'First to Level 100' title — locked to them forever"
+    ]},
+    {"ver":"4.9.0","date":"Aug 1","title":"♾️ Unlimited Levels & Website Help Bot","author":"Hermes","changes":[
+      "♾️ LEVELS — the level cap is GONE. Keep leveling forever: level N needs N×100 XP, stats keep growing every level, no ceiling",
+      "🤖 The adventure Discord bot is now a WEBSITE HELP bot: /help /guide /faq /website /status /updates /bug /support — no game commands, support for the adventure site only",
+      "📢 Admins can post site updates straight to the updates channel with /announce"
+    ]},
+    {"ver":"4.8.2","date":"Aug 1","title":"🏆 Milestone Rewards & 🎵 Per-Page Music","author":"Hermes","changes":[
+      "👑 LEADERBOARD RANK #1 REWARD: every player who reaches rank #1 on the leaderboard gets the Founder's set — Sword of Dawn + Helm of Dawn + Armor of Dawn + Phoenix + 20,000 coins (once per player)",
+      "🏆 FIRST TO LEVEL 50 REWARD: the first adventurer ever to hit Lv.50 gets the Unique Dawnbreaker + Solar Plate + Solar Crown + Golden Dragon + 100,000 coins",
+      "🎁 Rewards are granted instantly, equipped automatically, and a 🎁 MILESTONE REWARD mail arrives so you know what you got — claims are tracked, no double-dipping",
+      "🎵 EVERY PAGE NOW HAS ITS OWN TUNE: Town Theme, Dungeon Depths, Tower Summit, Battle Theme, Market Jingle, Temple Chant & Tavern Tune",
+      "🎛️ New MUSIC BOX bottom-left: ▶ play / ⏸ pause button, live track name + animated equalizer bars — choice remembered between visits"
+    ]},
+    {"ver":"4.8.1","date":"Aug 1","title":"🛠️ /help Command & Profile Fix","author":"Hermes","changes":[
+      "🤖 NEW: `/help` slash command — complete list of every bot command (Adventure, Games, General, Tickets, Auto-Mod, Utility, Admin + web dashboard link)",
+      "🧭 `>help adventure` guide fixed (was crashing) and main `>help` embed now shows only real commands",
+      "🛡️ PROFILE FIX: your save was showing an empty random profile when used outside the home server — all Discord commands (/profile, /tower, /players, >daily, >heal, >fish, >duel, /status, /fight, /dungeon, /leaderboard) now read your REAL adventure save from the home guild, everywhere",
+      "🎁 FOUNDER'S GIFT DELIVERED: the first account (player #1, DargoTamber) now carries the Sword of Dawn set + Phoenix + 20,000 coins — retro-granted after the founder feature shipped too late"
+    ]},
+    {"ver":"4.8.0","date":"Aug 1","title":"⚔️ PvP Arena Rework, Founder's Gift & Economy Rebalance","author":"Hermes","changes":[
+      "🔒 PvP challenges now require Lv.5 — newbies can't be jumped",
+      "🎵 Retro chiptune music & UI sounds site-wide — 🎵 toggle bottom-left",
+      "⚔️ PVP DUELS REBUILT — challenges persist now: the other player gets a floating notification on every page with ✓ ACCEPT / ⏰ LATER / ✗ DENY; sent challenges can be cancelled",
+      "🏟️ Accept → old-style arena: brick walls, torches & crowd, both fighters on stage with Discord avatars, Lv, ATK/DEF & live HP bars",
+      "⏳ Round combat: pick ONE skill per round, both strike simultaneously — every skill has its own cooldown (0–4 rounds), shown on the buttons",
+      "🤖 AFK opponent? The arena auto-fills their move after 20s with a countdown — matches never stall",
+      "💰 Winners earn XP + coins + duel wins/streak/rank; losses tracked; rank ups on your profile",
+      "🔇 Full sound design — challenge chime, round clash, crits, heals, win fanfare, defeat trombone + mute toggle",
+      "🎁 WELCOME GIFT is now FOUNDER-ONLY — the first account ever (Sword of Dawn set + Phoenix + 20,000 coins). Everyone after starts as a plain adventurer (100 coins)",
+      "⚖️ Economy rebalance: shop prices & sale values overhauled (Unique sells for 50,000), dungeon enemies & rewards buffed",
+      "🛌 Healing upgrade: 10 HP per 10 coins, or full heal costing XP",
+      "⚗️ Blacksmith: helmet recipes + forge TWO items to jump rarity (+1 → +5, capped at Unique)",
+      "💎 New UNIQUE rarity — 0.5% shop weight with a stat multiplier",
+      "👤 Login syncs your Discord avatar & name; dungeon defeat no longer rolls back your floor"
+    ]},
+    {"ver":"4.7.0","date":"Aug 1","title":"📜 150-Day Missions, Guild Hall Fixes & Leader Protection","author":"Hermes","changes":[
+      "📜 MISSIONS — a 150-day personal mission calendar. 3 seeded missions per day, random for every player (different players see different missions on the same day)",
+      "✅ 13 mission types track automatically: adventures, monster/boss kills, duels, daily claims, coins earned, tower floors, shop buys, sells, pet hatches, guild tasks, potion drinks & blacksmith crafts",
+      "🏆 Claim rewards any day up to today — later days pay more coins & XP",
+      "🛡️ GUILD FIX: the leader can never be kicked or removed — membership auto-repairs if data drifts (this was why you got kicked, dad)",
+      "👥 Guild Hall now shows your full member roster — online dots, ⭐level, 👑LEADER badge",
+      "🚫 JOIN button hidden on your own guild — shows 👑 YOUR GUILD / ✓ IN GUILD instead",
+      "💥 Leaders can DISBAND their guild (releases all members safely); duplicate member entries cleaned",
+      "💾 Guild data now saves atomically — no more corrupted guilds.json mid-write"
+    ]},
+    {"ver":"4.6.0","date":"Aug 1","title":"🔀 Dual Class Leveling, UNIQUE Rank & Lucky Roll Fixes","author":"Hermes","changes":[
+      "🔀 Dual classes now LEVEL UP — second class earns 50% of your Adventure & Duel XP",
+      "🎯 Rarity ladder: Common → Uncommon (Lv.3) → Rare (Lv.6) → Epic (Lv.9) → Legendary (Lv.12)",
+      "👑 UNIQUE rank at Lv.15 — one-of-a-kind class, first player to reach it locks it forever. Chronomancer ⏳ & Chimera 🐲 can also roll as global-unique right from the class roll!",
+      "🔮 Second class Circle progression: Circle I → V shown on your profile with a live XP bar",
+      "🎰 Lucky Roll now updates your coin balance instantly after every spin — no page reload needed",
+      "⚔️ Duel rewards: PvP winners now earn XP for both classes",
+      "🛡️ Role-locked weapon damage fixed for dual-class players (33% second-class stats already active)"
+    ]},
+    {"ver":"4.5.0","date":"July 31","title":"🛒 Shop Overhaul — 115 Items, Crafting Materials & New Forge Recipes","author":"Hermes","changes":[
+      "🛒 Shop expanded from 6 → 115 items — every tier auto-synced from the bot's guild shops (Abyssal, Celestial, Storm, Eclipse, Chrono, Excalibur…)",
+      "💰 Prices capped to web economy (150–3500 coins by rarity) — no more million-coin items",
+      "⛏️ Crafting materials now drop from all combat: Iron Ore (adventure), Undead Bones (dungeon), Dragon Scales & Silk Cloth (tower + boss floors)",
+      "⚔️ 3 new forge recipes: 🌊 Abyssal Blade, ⚡ Stormbreaker, 🌟 Celestial Scepter",
+      "⚖️ Dungeon & tower loot tables rebalanced with material drops"
+    ]},
+    {"ver":"3.0.0","date":"July 31","title":"🚀 Level 100 Expansion — Tower of Eternity Completed","author":"Hermes","changes":[
+      "⬆️ Level cap raised to 100 — same XP curve, every class path now reaches Ascendant",
+      "🏰 Tower extended to 100 floors — boss every 5th floor, Floor 100 = The Void Gate finale",
+      "📖 10 new story chapters (11–20) covering floors 51–100: Veil of Mists, Clockwork Sanctum, Sunken Cathedral, Ashen Plains, Hall of Mirrors, Umbral Court, Iron Grave, Realm of Echoes, Primal Rift, Void Gate",
+      "🏆 7 new achievements: Tower Master (75), Tower Conqueror (100), Grandmaster (Lv50), Elder (Lv75), Ascendant (Lv100), Tycoon (100K coins), Unstoppable (500 wins)",
+      "🐾 Pet cap raised to level 20",
+      "⚖️ Unified level-up stats everywhere — web, Discord bot, fishing & adventure all use the same curve",
+      "📊 Dashboard XP bar now shows /1000-scale and MAX at level 100"
+    ]},
+    {"ver":"2.0.0","date":"July 29","title":"🎮 Wave 2 — Loot, Jobs, Guild Tasks, Pets, Online","author":"Hermes","changes":[
+      "🎁 Loot drops everywhere — coins, heal pots, XP scrolls, gear, pet eggs & skill books from all combat",
+      "⚒️ 10 professions (Miner→Wizard) with XP bars & daily tasks, unlocked progressively Lv10→50",
+      "🏰 Guild Tasks — 3 daily coop missions (kill X, earn coins, climb floors)",
+      "🔒 Level gates — pages auto-lock/route until you meet the level requirement",
+      "🐾 Pet system — hatch eggs (common→mythic), equip up to 1 slot per 10 tower floors, battle bonuses",
+      "🛠️ Pet equip fixed — legacy string pets auto-migrated to proper IDs",
+      "👥 Online player roster — World tab shows all online, Guild tab shows guild members with online status",
+      "➕ Click any player in online list to send a friend request",
+      "🤖 Discord slash commands — /status, /fight, /dungeon, /leaderboard, /daily via new cog",
+      "📢 Version.json + Discord announcement channel auto-published"
+    ]},
+    {"ver":"1.5.1","date":"July 29","title":"🛠️ Bug Fix Patch","changes":[
+      "⚔️ Fixed Adventure combat crash (SyntaxError on fight)",
+      "🪙 Restored missing Sell Item button/route",
+      "🛡️ Fixed Dashboard equipment slots showing empty",
+      "🎒 Fixed Inventory equipped-items count (was missing helmet/shield)",
+      "🗺️ Bigger, easier-to-tap Adventure/Tower/Shop/Inventory buttons",
+      "📬 Mail now shows real subject, sender and reward info",
+      "📰 Update log now credits each patch to its author"
+    ]},
+    {"ver":"1.5.0","date":"July 28","title":"🏰 Tower of Eternity & Dungeon Overhaul","author":"Hermes","changes":[
+      "🏰 Tower page: story-driven climb with win% chance, animated SVG combat, floor visuals. Even level 1 can climb with luck!",
+      "🗺️ Adventure page: turn-based dungeon map (left) + combat arena with pixel hero/mob animations (right)",
+      "🎮 New pages: Temple, Duels, Skills, Guild, Jobs, Blacksmith, Auction, Lucky Roll, Leaderboard",
+      "📬 Retro-arcade mail redesign: gold borders, pixel fonts, CRT feel",
+      "🎨 Retro arcade navigator with pixel fight scene (hero vs zombie wave)",
+      "⚔️ Combat animations: sword slash FX, hit shake, damage numbers, dynamic enemy palettes",
+      "📜 Story chapters per floor in Tower (10 unique story beats)"
+    ]},
+    {"ver":"1.0.3","date":"July 27","title":"💎 Initial Web Release","author":"Hermes","changes":[
+      "Dashboard with player stats, class, floor progress",
+      "Equipment slots (4): helmet, weapon, armor, boots",
+      "Tower climb with classic turn combat",
+      "Inventory, Shop with item cards",
+      "Mail system with claim/claim-all",
+      "Retro arcade console login",
+      "Roles page with achievement badges"
+    ]}
+  ] %}
+
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    {% for u in updates %}
+    <div class="pxl" style="border:2px solid {{ '#ffd54a' if loop.first else '#333' }};background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #222;">
+        <div>
+          <span style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:9px;">{{ u.ver }}</span>
+          <span style="color:#888;font-size:13px;margin-left:8px;font-family:'VT323',monospace;">{{ u.date }}</span>
+        </div>
+        <div style="color:#aaa;font-size:10px;font-family:'Press Start 2P',monospace;">{{ u.title }}</div>
+      </div>
+      <div style="padding:14px 16px;">
+        {% for item in u.changes %}
+        <div style="display:flex;gap:10px;margin-bottom:8px;font-size:14px;color:#ccc;font-family:'VT323',monospace;">
+          <span>{{ item }}</span>
+        </div>
+        {% endfor %}
+        <div style="text-align:right;color:#666;font-size:12px;font-family:'VT323',monospace;margin-top:6px;">— By {{ u.author if u.author else 'DTempire' }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>

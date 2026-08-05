@@ -1,0 +1,588 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+#mapWrap{position:relative;border:4px solid #555;box-shadow:inset 0 0 30px rgba(0,0,0,.8),0 0 0 3px #ffd54a;background:#000;overflow:hidden;border-radius:2px;}
+#worldMap{display:block;image-rendering:pixelated;width:100%;}
+.hex-label{position:absolute;font-family:'Press Start 2P',monospace;font-size:6px;text-shadow:0 0 5px #000,1px 1px 0 #000;pointer-events:none;white-space:nowrap;transform:translate(-50%,-50%);}
+.zone-label{position:absolute;font-family:'Press Start 2P',monospace;font-size:6px;text-shadow:0 0 6px #000,2px 2px 0 #000;pointer-events:none;white-space:nowrap;opacity:.7;transform:translate(-50%,-50%);}
+#tooltip{position:fixed;display:none;background:#111;border:2px solid #ffd54a;padding:6px 10px;font-family:'VT323',monospace;font-size:15px;color:#ffd54a;z-index:999;pointer-events:none;}
+.stat-pill{background:#111;border:1px solid #333;padding:2px 8px;font-family:'VT323',monospace;font-size:15px;border-radius:2px;white-space:nowrap;}
+#combatLog{height:90px;overflow-y:auto;font-family:'VT323',monospace;font-size:14px;color:#aaa;padding:4px;background:#050505;border:1px solid #222;margin-top:4px;}
+.pxl-btn{font-family:'Press Start 2P',monospace;font-size:9px;padding:8px 14px;border:none;cursor:pointer;background:#ffd54a;color:#000;box-shadow:3px 3px 0 #000;transition:transform .1s,box-shadow .1s;}
+.pxl-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000;}
+.pxl-btn.danger{background:#ff4757;color:#fff;}
+.pxl-btn.green{background:#4ade80;color:#000;}
+.pxl-btn.grey{background:#444;color:#fff;}
+.pxl-btn:disabled{opacity:.4;cursor:default;transform:none;box-shadow:3px 3px 0 #000;}
+.floor-detail{font-family:'VT323',monospace;font-size:15px;line-height:1.5;padding:6px 8px;background:#0d0d0d;border:1px solid #222;margin-bottom:4px;border-radius:2px;}
+@keyframes heroPulse{0%,100%{filter:drop-shadow(0 2px 4px #ffd54a)}50%{filter:drop-shadow(0 0 12px #ffd54a)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.flash{animation:pulse .6s ease-in-out 2;}
+</style>
+
+<div style="max-width:1300px;margin:0 auto;padding:10px">
+
+  <!-- Top bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+    <h2 class="pixel" style="color:#ffd54a;margin:0;font-size:11px;">🗺️ DUNGEON WORLD</h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <span class="stat-pill">❤️ <span id="sHP" style="color:#4ade80;">{{player.health}}</span>/<span id="sMaxHP">{{player.max_health}}</span></span>
+      <span class="stat-pill">⚔️ <span id="sATK" style="color:#f87171;">{{player.attack}}</span></span>
+      <span class="stat-pill">🛡️ <span id="sDEF" style="color:#60a5fa;">{{player.defense}}</span></span>
+      <span class="stat-pill">🪙 <span id="sCoins" style="color:#ffd54a;">{{player.coins}}</span></span>
+      <span class="stat-pill">⭐ Lv.<span id="sLvl">{{player.level}}</span></span>
+      <span class="stat-pill">📍 Fl <span id="sCurFloor" style="color:#ffd54a;">{{player.get('dungeon_floor',1)}}</span>/100</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:12px;">
+
+    <!-- ── HEX MAP ── -->
+    <div id="mapWrap">
+      <canvas id="worldMap"></canvas>
+    </div>
+
+    <!-- ── SIDE PANEL ── -->
+    <div style="display:flex;flex-direction:column;gap:8px;">
+
+      <!-- Zone info -->
+      <div id="zoneInfo" class="floor-detail">
+        <div style="color:#ffd54a;font-size:16px;">📍 <span id="zpName">Select a region</span></div>
+        <div id="zpRange" style="color:#aaa;font-size:14px;"></div>
+        <div id="zpEnemy" style="color:#888;font-size:14px;margin-top:2px;"></div>
+        <div id="zpBoss" style="color:#ff4757;display:none;font-weight:bold;">👑 BOSS ZONE</div>
+      </div>
+
+      <!-- Floor progress -->
+      <div style="display:flex;gap:4px;margin-bottom:2px;" id="floorDots"></div>
+
+      <!-- Combat panel -->
+      <div style="background:#0a0a0a;border:2px solid #333;padding:10px;border-radius:2px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span class="pixel" style="font-size:8px;color:#ffd54a;">⚔️ COMBAT</span>
+          <span style="font-family:'VT323',monospace;font-size:14px;color:#888;">
+            HP: <span id="cpHP" style="color:#4ade80;">{{player.health}}</span>/<span id="cpMaxHP">{{player.max_health}}</span>
+          </span>
+        </div>
+        <div style="width:100%;height:8px;background:#111;border:2px solid #333;margin-bottom:6px;">
+          <div id="cpHpBar" style="height:100%;background:linear-gradient(90deg,#166534,#4ade80);transition:width .3s;border-radius:1px;"></div>
+        </div>
+        <div id="combatLog"><span style="color:#555;">Click a region on the map.</span></div>
+      </div>
+
+      <!-- Buttons -->
+      <div id="actionArea" style="display:flex;flex-direction:column;gap:4px;">
+        <button class="pxl-btn" id="enterBtn" onclick="enterFloor()" style="width:100%;">⚔️ ENTER FLOOR <span id="btnFloor"></span></button>
+        <div id="afterBtns" style="display:none;gap:4px;">
+          <button class="pxl-btn green" id="nextBtn" onclick="advanceFloor()" style="width:100%;display:none;">⬇ DESCEND DEEPER</button>
+          <button class="pxl-btn grey" onclick="resetCombat()" style="width:100%;">↩ Back to Map</button>
+        </div>
+        <div id="knockedMsg" style="display:none;color:#ff4757;font-family:'VT323',monospace;font-size:15px;text-align:center;padding:4px;">💀 No HP — Rest first</div>
+      </div>
+
+      <!-- Reward toast -->
+      <div id="rewardBox" style="display:none;padding:6px;border:2px solid #ffd54a;background:#1a1600;font-family:'VT323',monospace;font-size:15px;color:#ffd54a;text-align:center;border-radius:2px;"></div>
+
+      <!-- Legend -->
+      <div style="font-family:'VT323',monospace;font-size:13px;color:#666;border-top:1px solid #222;padding-top:6px;">
+        <div style="margin-bottom:2px;color:#aaa;">LEGEND</div>
+        <div>🟢 Cleared &nbsp; 🟡 Current &nbsp; 🔴 Locked</div>
+        <div>👑 Boss zone (every 10th floor)</div>
+        <div style="margin-top:4px;">
+          <span style="display:inline-block;width:10px;height:10px;background:#1a3a22;vertical-align:middle;"></span> Forest
+          <span style="display:inline-block;width:10px;height:10px;background:#3a3020;vertical-align:middle;margin-left:6px;"></span> Hills
+          <span style="display:inline-block;width:10px;height:10px;background:#4a4040;vertical-align:middle;margin-left:6px;"></span> Mountains
+        </div>
+        <div>
+          <span style="display:inline-block;width:10px;height:10px;background:#2a4a30;vertical-align:middle;"></span> Farmland
+          <span style="display:inline-block;width:10px;height:10px;background:#7a3a1a;vertical-align:middle;margin-left:6px;"></span> Desert
+          <span style="display:inline-block;width:10px;height:10px;background:#1a1a3a;vertical-align:middle;margin-left:6px;"></span> Water
+          <span style="display:inline-block;width:10px;height:10px;background:#2a0a2a;vertical-align:middle;margin-left:6px;"></span> Void
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// ── CONSTANTS ──
+const PLAYER_FLOOR = {{player.get('dungeon_floor', 1)}};
+const HIGHEST = {{player.get('highest_dungeon', 0)}};
+const PLAYER_LEVEL = {{player.level}};
+const MAP_W = 900, MAP_H = 660;
+
+// ── HEX MAP DATA ──
+// Each zone: id, name, floors [start, end], grid position [col, row] (center hex of zone),
+// terrain type (determines hex color), enemy_tier index, color, label
+const ZONES = [
+  {id:'goblin-woods',  name:'Goblin Woods',    floors:[1,10],   pos:[2,5],   terrain:'forest',   tier:0, color:'#1a3a22', lcolor:'#4ade80', lvl:1,  enemies:['🐺 Goblin Scout','🌿 Thorn Lurker','🦇 Wood Bat','🐀 Bush Rat','🕷️ Forest Weaver']},
+  {id:'erdohon',       name:'Erdőhon',          floors:[11,20],  pos:[4,4],   terrain:'farmland', tier:0, color:'#2a4a30', lcolor:'#6ee7b7', lvl:10, enemies:['🌾 Scarecrow','🐗 Wild Boar','🦌 Forest Stag','🐓 Giant Cockatrice','👨‍🌾 Corrupted Farmer']},
+  {id:'crystal-caves',  name:'Crystal Caves',    floors:[21,30],  pos:[7,2],   terrain:'mountain', tier:1, color:'#4a4a5a', lcolor:'#818cf8', lvl:20, enemies:['💀 Skeleton','🔮 Crystal Golem','🦂 Cave Scorpion','🪨 Stone Knight','💎 Gem Wraith']},
+  {id:'vaslanka',      name:'Vaslanka',          floors:[31,40],  pos:[3,7],   terrain:'hills',    tier:1, color:'#3a3020', lcolor:'#d4a574', lvl:30, enemies:['⚔️ Bandit Raider','🛡️ Iron Guard','🏹 Hill Archer','🐺 Dire Wolf','🗡️ Mercenary']},
+  {id:'viharszem',     name:'Viharszem Keep',   floors:[41,50],  pos:[6,5],   terrain:'dark',     tier:2, color:'#2a1a24', lcolor:'#f87171', lvl:40, enemies:['👻 Wraith Guard','🦴 Bone Knight','🌑 Shadow Stalker','🔮 Dark Mage','👑 Dark Commander']},
+  {id:'naposveg',      name:'Naposvég',         floors:[51,60],  pos:[9,4],   terrain:'autumn',   tier:2, color:'#4a2a10', lcolor:'#fb923c', lvl:50, enemies:['🍂 Autumn Wisp','🔥 Ember Hound','🌲 Treant','🦊 Fire Fox','🍄 Mushroom Shaman']},
+  {id:'folyosziv',     name:'Folyószív',        floors:[61,70],  pos:[10,7],  terrain:'water',    tier:3, color:'#1a1a4a', lcolor:'#60a5fa', lvl:60, enemies:['🐍 River Serpent','🌊 Tidal Spirit','🐚 Shell Guardian','🦑 Deep Kraken','🧜‍♂️ Siren']},
+  {id:'mirewood',      name:'Mirewood Swamp',   floors:[71,80],  pos:[8,9],   terrain:'swamp',    tier:3, color:'#2a2a1a', lcolor:'#a3e635', lvl:70, enemies:['🐊 Swamp Crocodile','🪰 Plague Fly','☠️ Toxic Shambler','🐸 Giant Toad','🕯️ Will-o-Wisp']},
+  {id:'sstklsk',       name:'Ss\'tk\'lsk',      floors:[81,90],  pos:[6,10],  terrain:'desert',   tier:4, color:'#5a3a1a', lcolor:'#fde68a', lvl:80, enemies:['🐍 Sand Viper','🏜️ Dust Wraith','🪦 Tomb Guardian','🐪 Bone Dromedary','👁️ Ancient Eye']},
+  {id:'void-gate',     name:'Void Gate',        floors:[91,100], pos:[8,12],  terrain:'void',     tier:4, color:'#1a0520', lcolor:'#f0abfc', lvl:90, enemies:['🌌 Void Reaper','💀 Soul Devourer','🔥 Chaos Fiend','⭐ Star Eater','🌀 Reality Tearer']},
+];
+
+// Hex grid layout (pointy-top) — each position [col, row] maps to pixel coords
+// For pointy-top hexagons: 
+//   x = col * hex_w * 3/4
+//   y = (row + (col%2)*0.5) * hex_h + offset
+const HEX_R = 30; // hex radius in px
+const HEX_W = HEX_R * 1.732;
+const HEX_H = HEX_R * 2;
+
+function hexPos(col, row) {
+  const x = 50 + col * HEX_W * 0.75;
+  const y = 40 + (row + (col%2) * 0.5) * HEX_H * 0.86;
+  return {x, y};
+}
+
+// Terrain generation grid — 14 cols x 14 rows of terrain types
+const TERRAIN = [
+  //  0    1    2    3    4    5    6    7    8    9   10   11   12   13
+  ['wa','wa','wa','wa','mo','mo','mo','mo','mo','mo','mo','mo','mo','mo'], // row 0
+  ['wa','wa','fo','fo','mo','mo','mo','mo','mo','mo','mo','mo','mo','au'], // row 1
+  ['wa','fo','fo','fo','mo','mo','mo','mo','mo','mo','au','au','au','au'], // row 2
+  ['wa','fo','fo','fa','fa','da','da','mo','mo','au','au','au','au','wa'], // row 3
+  ['fo','fo','fa','fa','fa','da','da','mo','mo','au','au','au','wa','wa'], // row 4
+  ['fo','fo','fa','hi','hi','da','da','da','da','au','au','wa','wa','wa'], // row 5
+  ['fo','fo','hi','hi','hi','da','da','da','da','da','wa','wa','wa','de'], // row 6
+  ['fo','hi','hi','hi','hi','da','da','da','da','wa','wa','wa','de','de'], // row 7
+  ['fo','hi','hi','sw','sw','da','da','da','wa','wa','wa','de','de','de'], // row 8
+  ['fo','sw','sw','sw','sw','da','da','da','wa','de','de','de','de','de'], // row 9
+  ['fo','sw','sw','sw','de','de','de','de','de','de','de','de','de','de'], // row 10
+  ['fo','fo','sw','de','de','de','de','vo','vo','vo','vo','de','de','de'], // row 11
+  ['fo','fo','de','de','de','de','vo','vo','vo','vo','vo','vo','de','de'], // row 12
+  ['fo','de','de','de','de','de','vo','vo','vo','vo','vo','vo','vo','de'], // row 13
+];
+
+const TERRAIN_COLORS = {
+  'fo': '#1a3a22',   // forest
+  'fa': '#2a4a30',   // farmland
+  'mo': '#4a4a50',   // mountain
+  'hi': '#3a3020',   // hills
+  'da': '#3a3020',   // dark/dirt
+  'au': '#4a2a10',   // autumn
+  'wa': '#1a1a4a',   // water
+  'sw': '#2a2a1a',   // swamp
+  'de': '#5a3a1a',   // desert
+  'vo': '#1a0520',   // void
+};
+
+const TERRAIN_NAMES = {
+  'fo':'Forest','fa':'Farmland','mo':'Mountain','hi':'Hills',
+  'da':'Wasteland','au':'Autumn Woods','wa':'Water','sw':'Swamp',
+  'de':'Desert','vo':'Void',
+};
+
+function getFloorZone(f) {
+  for(const z of ZONES) {
+    if(f >= z.floors[0] && f <= z.floors[1]) return z;
+  }
+  return ZONES[0];
+}
+
+// Locked = not cleared, not current, and (not yet floor-reached OR level too low)
+function zoneLocked(z) {
+  const done = PLAYER_FLOOR > z.floors[1];
+  const current = PLAYER_FLOOR >= z.floors[0] && PLAYER_FLOOR <= z.floors[1];
+  return !done && !current && (z.floors[0] > HIGHEST + 1 || PLAYER_LEVEL < z.lvl);
+}
+
+// ── ENEMY TIERS ──
+const ENEMIES = [
+  ['🐺 Goblin Scout','🌿 Thorn Lurker','🦇 Wood Bat','🐀 Bush Rat','🕷️ Forest Weaver'],
+  ['💀 Skeleton','🔮 Crystal Golem','🦂 Cave Scorpion','🪨 Stone Knight','💎 Gem Wraith'],
+  ['👻 Wraith Guard','🦴 Bone Knight','🌑 Shadow Stalker','🔮 Dark Mage','👑 Dark Commander'],
+  ['🐍 River Serpent','🌊 Tidal Spirit','🐚 Shell Guardian','🦑 Deep Kraken','🧜‍♂️ Siren'],
+  ['🌌 Void Reaper','💀 Soul Devourer','🔥 Chaos Fiend','⭐ Star Eater','🌀 Reality Tearer'],
+];
+
+// ── STATE ──
+let selectedZone = null;
+let inCombat = false;
+
+// ── CANVAS ──
+const wrap = document.getElementById('mapWrap');
+const canvas = document.getElementById('worldMap');
+const ctx = canvas.getContext('2d');
+
+function hexCorner(cx, cy, r, i) {
+  const angle = Math.PI / 180 * (60*i - 30); // pointy-top
+  return {x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle)};
+}
+
+// ── ZONE LABELS ──
+const ZONE_LABELS = [
+  {name:'Goblin Woods', pos:[2,5], color:'#4ade80'},
+  {name:'Erdőhon', pos:[4,4], color:'#6ee7b7'},
+  {name:'Crystal Caves', pos:[7,2], color:'#818cf8'},
+  {name:'Vaslanka', pos:[3,7], color:'#d4a574'},
+  {name:'Viharszem', pos:[6,5], color:'#f87171'},
+  {name:'Naposvég', pos:[9,4], color:'#fb923c'},
+  {name:'Folyószív', pos:[10,7], color:'#60a5fa'},
+  {name:'Mirewood', pos:[8,9], color:'#a3e635'},
+  {name:"Ss'tk'lsk", pos:[6,10], color:'#fde68a'},
+  {name:'Void Gate', pos:[8,12], color:'#f0abfc'},
+];
+
+function drawHex(cx, cy, r, fill, stroke, lw) {
+  ctx.beginPath();
+  for(let i=0;i<6;i++) {
+    const p = hexCorner(cx, cy, r, i);
+    i===0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if(stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lw || 1;
+    ctx.stroke();
+  }
+}
+
+function drawHexMap(scale) {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  const bg = ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.7);
+  bg.addColorStop(0,'#0a0a12');
+  bg.addColorStop(1,'#020105');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Draw terrain hex grid
+  for(let r=0; r<TERRAIN.length; r++) {
+    for(let c=0; c<TERRAIN[r].length; c++) {
+      const t = TERRAIN[r][c];
+      const pos = hexPos(c, r);
+      const cx = pos.x * scale, cy = pos.y * scale;
+      const fill = TERRAIN_COLORS[t];
+      // slight variation per hex
+      const bright = 0.85 + Math.random()*0.15;
+      drawHex(cx, cy, HEX_R*scale, fill, '#000', 0.5*scale);
+    }
+  }
+
+  // Draw zone labels
+  for(const z of ZONES) {
+    const pos = hexPos(z.pos[0], z.pos[1]);
+    ctx.font = `bold ${7*scale}px "Press Start 2P"`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    const labelY = (pos.y - HEX_R - 12) * scale;
+    ctx.fillText(z.name, (pos.x+1)*scale, labelY+1);
+    ctx.fillStyle = z.lcolor;
+    ctx.fillText(z.name, pos.x*scale, labelY);
+  }
+
+  // Draw roads between connected zones (connect consecutive zones)
+  for(let i=0;i<ZONES.length-1;i++) {
+    const a = hexPos(ZONES[i].pos[0], ZONES[i].pos[1]);
+    const b = hexPos(ZONES[i+1].pos[0], ZONES[i+1].pos[1]);
+    ctx.strokeStyle = 'rgba(200,180,140,0.25)';
+    ctx.lineWidth = 2*scale;
+    ctx.setLineDash([5*scale,4*scale]);
+    ctx.beginPath();
+    ctx.moveTo(a.x*scale, a.y*scale);
+    ctx.lineTo(b.x*scale, b.y*scale);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Cross connections
+  const extraRoads = [[0,2],[3,4],[4,6],[2,4]];
+  for(const [i,j] of extraRoads) {
+    if(i>=ZONES.length||j>=ZONES.length) continue;
+    const a = hexPos(ZONES[i].pos[0], ZONES[i].pos[1]);
+    const b = hexPos(ZONES[j].pos[0], ZONES[j].pos[1]);
+    ctx.strokeStyle = 'rgba(200,180,140,0.15)';
+    ctx.lineWidth = 1.5*scale;
+    ctx.setLineDash([3*scale,5*scale]);
+    ctx.beginPath();
+    ctx.moveTo(a.x*scale, a.y*scale);
+    ctx.lineTo(b.x*scale, b.y*scale);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw zone markers
+  for(const z of ZONES) {
+    const pos = hexPos(z.pos[0], z.pos[1]);
+    const cx = pos.x * scale, cy = pos.y * scale;
+    const floorStart = z.floors[0];
+    const done = PLAYER_FLOOR > z.floors[1];
+    const current = PLAYER_FLOOR >= z.floors[0] && PLAYER_FLOOR <= z.floors[1];
+    const locked = zoneLocked(z);
+
+    // Rim
+    const rimColor = done ? '#4ade80' : current ? '#ffd54a' : locked ? '#444' : '#888';
+    const rimW = (current||done) ? 2.5 : 1.5;
+    drawHex(cx, cy, HEX_R*scale*0.88, null, rimColor, rimW*scale);
+
+    // Icon
+    ctx.font = `${12*scale}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = done ? 'rgba(74,222,128,0.3)' : current ? '#ffd54a' : locked ? '#333' : 'rgba(255,255,255,0.15)';
+    ctx.fillText(z.floors[1]%10===0 ? '👑' : z.floors[0]%10===0 ? '👑' : '⚔️', cx, cy);
+
+    // Floor range label
+    ctx.font = `${5*scale}px "Press Start 2P"`;
+    ctx.fillStyle = '#888';
+    ctx.fillText(`Fl ${z.floors[0]}-${z.floors[1]}`, cx, (cy + HEX_R*scale*0.6));
+  }
+
+  // Hero marker on current zone
+  const curZone = getFloorZone(PLAYER_FLOOR);
+  const heroPos = hexPos(curZone.pos[0], curZone.pos[1]);
+  ctx.font = `${16*scale}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.shadowBlur = 12*scale;
+  ctx.shadowColor = '#ffd54a';
+  ctx.fillText('🧭', heroPos.x*scale, (heroPos.y - HEX_R*scale - 18)*scale);
+  ctx.shadowBlur = 0;
+
+  // Map border decorations (stone texture)
+  // Top-left corner glyph
+  ctx.font = `${14*scale}px serif`;
+  ctx.fillStyle = 'rgba(200,180,140,0.15)';
+  ctx.fillText('🗺️', 10*scale, 20*scale);
+}
+
+// ── SCALING ──
+function resize() {
+  const w = wrap.clientWidth;
+  const scale = w / MAP_W;
+  canvas.width = w;
+  canvas.height = MAP_H * scale;
+  canvas.style.height = (MAP_H * scale) + 'px';
+
+  // Generate random seed for terrain variation (reset each draw)
+  drawHexMap(scale);
+}
+
+// ── CLICK HANDLING ──
+function getScale() { return canvas.width / MAP_W; }
+
+function posToZone(mx, my) {
+  let best = null, bestD = 999;
+  for(const z of ZONES) {
+    const pos = hexPos(z.pos[0], z.pos[1]);
+    const d = Math.hypot(mx-pos.x, my-pos.y);
+    if(d < bestD) { bestD = d; best = z; }
+  }
+  if(bestD < HEX_R * 1.5) return best;
+  // Also check if clicked inside any hex
+  for(let r=0; r<TERRAIN.length; r++) {
+    for(let c=0; c<TERRAIN[r].length; c++) {
+      const pos = hexPos(c, r);
+      const d = Math.hypot(mx-pos.x, my-pos.y);
+      if(d < HEX_R * 0.7) {
+        // find which zone this hex belongs to
+        let nearest = null, nd = 999;
+        for(const z of ZONES) {
+          const zp = hexPos(z.pos[0], z.pos[1]);
+          const dd = Math.hypot(mx-zp.x, my-zp.y);
+          if(dd < nd) { nd = dd; nearest = z; }
+        }
+        return nearest;
+      }
+    }
+  }
+  return best;
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scale = getScale();
+  const mx = (e.clientX - rect.left) / scale;
+  const my = (e.clientY - rect.top) / scale;
+  const zone = posToZone(mx, my);
+  if(zone) selectZone(zone);
+});
+
+const tip = document.getElementById('tooltip');
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scale = getScale();
+  const mx = (e.clientX - rect.left) / scale;
+  const my = (e.clientY - rect.top) / scale;
+  const zone = posToZone(mx, my);
+  if(zone) {
+    const done = PLAYER_FLOOR > zone.floors[1];
+    const locked = zoneLocked(zone);
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX+12)+'px';
+    tip.style.top = (e.clientY+12)+'px';
+    tip.innerHTML = `<b style="color:${zone.lcolor}">${zone.name}</b><br>
+      <span style="color:#aaa">Floors ${zone.floors[0]}-${zone.floors[1]} · Lv.${zone.lvl}+</span><br>
+      <span style="color:${done?'#4ade80':locked?'#555':'#ffd54a'}">${done?'✅ Cleared':locked?'🔒 Locked':'⚔️ Available'}</span>`;
+  } else {
+    tip.style.display = 'none';
+  }
+});
+canvas.addEventListener('mouseleave', ()=>{ tip.style.display='none'; });
+
+// ── ZONE SELECTION ──
+function selectZone(zone) {
+  selectedZone = zone;
+  const done = PLAYER_FLOOR > zone.floors[1];
+  const current = PLAYER_FLOOR >= zone.floors[0] && PLAYER_FLOOR <= zone.floors[1];
+  const locked = zoneLocked(zone);
+  const lvlLock = !done && !current && PLAYER_LEVEL < zone.lvl;
+
+  document.getElementById('zpName').innerHTML = `<span style="color:${zone.lcolor}">${zone.name}</span> <span style="color:#666;font-size:12px;">(Lv.${zone.lvl}+)</span>`;
+  document.getElementById('zpRange').textContent = `Floors ${zone.floors[0]} - ${zone.floors[1]}`;
+  document.getElementById('zpEnemy').textContent = locked ? (lvlLock ? `🔒 Requires Level ${zone.lvl}` : '🔒 Locked') : `Enemies: ${zone.enemies.join(', ')}`;
+  document.getElementById('zpBoss').style.display = (zone.floors[1]%10===0||zone.floors[0]%10===0) && !locked ? 'block' : 'none';
+
+  // Floor dots
+  const dots = document.getElementById('floorDots');
+  dots.innerHTML = '';
+  for(let f=zone.floors[0]; f<=zone.floors[1]; f++) {
+    const d = document.createElement('span');
+    d.style.cssText = `display:inline-block;width:16px;height:16px;border-radius:2px;font-size:7px;font-family:'Press Start 2P',monospace;text-align:center;line-height:16px;`;
+    if(f < PLAYER_FLOOR) { d.style.background='#1a3a1a'; d.style.color='#4ade80'; d.style.border='1px solid #2a5a2a'; d.textContent='✓'; }
+    else if(f == PLAYER_FLOOR) { d.style.background='#3a2a00'; d.style.color='#ffd54a'; d.style.border='1px solid #ffd54a'; d.style.boxShadow='0 0 4px rgba(255,213,74,0.5)'; d.textContent='◈'; }
+    else { d.style.background='#111'; d.style.color='#333'; d.style.border='1px solid #222'; d.textContent=f%10===0?'👑':''; }
+    d.title = `Floor ${f}`;
+    dots.appendChild(d);
+  }
+
+  // Enter button
+  const btn = document.getElementById('enterBtn');
+  btn.disabled = locked || !current;
+  document.getElementById('btnFloor').textContent = PLAYER_FLOOR;
+
+  if(!current && !done) {
+    btn.textContent = `⚔️ Progress to ${zone.name}`;
+  } else if(current) {
+    btn.textContent = `⚔️ ENTER FLOOR ${PLAYER_FLOOR}`;
+  }
+
+  // Reset combat panel
+  if(current) {
+    document.getElementById('enterBtn').style.display = 'block';
+    document.getElementById('afterBtns').style.display = 'none';
+    document.getElementById('rewardBox').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+  }
+}
+
+function enterFloor() {
+  if(inCombat) return;
+  const f = PLAYER_FLOOR;
+  if(f > 100) { addLog('🏆 All 100 floors conquered!'); return; }
+  if(parseInt(document.getElementById('sHP').textContent) <= 0) {
+    document.getElementById('knockedMsg').style.display = 'block';
+    return;
+  }
+  document.getElementById('knockedMsg').style.display = 'none';
+  inCombat = true;
+  document.getElementById('enterBtn').disabled = true;
+  document.getElementById('rewardBox').style.display = 'none';
+  clearLog();
+  addLog(`⚔️ Entering Floor ${f}...`, '#ffd54a');
+
+  fetch('/api/dungeon/combat', {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r => r.json().catch(()=>{throw new Error('SyntaxError')}))
+    .then(data => {
+      if(data.error) { addLog('❌ '+data.error,'#ff4757'); inCombat=false; document.getElementById('enterBtn').disabled=false; return; }
+      renderResult(data);
+    })
+    .catch(err => { clearLog(); addLog(`❌ ${err.message}. Try again.`,'#ff4757'); inCombat=false; document.getElementById('enterBtn').disabled=false; });
+}
+
+function renderResult(data) {
+  data.log.forEach((line,i) => setTimeout(()=>addLog(line), i*80));
+
+  const pHp = data.player_hp, pMax = data.player_max_hp;
+  document.getElementById('sHP').textContent = pHp;
+  document.getElementById('cpHP').textContent = pHp;
+  document.getElementById('cpMaxHP').textContent = pMax;
+  document.getElementById('cpHpBar').style.width = Math.max(0,(pHp/pMax)*100)+'%';
+
+  document.getElementById('sCoins').textContent = parseInt(document.getElementById('sCoins').textContent) + data.coins;
+  if(data.level) document.getElementById('sLvl').textContent = data.level;
+
+  if(data.won) {
+    document.getElementById('rewardBox').style.display = 'block';
+    document.getElementById('rewardBox').innerHTML = `✅ +${data.coins} 🪙 +${data.xp} XP${data.loot_msg ? '<br>🎁 '+data.loot_msg : ''}`;
+    document.getElementById('enterBtn').style.display = 'none';
+    document.getElementById('afterBtns').style.display = 'flex';
+    document.getElementById('afterBtns').style.flexDirection = 'column';
+    if(data.floor < 100) {
+      document.getElementById('nextBtn').style.display = 'block';
+    }
+  } else {
+    inCombat = false;
+    document.getElementById('enterBtn').disabled = false;
+    if(pHp <= 0) document.getElementById('knockedMsg').style.display = 'block';
+  }
+}
+
+function advanceFloor() {
+  location.reload();
+}
+
+function resetCombat() {
+  inCombat = false;
+  document.getElementById('enterBtn').disabled = false;
+  document.getElementById('enterBtn').style.display = 'block';
+  document.getElementById('afterBtns').style.display = 'none';
+  document.getElementById('rewardBox').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  clearLog();
+  addLog('↩ Select a region on the map.', '#888');
+}
+
+function addLog(line, color) {
+  const log = document.getElementById('combatLog');
+  const d = document.createElement('div');
+  d.innerHTML = line;
+  if(color) d.style.color = color;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog() { document.getElementById('combatLog').innerHTML = ''; }
+
+// ── INIT ──
+window.addEventListener('resize', resize);
+resize();
+// Init HP bar
+const h0 = {{player.health}}, hm0 = {{player.max_health}};
+document.getElementById('cpHpBar').style.width = Math.max(0,(h0/hm0)*100)+'%';
+document.getElementById('sCurFloor').textContent = PLAYER_FLOOR;
+selectZone(getFloorZone(PLAYER_FLOOR));
+</script>
+{% if true %}
+<div id="healWidget" style="position:fixed;right:12px;bottom:12px;z-index:999;display:flex;gap:8px;align-items:center;">
+  <span style="color:#888;font-family:'VT323',monospace;font-size:14px;">❤️ {{ player.health }}/{{ player.max_health }}</span>
+  <button class="pxl-btn" onclick="doHeal('full')" style="padding:7px 12px;font-size:8px;background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;" title="Spend coins to fully heal">⚡ FULL HEAL (COINS)</button>
+  <button class="pxl-btn" onclick="doHeal('coins')" style="padding:7px 12px;font-size:8px;" title="10 coins for +30 HP">🪙 HEAL (10)</button>
+</div>
+{% endif %}
+<script>
+function doHeal(mode){
+  fetch('/api/heal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){ healToast(d.message,false); setTimeout(function(){location.reload()},700); }
+    else { healToast(d.error||'Failed',true); }
+  }).catch(function(){healToast('Network error',true);});
+}
+function healToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:60px;right:12px;z-index:9999;padding:9px 18px;font-family:VT323,monospace;font-size:17px;border:2px solid '+(t?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2600);
+}
+</script>

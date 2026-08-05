@@ -1,0 +1,857 @@
+{
+  "weapons": [
+    {
+      "id": "wooden_sword",
+      "name": "\ud83d\udde1\ufe0f Wooden Sword",
+      "attack": 5,
+      "price": 100,
+      "desc": "A basic wooden sword. +5 ATK"
+    },
+    {
+      "id": "iron_sword",
+      "name": "\u2694\ufe0f Iron Sword",
+      "attack": 12,
+      "price": 300,
+      "desc": "A sturdy iron blade. +12 ATK"
+    },
+    {
+      "id": "steel_sword",
+      "name": "\ud83d\udd2a Steel Sword",
+      "attack": 20,
+      "price": 350,
+      "desc": "Sharp steel. +20 ATK"
+    },
+    {
+      "id": "flame_blade",
+      "name": "\ud83d\udd25 Flame Blade",
+      "attack": 35,
+      "price": 750,
+      "desc": "Burns with eternal fire. +35 ATK"
+    },
+    {
+      "id": "obsidian_katana",
+      "name": "\ud83d\uddfe Obsidian Katana",
+      "attack": 45,
+      "price": 1100,
+      "desc": "A razor-sharp volcanic glass blade. +45 ATK"
+    },
+    {
+      "id": "dragon_slayer",
+      "name": "\ud83d\udc09 Dragon Slayer",
+      "attack": 55,
+      "price": 1500,
+      "desc": "Forged to slay dragons. +55 ATK"
+    },
+    {
+      "id": "excalibur",
+      "name": "\ud83d\udc51 Excalibur",
+      "attack": 80,
+      "price": 3000,
+      "desc": "The legendary sword of kings. +80 ATK"
+    },
+    {
+      "id": "stormbreaker",
+      "name": "\u26a1 Stormbreaker",
+      "attack": 95,
+      "price": 4500,
+      "desc": "Forged in the heart of a storm. +95 ATK"
+    },
+    {
+      "id": "phoenix_blade",
+      "name": "\ud83d\udd25 Phoenix Blade",
+      "attack": 110,
+      "price": 6000,
+      "desc": "Reborn from immortal flames. +110 ATK"
+    },
+    {
+      "id": "doomhammer",
+      "name": "\ud83d\udd28 Doomhammer",
+      "attack": 130,
+      "price": 8000,
+      "desc": "Smashes everything in its path. +130 ATK"
+    },
+    {
+      "id": "tempest_fury",
+      "name": "\ud83c\udf2a\ufe0f Tempest Fury",
+      "attack": 150,
+      "price": 10000,
+      "desc": "A blade infused with the fury of storms. +150 ATK"
+    },
+    {
+      "id": "void_reaper",
+      "name": "\ud83c\udf11 Void Reaper",
+      "attack": 175,
+      "price": 13000,
+      "desc": "Forged from the essence of the Void. +175 ATK"
+    },
+    {
+      "id": "eternal_flame",
+      "name": "\ud83d\udd25 Eternal Flame",
+      "attack": 200,
+      "price": 16000,
+      "desc": "Burns with the fire of a thousand suns. +200 ATK"
+    },
+    {
+      "id": "prismatic_blade",
+      "name": "\ud83d\udca0 Prismatic Blade",
+      "attack": 230,
+      "price": 20000,
+      "desc": "Refracts light into devastating energy. +230 ATK"
+    },
+    {
+      "id": "crystal_staff",
+      "name": "\ud83d\udd2e Crystal Staff",
+      "attack": 260,
+      "price": 25000,
+      "desc": "Channels geomantic power through crystal. +260 ATK"
+    },
+    {
+      "id": "abyssal_blade",
+      "name": "\ud83d\udd25 Abyssal Blade",
+      "attack": 300,
+      "price": 32000,
+      "desc": "Forged in the Abyssal Rift. Burns with hellfire. +300 ATK"
+    },
+    {
+      "id": "soul_reaper",
+      "name": "\ud83d\udc80 Soul Reaper",
+      "attack": 350,
+      "price": 40000,
+      "desc": "Steals the soul of the fallen. +350 ATK"
+    },
+    {
+      "id": "shadow_fang",
+      "name": "\ud83c\udf11 Shadow Fang",
+      "attack": 420,
+      "price": 50000,
+      "desc": "A blade forged in the Shadowfall Depths. Strikes from the void. +420 ATK"
+    },
+    {
+      "id": "ember_fang",
+      "name": "\ud83d\udd25 Ember Fang",
+      "attack": 500,
+      "price": 60000,
+      "desc": "Forged in the Molten Core. Burns with eternal flame. +500 ATK"
+    },
+    {
+      "id": "lunar_crescent",
+      "name": "\ud83c\udf19 Lunar Crescent",
+      "attack": 580,
+      "price": 75000,
+      "desc": "A crescent blade forged from pure moonlight. +580 ATK"
+    },
+    {
+      "id": "gaia_wrath",
+      "name": "\ud83c\udf3f Gaia's Wrath",
+      "attack": 650,
+      "price": 90000,
+      "desc": "A living weapon grown from the World Tree. +650 ATK"
+    },
+    {
+      "id": "eclipse_blade",
+      "name": "\ud83c\udf11 Eclipse Blade",
+      "attack": 720,
+      "price": 110000,
+      "desc": "Forged in the space between sun and moon. +720 ATK"
+    },
+    {
+      "id": "scorching_mirage",
+      "name": "\ud83c\udfdc\ufe0f Scorching Mirage",
+      "attack": 820,
+      "price": 140000,
+      "desc": "A blade forged from desert heat and ancient magic. +820 ATK"
+    },
+    {
+      "id": "glacial_blade",
+      "name": "\ud83e\uddca Glacial Blade",
+      "attack": 950,
+      "price": 180000,
+      "desc": "A blade forged in the heart of a glacier. +950 ATK"
+    },
+    {
+      "id": "frostbite_staff",
+      "name": "\u2744\ufe0f Frostbite Staff",
+      "attack": 1050,
+      "price": 220000,
+      "desc": "Channels the biting cold of eternal winter. +1050 ATK"
+    },
+    {
+      "id": "stormsplitter_blade",
+      "name": "\ud83c\udf0a Stormsplitter Blade",
+      "attack": 1200,
+      "price": 300000,
+      "desc": "Cleaves through tidal waves and thunderstorms alike. +1200 ATK"
+    },
+    {
+      "id": "astral_blade",
+      "name": "\ud83c\udf0c Astral Blade",
+      "attack": 1400,
+      "price": 400000,
+      "desc": "Forged from crystallized astral energy. Cuts through dimensions. +1400 ATK"
+    },
+    {
+      "id": "stellar_talon",
+      "name": "\u2b50 Stellar Talon",
+      "attack": 1600,
+      "price": 500000,
+      "desc": "A claw-like weapon forged from a dying star. +1600 ATK"
+    },
+    {
+      "id": "aether_blade",
+      "name": "\ud83c\udf0c Aether Blade",
+      "attack": 1900,
+      "price": 700000,
+      "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"
+    },
+    {
+      "id": "chrono_edge",
+      "name": "\u23f3 Chrono Edge",
+      "attack": 2100,
+      "price": 850000,
+      "desc": "A blade that cuts through time itself. +2100 ATK"
+    },
+    {
+      "id": "abyssal_trident",
+      "name": "\ud83d\udd31 Abyssal Trident",
+      "attack": 2300,
+      "price": 950000,
+      "desc": "Forged in the deepest ocean trench. Strikes with the pressure of the abyss. +2300 ATK"
+    },
+    {
+      "id": "celestial_scepter",
+      "name": "\ud83c\udf0c Celestial Scepter",
+      "attack": 2500,
+      "price": 1100000,
+      "desc": "Forged from collapsed star matter. Channels cosmic energy. +2500 ATK"
+    }
+  ],
+  "armor": [
+    {
+      "id": "leather_armor",
+      "name": "\ud83e\udd4b Leather Armor",
+      "defense": 3,
+      "price": 40,
+      "desc": "Basic leather protection. +3 DEF"
+    },
+    {
+      "id": "chainmail",
+      "name": "\u26d3\ufe0f Chainmail",
+      "defense": 8,
+      "price": 250,
+      "desc": "Linked metal rings. +8 DEF"
+    },
+    {
+      "id": "iron_armor",
+      "name": "\ud83d\udee1\ufe0f Iron Armor",
+      "defense": 15,
+      "price": 300,
+      "desc": "Solid iron plates. +15 DEF"
+    },
+    {
+      "id": "steel_armor",
+      "name": "\ud83c\udff0 Steel Armor",
+      "defense": 25,
+      "price": 600,
+      "desc": "Heavy steel protection. +25 DEF"
+    },
+    {
+      "id": "titanium_armor",
+      "name": "\ud83d\udee1\ufe0f Titanium Armor",
+      "defense": 32,
+      "price": 900,
+      "desc": "Lightweight yet nearly unbreakable. +32 DEF"
+    },
+    {
+      "id": "dragon_scale",
+      "name": "\ud83d\udc32 Dragon Scale",
+      "defense": 40,
+      "price": 1200,
+      "desc": "Made from dragon scales. +40 DEF"
+    },
+    {
+      "id": "divine_plate",
+      "name": "\u2728 Divine Plate",
+      "defense": 60,
+      "price": 2500,
+      "desc": "Blessed by the gods. +60 DEF"
+    },
+    {
+      "id": "celestial_aegis",
+      "name": "\ud83c\udf1f Celestial Aegis",
+      "defense": 75,
+      "price": 4000,
+      "desc": "Woven from starlight. +75 DEF"
+    },
+    {
+      "id": "mystic_robes",
+      "name": "\ud83c\udf19 Mystic Robes",
+      "defense": 50,
+      "price": 1800,
+      "desc": "Enchanted fabric that absorbs magic. +50 DEF"
+    },
+    {
+      "id": "abyssal_cloak",
+      "name": "\ud83c\udf11 Abyssal Cloak",
+      "defense": 90,
+      "price": 5500,
+      "desc": "Woven from the fabric of the abyss. +90 DEF"
+    },
+    {
+      "id": "storm_shield",
+      "name": "\u26c8\ufe0f Storm Shield",
+      "defense": 105,
+      "price": 7000,
+      "desc": "Forged in the heart of a hurricane. +105 DEF"
+    },
+    {
+      "id": "void_plate",
+      "name": "\ud83c\udf0c Void Plate",
+      "defense": 120,
+      "price": 9000,
+      "desc": "Absorbs attacks into the Void. +120 DEF"
+    },
+    {
+      "id": "eternal_aegis",
+      "name": "\u2728 Eternal Aegis",
+      "defense": 140,
+      "price": 12000,
+      "desc": "An indestructible shield of pure light. +140 DEF"
+    },
+    {
+      "id": "prismatic_shield",
+      "name": "\ud83d\udca0 Prismatic Shield",
+      "defense": 165,
+      "price": 18000,
+      "desc": "A shield that refracts incoming attacks. +165 DEF"
+    },
+    {
+      "id": "crystal_plate",
+      "name": "\ud83d\udd2e Crystal Plate",
+      "defense": 190,
+      "price": 24000,
+      "desc": "Forged from enchanted crystal matrices. +190 DEF"
+    },
+    {
+      "id": "abyssal_armor",
+      "name": "\ud83d\udd25 Abyssal Armor",
+      "defense": 220,
+      "price": 30000,
+      "desc": "Forged in the Abyssal Rift. Immune to fire. +220 DEF"
+    },
+    {
+      "id": "soul_guard",
+      "name": "\ud83d\udc80 Soul Guard",
+      "defense": 260,
+      "price": 38000,
+      "desc": "Protects the wearer's soul from harm. +260 DEF"
+    },
+    {
+      "id": "shadowfall_armor",
+      "name": "\ud83c\udf11 Shadowfall Armor",
+      "defense": 310,
+      "price": 48000,
+      "desc": "Forged in the depths where shadows reign. Absorbs dark energy. +310 DEF"
+    },
+    {
+      "id": "molten_plate",
+      "name": "\ud83d\udd25 Molten Plate",
+      "defense": 370,
+      "price": 58000,
+      "desc": "Forged from the magma of the Eternal Flame. +370 DEF"
+    },
+    {
+      "id": "moonweave_robes",
+      "name": "\ud83c\udf19 Moonweave Robes",
+      "defense": 440,
+      "price": 72000,
+      "desc": "Woven from threads of pure moonlight by the Moon Goddess. +440 DEF"
+    },
+    {
+      "id": "gaia_bark",
+      "name": "\ud83c\udf3f Gaia's Bark",
+      "defense": 520,
+      "price": 88000,
+      "desc": "Living armor grown from ancient World Tree bark. +520 DEF"
+    },
+    {
+      "id": "eclipse_aegis",
+      "name": "\ud83c\udf11 Eclipse Aegis",
+      "defense": 600,
+      "price": 105000,
+      "desc": "A shield forged from the essence of celestial alignment. +600 DEF"
+    },
+    {
+      "id": "sunforged_plate",
+      "name": "\ud83c\udf1e Sunforged Plate",
+      "defense": 700,
+      "price": 130000,
+      "desc": "Forged under the eternal desert sun. +700 DEF"
+    },
+    {
+      "id": "frostweave_cloak",
+      "name": "\ud83e\udde3 Frostweave Cloak",
+      "defense": 820,
+      "price": 170000,
+      "desc": "Woven from threads of pure ice by winter spirits. +820 DEF"
+    },
+    {
+      "id": "aurora_aegis",
+      "name": "\ud83c\udf0c Aurora Aegis",
+      "defense": 950,
+      "price": 210000,
+      "desc": "A shield that captures the northern lights. +950 DEF"
+    },
+    {
+      "id": "tidalwave_barrier",
+      "name": "\ud83c\udf0a Tidalwave Barrier",
+      "defense": 1100,
+      "price": 280000,
+      "desc": "A shield forged from the pressure of the deepest ocean. +1100 DEF"
+    },
+    {
+      "id": "voidweave_aegis",
+      "name": "\ud83c\udf0c Voidweave Aegis",
+      "defense": 1250,
+      "price": 350000,
+      "desc": "Woven from threads of pure void energy. +1250 DEF"
+    },
+    {
+      "id": "astral_plate",
+      "name": "\ud83d\udcab Astral Plate",
+      "defense": 1450,
+      "price": 450000,
+      "desc": "Armor forged from crystallized starlight. +1450 DEF"
+    },
+    {
+      "id": "cosmic_aegis",
+      "name": "\ud83c\udf0c Cosmic Aegis",
+      "defense": 1700,
+      "price": 600000,
+      "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +1700 DEF"
+    },
+    {
+      "id": "temporal_aegis",
+      "name": "\u23f3 Temporal Aegis",
+      "defense": 1900,
+      "price": 750000,
+      "desc": "Woven from the fabric of frozen time. Stops attacks before they land. +1900 DEF"
+    },
+    {
+      "id": "abyssal_mantle",
+      "name": "\ud83c\udf0a Abyssal Mantle",
+      "defense": 2100,
+      "price": 880000,
+      "desc": "Armor woven from the crushing pressure of the deepest ocean trench. +2100 DEF"
+    },
+    {
+      "id": "cosmic_mantle",
+      "name": "\ud83c\udf0c Cosmic Mantle",
+      "defense": 2300,
+      "price": 1000000,
+      "desc": "Woven from the fabric of the Celestial Abyss. Absorbs dimensional energy. +2300 DEF"
+    }
+  ],
+  "potions": [
+    {
+      "id": "health_potion",
+      "name": "\u2764\ufe0f Health Potion",
+      "heal": 30,
+      "price": 25,
+      "desc": "Restores 30 HP"
+    },
+    {
+      "id": "large_potion",
+      "name": "\ud83d\udc96 Large Potion",
+      "heal": 75,
+      "price": 60,
+      "desc": "Restores 75 HP"
+    },
+    {
+      "id": "elixir",
+      "name": "\ud83e\uddea Elixir",
+      "heal": 400,
+      "price": 300,
+      "desc": "Fully restores HP"
+    },
+    {
+      "id": "mega_elixir",
+      "name": "\ud83d\udcab Mega Elixir",
+      "heal": 500,
+      "price": 350,
+      "desc": "Heals 500 HP instantly"
+    },
+    {
+      "id": "xp_potion",
+      "name": "\u2b50 XP Potion",
+      "xp_boost": 50,
+      "price": 80,
+      "desc": "Grants 50 XP"
+    },
+    {
+      "id": "elixir_of_power",
+      "name": "\ud83e\uddec Elixir of Power",
+      "xp_boost": 200,
+      "price": 500,
+      "desc": "Grants 200 XP instantly"
+    },
+    {
+      "id": "time_warp_potion",
+      "name": "\u23f3 Time Warp Potion",
+      "xp_boost": 500,
+      "price": 1200,
+      "desc": "Bends spacetime for 500 XP"
+    },
+    {
+      "id": "elixir_of_fortune",
+      "name": "\ud83c\udf40 Elixir of Fortune",
+      "xp_boost": 1000,
+      "price": 2500,
+      "desc": "Grants 1000 XP and doubles fishing rewards for 5 minutes"
+    },
+    {
+      "id": "crystal_elixir",
+      "name": "\ud83d\udc8e Crystal Elixir",
+      "heal": 1000,
+      "price": 800,
+      "desc": "A potent crystalline brew. Restores 1000 HP"
+    },
+    {
+      "id": "elixir_of_the_gods",
+      "name": "\ud83c\udf1f Elixir of the Gods",
+      "xp_boost": 2500,
+      "price": 5000,
+      "desc": "Divine elixir. Grants 2500 XP instantly"
+    },
+    {
+      "id": "abyssal_brew",
+      "name": "\ud83d\udd25 Abyssal Brew",
+      "heal": 2000,
+      "price": 1500,
+      "desc": "A fiery concoction from the Abyssal Rift. Restores 2000 HP"
+    },
+    {
+      "id": "soul_elixir",
+      "name": "\ud83d\udc80 Soul Elixir",
+      "xp_boost": 5000,
+      "price": 8000,
+      "desc": "Grants 5000 XP and fully restores HP"
+    },
+    {
+      "id": "nectar_of_the_gods",
+      "name": "\ud83c\udf1f Nectar of the Gods",
+      "heal": 3000,
+      "price": 2500,
+      "desc": "Divine nectar. Restores 3000 HP instantly"
+    },
+    {
+      "id": "elixir_of_eternity",
+      "name": "\u23f3 Elixir of Eternity",
+      "xp_boost": 10000,
+      "price": 15000,
+      "desc": "Grants 10000 XP and fully restores HP"
+    },
+    {
+      "id": "mirage_flask",
+      "name": "\ud83c\udf0c Mirage Flask",
+      "heal": 5000,
+      "xp_boost": 5000,
+      "price": 20000,
+      "desc": "Restores 5000 HP and grants 5000 XP"
+    },
+    {
+      "id": "frostfire_mixture",
+      "name": "\ud83e\uddca\ud83d\udd25 Frostfire Mixture",
+      "heal": 7000,
+      "xp_boost": 7000,
+      "price": 30000,
+      "desc": "A paradoxical brew of fire and ice. Restores 7000 HP and 7000 XP"
+    },
+    {
+      "id": "elixir_of_the_aurora",
+      "name": "\ud83c\udf0c Elixir of the Aurora",
+      "xp_boost": 15000,
+      "price": 25000,
+      "desc": "Distilled from the northern lights. Grants 15000 XP"
+    },
+    {
+      "id": "phantom_tide",
+      "name": "\ud83c\udf0a Phantom Tide",
+      "xp_boost": 20000,
+      "price": 45000,
+      "desc": "A ghostly ocean current. Grants 20000 XP and fully restores HP"
+    },
+    {
+      "id": "cosmic_convergence",
+      "name": "\ud83c\udf0c Cosmic Convergence",
+      "heal": 10000,
+      "xp_boost": 10000,
+      "price": 60000,
+      "desc": "Channels cosmic forces. Restores 10000 HP and 10000 XP"
+    },
+    {
+      "id": "elixir_of_infinity",
+      "name": "\u267e\ufe0f Elixir of Infinity",
+      "xp_boost": 25000,
+      "price": 80000,
+      "desc": "Distilled from infinite space. Grants 25000 XP and fully restores HP"
+    },
+    {
+      "id": "abyssal_convergence",
+      "name": "\ud83c\udf0c Abyssal Convergence",
+      "heal": 15000,
+      "xp_boost": 15000,
+      "price": 100000,
+      "desc": "Channels the full power of the Celestial Abyss. Restores 15000 HP and 15000 XP"
+    },
+    {
+      "id": "elixir_of_forever",
+      "name": "\u267e\ufe0f Elixir of Forever",
+      "heal": 20000,
+      "xp_boost": 20000,
+      "price": 120000,
+      "desc": "A timeless brew from the Chrono Sanctum. Restores 20000 HP and 20000 XP"
+    },
+    {
+      "id": "deep_tide_potion",
+      "name": "\ud83c\udf0a Deep Tide Potion",
+      "heal": 18000,
+      "xp_boost": 18000,
+      "price": 130000,
+      "desc": "Bottled pressure from the Abyssal Trench. Restores 18000 HP and 18000 XP"
+    }
+  ],
+  "special": [
+    {
+      "id": "lucky_charm",
+      "name": "\ud83c\udf40 Lucky Charm",
+      "price": 400,
+      "desc": "Increases rare drop chance"
+    },
+    {
+      "id": "shield_ring",
+      "name": "\ud83d\udc8d Shield Ring",
+      "price": 350,
+      "desc": "+5 permanent DEF"
+    },
+    {
+      "id": "power_ring",
+      "name": "\ud83d\udc8e Power Ring",
+      "price": 350,
+      "desc": "+5 permanent ATK"
+    },
+    {
+      "id": "life_crystal",
+      "name": "\ud83d\udca0 Life Crystal",
+      "price": 500,
+      "desc": "+20 permanent max HP"
+    },
+    {
+      "id": "gravity_well",
+      "name": "\ud83c\udf00 Gravity Well",
+      "price": 800,
+      "desc": "+10 ATK & +10 DEF permanently"
+    },
+    {
+      "id": "enchanted_lure",
+      "name": "\u2728 Enchanted Lure",
+      "price": 450,
+      "desc": "Doubles fishing rare catch chance"
+    },
+    {
+      "id": "soul_gem",
+      "name": "\ud83d\udc8e Soul Gem",
+      "price": 2000,
+      "desc": "+15 ATK & +15 DEF & +30 max HP permanently"
+    },
+    {
+      "id": "dragon_heart",
+      "name": "\ud83d\udc32 Dragon Heart",
+      "price": 3500,
+      "desc": "+25 ATK & +25 DEF & +50 max HP permanently"
+    },
+    {
+      "id": "celestial_blessing",
+      "name": "\ud83c\udf1f Celestial Blessing",
+      "price": 5000,
+      "desc": "+40 ATK & +40 DEF & +100 max HP permanently"
+    },
+    {
+      "id": "crystal_core",
+      "name": "\ud83d\udc8e Crystal Core",
+      "price": 7500,
+      "desc": "+60 ATK & +60 DEF & +150 max HP permanently"
+    },
+    {
+      "id": "essence_of_eternity",
+      "name": "\u2728 Essence of Eternity",
+      "price": 10000,
+      "desc": "+100 ATK & +100 DEF & +250 max HP permanently"
+    },
+    {
+      "id": "abyssal_heart",
+      "name": "\ud83d\udd25 Abyssal Heart",
+      "price": 15000,
+      "desc": "+150 ATK & +150 DEF & +350 max HP permanently"
+    },
+    {
+      "id": "soul_stone",
+      "name": "\ud83d\udc80 Soul Stone",
+      "price": 20000,
+      "desc": "+200 ATK & +200 DEF & +500 max HP permanently"
+    },
+    {
+      "id": "void_essence",
+      "name": "\ud83c\udf0c Void Essence",
+      "price": 28000,
+      "desc": "+300 ATK & +300 DEF & +750 max HP permanently"
+    },
+    {
+      "id": "flame_of_eternity",
+      "name": "\ud83d\udd25 Flame of Eternity",
+      "price": 35000,
+      "desc": "+400 ATK & +400 DEF & +1000 max HP permanently"
+    },
+    {
+      "id": "moonstone_aegis",
+      "name": "\ud83c\udf19 Moonstone Aegis",
+      "price": 45000,
+      "desc": "+500 ATK & +500 DEF & +1250 max HP permanently"
+    },
+    {
+      "id": "gaia_heart",
+      "name": "\ud83c\udf3f Gaia's Heart",
+      "price": 60000,
+      "desc": "+600 ATK & +600 DEF & +1500 max HP permanently"
+    },
+    {
+      "id": "eclipse_core",
+      "name": "\ud83c\udf11 Eclipse Core",
+      "price": 80000,
+      "desc": "+750 ATK & +750 DEF & +2000 max HP permanently"
+    },
+    {
+      "id": "solar_prism",
+      "name": "\ud83d\udca0 Solar Prism",
+      "price": 120000,
+      "desc": "+900 ATK & +900 DEF & +3000 max HP permanently"
+    },
+    {
+      "id": "crystal_of_eternal_frost",
+      "name": "\ud83d\udc8e Crystal of Eternal Frost",
+      "price": 160000,
+      "desc": "+1100 ATK & +1100 DEF & +4000 max HP permanently"
+    },
+    {
+      "id": "northern_star",
+      "name": "\u2b50 Northern Star",
+      "price": 200000,
+      "desc": "+1300 ATK & +1300 DEF & +5000 max HP permanently"
+    },
+    {
+      "id": "indigo_monarch_crown",
+      "name": "\ud83d\udc51 Indigo Monarch's Crown",
+      "price": 250000,
+      "desc": "+1500 ATK & +1500 DEF & +6000 max HP permanently"
+    },
+    {
+      "id": "infinity_fragment",
+      "name": "\u267e\ufe0f Infinity Fragment",
+      "price": 350000,
+      "desc": "+1800 ATK & +1800 DEF & +7500 max HP permanently"
+    },
+    {
+      "id": "cosmic_seed",
+      "name": "\ud83c\udf0c Cosmic Seed",
+      "price": 500000,
+      "desc": "+2200 ATK & +2200 DEF & +10000 max HP permanently"
+    },
+    {
+      "id": "aether_shard",
+      "name": "\ud83c\udf0c Aether Shard",
+      "price": 750000,
+      "desc": "+2800 ATK & +2800 DEF & +14000 max HP permanently"
+    },
+    {
+      "id": "chrono_core",
+      "name": "\u23f3 Chrono Core",
+      "price": 900000,
+      "desc": "+3500 ATK & +3500 DEF & +18000 max HP permanently"
+    },
+    {
+      "id": "trench_treasure",
+      "name": "\ud83d\udca0 Trench Treasure",
+      "price": 200000,
+      "desc": "+1600 ATK & +1600 DEF & +6500 max HP permanently"
+    },
+    {
+      "id": "astral_convergence",
+      "name": "\ud83c\udf0c Astral Convergence",
+      "price": 1200000,
+      "desc": "+4000 ATK & +4000 DEF & +22000 max HP permanently"
+    }
+  ],
+  "helmets": [
+    {
+      "id": "leather_cap",
+      "name": "\ud83e\udde2 Leather Cap",
+      "price": 90,
+      "desc": "+4 DEF, +10 HP"
+    },
+    {
+      "id": "iron_helm",
+      "name": "\u26d1\ufe0f Iron Helm",
+      "price": 260,
+      "desc": "+8 DEF, +20 HP"
+    },
+    {
+      "id": "knight_helm",
+      "name": "\ud83e\ude96 Knight Helm",
+      "price": 650,
+      "desc": "+14 DEF, +35 HP"
+    },
+    {
+      "id": "dragon_helm",
+      "name": "\ud83d\udc09 Dragon Helm",
+      "price": 1400,
+      "desc": "+24 DEF, +60 HP"
+    },
+    {
+      "id": "crown_of_tyrants",
+      "name": "\ud83d\udc51 Crown of Tyrants",
+      "price": 3000,
+      "desc": "+36 DEF, +100 HP"
+    }
+  ],
+  "boots": [
+    {
+      "id": "cloth_boots",
+      "name": "\ud83d\udc62 Cloth Boots",
+      "price": 70,
+      "desc": "+3 DEF, +8 HP"
+    },
+    {
+      "id": "leather_boots",
+      "name": "\ud83e\udd7e Leather Boots",
+      "price": 200,
+      "desc": "+6 DEF, +15 HP"
+    },
+    {
+      "id": "iron_greaves",
+      "name": "\ud83e\uddbf Iron Greaves",
+      "price": 500,
+      "desc": "+11 DEF, +28 HP"
+    },
+    {
+      "id": "wind_treads",
+      "name": "\ud83c\udf2a\ufe0f Wind Treads",
+      "price": 1200,
+      "desc": "+19 DEF, +50 HP"
+    },
+    {
+      "id": "titan_boots",
+      "name": "\ud83d\uddff Titan Boots",
+      "price": 2600,
+      "desc": "+30 DEF, +85 HP"
+    }
+  ]
+}

@@ -1,195 +1,134 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Shop</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:1000px;margin:0 auto;padding:24px}
-.coins-display{text-align:right;font-size:1.2em;margin-bottom:16px;color:#fbbf24}
-.role-filter-banner{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(108,60,224,0.05));border:1px solid #6c3ce0;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.role-filter-banner .filter-icon{font-size:1.8em}
-.role-filter-banner .filter-text{flex:1}
-.role-filter-banner .filter-label{color:#a855f7;font-weight:600}
-.role-filter-banner .filter-desc{color:#888;font-size:0.85em}
-.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
-.tab{padding:10px 20px;border:1px solid #333;border-radius:8px;background:rgba(20,20,40,0.8);color:#aaa;cursor:pointer;transition:all 0.3s;font-size:0.9em}
-.tab:hover,.tab.active{border-color:#a855f7;color:#fff;background:rgba(168,85,247,0.2)}
-.tab.disabled{opacity:0.3;cursor:not-allowed}
-.tab.disabled:hover{border-color:#333;color:#aaa;background:rgba(20,20,40,0.8)}
-.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-.item-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;transition:all 0.3s}
-.item-card:hover{border-color:#a855f7;transform:translateY(-2px)}
-.item-card h3{font-size:1.1em;margin-bottom:6px}
-.item-card .desc{color:#888;font-size:0.85em;margin-bottom:12px}
-.item-card .price{color:#fbbf24;font-weight:600;margin-bottom:12px}
-.btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.3s}
-.btn-buy{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff;width:100%}
-.btn-buy:hover{box-shadow:0 4px 15px rgba(168,85,247,0.4)}
-.btn-buy:disabled{opacity:0.5;cursor:not-allowed}
-.toast{position:fixed;bottom:24px;right:24px;padding:16px 24px;border-radius:8px;color:#fff;font-weight:600;z-index:1000;animation:slideIn 0.3s ease}
-.toast.success{background:linear-gradient(135deg,#22c55e,#16a34a)}
-.toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-</style>
-</head>
-<body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/adventure">Adventure</a>
-    <a href="/shop" class="active">Shop</a>
-    <a href="/inventory">Inventory</a>
-    <a href="/duels">⚔️ Duels</a>
-    <a href="/leaderboard">Leaderboard</a>
-    <a href="/roles">Roles</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
-<div class="container">
-  <h2 style="margin-bottom:8px">🏪 Hermes' Shop</h2>
-  <div class="coins-display">🪙 <span id="coinsValue">{{ player.coins }}</span> coins</div>
-
-  <!-- Role Filter Banner -->
-  {% if player_role %}
-  <div class="role-filter-banner">
-    <div class="filter-icon">
-      {% for rid, rinfo in roles_data.roles.items() %}
-        {% if rid == player_role %}{{ rinfo.emoji }}{% endif %}
-      {% endfor %}
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="pxl" style="max-width:800px;margin:0 auto;padding:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <h2 class="pixel" style="color:#ffd54a;font-size:12px;">{{ '🏪 NORMAL SHOP' if store == 'normal' else ('💎 PREMIUM STORE' if store == 'premium' else '👑 VIP STORE') }}</h2>
+    <div style="font-family:'VT323',monospace;font-size:18px;">
+      🪙 <span style="color:#ffd54a;">{{ player.coins|default(0) }} {{ "coins" if player.coins != 1 else "coin" }}</span>
     </div>
-    <div class="filter-text">
-      <div class="filter-label">Shop filtered for: 
-        {% for rid, rinfo in roles_data.roles.items() %}
-          {% if rid == player_role %}{{ rinfo.name }}{% endif %}
-        {% endfor %}
+  </div>
+  <div style="background:#0d0d0d;border:1px solid #ffd54a;color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 10px;margin-bottom:16px;">
+    📈 ALL BASE PRICES +25% · DAILY ECONOMY INDEX ×{{ '%.3f'|format(inflation) }} · FIXED ITEM RARITIES<br>
+    <span style="color:#888;">Normal: Common/Uncommon/Rare · Premium: Rare/Epic/Unique · VIP: Legendary/Mythical/Unique</span>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <a class="pxl-btn" href="/shop/normal">🏪 NORMAL</a><a class="pxl-btn" href="/shop/premium">💎 PREMIUM</a><a class="pxl-btn" href="/shop/vip">👑 VIP</a>
+  </div>
+  {% if store != 'normal' and not has_access %}
+  <div class="pxl" style="text-align:center;margin-bottom:16px;border-color:#ff4757">
+    <div style="font-family:'Press Start 2P';font-size:9px;color:#ffd54a;margin-bottom:8px">ACCESS LOCKED</div>
+    <div>{{ subscriptions[store].name }} costs 🪙 {{ '{:,}'.format(subscriptions[store].cost) }} for 1 hour.</div>
+    <button onclick="subscribeStore('{{ store|e }}')" style="margin-top:10px">UNLOCK 1 HOUR</button>
+  </div>
+  {% elif store != 'normal' %}<div style="color:#4ade80;margin-bottom:12px">✅ ACCESS ACTIVE · expires <span id="accessUntil"></span></div>{% endif %}
+
+  {% set items = shop_items if shop_items is defined and shop_items else player.get('shop_items', [
+    {'name':'Mystery Egg','rarity':'common','category':'egg','price':200,'attack':0,'defense':0,'bonus_hp':0,'heal':0},
+    {'name':'Golden Egg','rarity':'rare','category':'egg','price':1000,'attack':0,'defense':0,'bonus_hp':0,'heal':0},
+    {'name':'Iron Sword','rarity':'unique','category':'weapon','price':200,'attack':5,'defense':0,'bonus_hp':0,'heal':0},
+    {'name':'Steel Armor','rarity':'rare','category':'armor','price':400,'attack':0,'defense':8,'bonus_hp':20,'heal':0},
+    {'name':'Wooden Shield','rarity':'common','category':'armor','price':80,'attack':0,'defense':3,'bonus_hp':0,'heal':0},
+    {'name':'Mystic Helmet','rarity':'legendary','category':'head','price':800,'attack':3,'defense':4,'bonus_hp':30,'heal':0},
+    {'name':'Leather Boots','rarity':'common','category':'boots','price':60,'attack':0,'defense':2,'bonus_hp':5,'heal':0},
+    {'name':'Shadow Dagger','rarity':'rare','category':'weapon','price':350,'attack':8,'defense':0,'bonus_hp':0,'heal':0}
+  ]) %}
+
+  <!-- 🏷️ STICKY CATEGORY FILTER BAR -->
+  <div style="position:sticky;top:0;z-index:50;background:#0a0a0a;padding:8px 0 10px;border-bottom:1px solid #333;margin-bottom:14px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="shop-cat active" data-cat="all" onclick="filterShop('all',this)">ALL</button>
+      <button class="shop-cat" data-cat="weapon" onclick="filterShop('weapon',this)">⚔️ WEAPONS</button>
+      <button class="shop-cat" data-cat="armor" onclick="filterShop('armor',this)">🛡️ ARMOR</button>
+      <button class="shop-cat" data-cat="head" onclick="filterShop('head',this)">⛑️ HELMETS</button>
+      <button class="shop-cat" data-cat="boots" onclick="filterShop('boots',this)">👢 BOOTS</button>
+      <button class="shop-cat" data-cat="potion" onclick="filterShop('potion',this)">🧪 POTIONS</button>
+      <button class="shop-cat" data-cat="misc" onclick="filterShop('misc',this)">📦 MISC</button>
+    </div>
+    <input id="shopSearch" type="text" placeholder="🔍 SEARCH ITEMS…" oninput="filterShop(activeCat, null)"
+           style="width:100%;box-sizing:border-box;background:#050505;border:1px solid #333;color:#e8e8e8;font-family:'VT323',monospace;font-size:16px;padding:6px 10px;outline:none;">
+  </div>
+
+  <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+    {% for item in items %}
+    <div class="pxl shop-card" data-cat="{{ item.category }}" style="padding:14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div class="rarity-{{ item.rarity }}" style="font-family:'Press Start 2P',monospace;font-size:8px;">{{ item.name[:18] }}</div>
+          <span style="background:#222;color:#888;padding:1px 5px;font-size:8px;font-family:'Press Start 2P',monospace;">{{ item.subcat|default(item.category|upper) }}</span>
+        </div>
+        <div class="rarity-{{ item.rarity }}" style="font-size:8px;font-family:'Press Start 2P',monospace;">{{ item.rarity|upper }}</div>
       </div>
-      <div class="filter-desc">Only items relevant to your role are shown. <a href="/roles" style="color:#a855f7">Change role</a></div>
-    </div>
-  </div>
-  {% elif player.level >= 5 %}
-  <div class="role-filter-banner" style="border-color:#f59e0b">
-    <div class="filter-icon">💡</div>
-    <div class="filter-text">
-      <div class="filter-label" style="color:#f59e0b">Choose a role to get shop discounts & filters!</div>
-      <div class="filter-desc"><a href="/roles" style="color:#a855f7">Pick your role</a> to see role-specific items.</div>
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="tabs">
-    <div class="tab active" onclick="showTab('all')">All</div>
-    {% for cat in allowed_categories %}
-    <div class="tab" onclick="showTab('{{ cat }}')">
-      {% if cat == 'weapons' %}⚔️ Weapons
-      {% elif cat == 'armor' %}🛡️ Armor
-      {% elif cat == 'potions' %}🧪 Potions
-      {% elif cat == 'special' %}✨ Special
+      {% if item.roles %}
+      <div style="font-family:'VT323',monospace;font-size:13px;color:#ffd54a;border:1px dashed #333;padding:2px 6px;">
+        🗡️ {{ item.roles|map('capitalize')|join(' · ') }}
+      </div>
       {% endif %}
+      <div style="display:flex;gap:10px;font-family:'VT323',monospace;font-size:15px;color:#aaa;">
+        {% if item.attack|default(0) > 0 %}<span>⚔️ +{{ item.attack }}</span>{% endif %}
+        {% if item.defense|default(0) > 0 %}<span>🛡️ +{{ item.defense }}</span>{% endif %}
+        {% if item.bonus_hp|default(0) > 0 %}<span>❤️ +{{ item.bonus_hp }}</span>{% endif %}
+        {% if item.heal|default(0) > 0 %}<span>💊 +{{ item.heal }} HP</span>{% endif %}
+      </div>
+      <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#ffd54a;font-family:'VT323',monospace;font-size:17px;">🪙 {{ item.price }}</span>
+        <button class="pxl-btn" onclick="buyItem('{{ item.name|e|replace("'", "\\'") }}')" {% if not has_access %}disabled title="Locked — unlock this store first"{% endif %} style="font-size:8px;padding:5px 12px;">{% if not has_access %}🔒 LOCKED{% else %}BUY{% endif %}</button>
+      </div>
     </div>
     {% endfor %}
-    {% if 'weapons' not in allowed_categories %}
-    <div class="tab disabled" title="Not available for your role">⚔️ Weapons</div>
-    {% endif %}
-    {% if 'armor' not in allowed_categories %}
-    <div class="tab disabled" title="Not available for your role">🛡️ Armor</div>
-    {% endif %}
-    {% if 'potions' not in allowed_categories %}
-    <div class="tab disabled" title="Not available for your role">🧪 Potions</div>
-    {% endif %}
-    {% if 'special' not in allowed_categories %}
-    <div class="tab disabled" title="Not available for your role">✨ Special</div>
-    {% endif %}
+    <div id="shopEmpty" style="display:none;grid-column:1/-1;text-align:center;padding:40px 0;color:#555;font-family:'Press Start 2P',monospace;font-size:9px;">
+      NO ITEMS FOUND 🔍
+    </div>
   </div>
-
-  <div id="itemsContainer" class="items-grid"></div>
 </div>
 
+<style>
+.shop-cat{background:transparent;border:1px solid #333;color:#888;font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 9px;cursor:pointer;}
+.shop-cat:hover{border-color:#ffd54a;color:#ffd54a;}
+.shop-cat.active{background:#ffd54a;border-color:#ffd54a;color:#000;}
+.pxl-btn:disabled{cursor:not-allowed !important;opacity:0.45;filter:grayscale(0.7);}
+</style>
+
 <script>
-const shopData = {{ shop|tojson }};
-const fullShop = {{ full_shop|tojson }};
-const allowedCats = {{ allowed_categories|tojson }};
-const allItems = [];
-const catLabels = {weapons: '⚔️', armor: '🛡️', potions: '🧪', special: '✨'};
-
-// Build items from filtered shop
-Object.keys(shopData).forEach(cat => {
-  (shopData[cat] || []).forEach(item => {
-    allItems.push({...item, category: cat});
-  });
-});
-
-function showTab(cat) {
-  document.querySelectorAll('.tab').forEach(t => {
-    if (!t.classList.contains('disabled')) t.classList.remove('active');
-  });
-  event.target.classList.add('active');
-  const items = cat === 'all' ? allItems : allItems.filter(i => i.category === cat);
-  renderItems(items);
-}
-
-function renderItems(items) {
-  const container = document.getElementById('itemsContainer');
-  if (items.length === 0) {
-    container.innerHTML = '<p style="color:#666;text-align:center;padding:40px;grid-column:1/-1">No items available in this category.</p>';
-    return;
+var activeCat = 'all';
+function filterShop(cat, btn) {
+  activeCat = cat;
+  if (btn) {
+    var btns = document.querySelectorAll('.shop-cat');
+    for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
+    btn.classList.add('active');
   }
-  container.innerHTML = items.map(item => `
-    <div class="item-card">
-      <h3>${item.name}</h3>
-      <div class="desc">${item.desc}</div>
-      <div class="price">🪙 ${item.price}</div>
-      <button class="btn btn-buy" onclick="buyItem('${item.id}', ${item.price})" id="btn-${item.id}">Buy</button>
-    </div>
-  `).join('');
+  var q = (document.getElementById('shopSearch').value || '').toLowerCase();
+  var cards = document.querySelectorAll('.shop-card');
+  var shown = 0;
+  for (var i = 0; i < cards.length; i++) {
+    var ok = (activeCat === 'all' || cards[i].getAttribute('data-cat') === activeCat);
+    if (ok && q) { ok = cards[i].textContent.toLowerCase().indexOf(q) !== -1; }
+    cards[i].style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  }
+  document.getElementById('shopEmpty').style.display = shown ? 'none' : 'block';
 }
-
-function buyItem(itemId, price) {
-  const btn = document.getElementById('btn-' + itemId);
-  btn.disabled = true;
-  btn.textContent = 'Buying...';
-
-  fetch('/api/buy', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: itemId})
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      showToast(data.message, 'success');
-      document.getElementById('coinsValue').textContent = data.player.coins;
-    } else {
-      showToast(data.error, 'error');
-      btn.disabled = false;
-      btn.textContent = 'Buy';
+function buyItem(name) {
+  fetch('/api/shop/buy', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:name,store:{{ store|tojson }}})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){
+      showToast('✅ Bought ' + d.rolled_rarity.toUpperCase() + ' ' + name + '!','ok');
+      setTimeout(function(){location.reload()},900);
     }
+    else{showToast(d.error||'Insufficient coins','err');}
   })
-  .catch(err => {
-    showToast('Error: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = 'Buy';
-  });
+  .catch(function(e){showToast('Error','err');});
 }
-
-function showToast(msg, type) {
-  const toast = document.createElement('div');
-  toast.className = 'toast ' + type;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+function subscribeStore(store) {
+  if (!confirm('Unlock this store for 1 hour?')) return;
+  fetch('/api/shop/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({store:store})})
+  .then(function(r){return r.json()}).then(function(d){if(d.success){location.reload()}else{showToast(d.error||'Failed','err')}});
 }
-
-renderItems(allItems);
+{% if store != 'normal' and has_access %}document.getElementById('accessUntil').textContent = new Date({{ subscription_until }} * 1000).toLocaleString();{% endif %}
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
 </script>
-</body>
-</html>

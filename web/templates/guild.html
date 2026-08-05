@@ -1,0 +1,150 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:900px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;">🛡️ GUILD HALL</h2>
+    <p style="color:#888;font-size:14px;font-family:'VT323',monospace;">Create or join a guild. Cost: 500 coins to found. Guilds earn shared XP.</p>
+  </div>
+
+  {% if player.guild %}
+  <!-- In a guild -->
+  <div class="pxl" style="margin-bottom:20px;padding:20px;border-color:#4ade80;">
+    <h3 class="pixel" style="color:#4ade80;font-size:9px;margin-bottom:10px;">✅ YOUR GUILD</h3>
+    <div style="font-size:22px;font-family:'VT323',monospace;color:#ffd54a;">{{ player.guild_name|default('Your Guild') }}</div>
+    <div style="color:#888;font-size:13px;font-family:'VT323',monospace;margin-top:4px;">ID: {{ player.guild }}</div>
+
+    <div style="margin-top:14px;">
+      <div class="pixel" style="color:#aaa;font-size:8px;margin-bottom:8px;">👥 MEMBERS</div>
+      <div id="memberList" style="display:grid;gap:6px;">
+        <div style="color:#888;font-family:'VT323',monospace;font-size:15px;">Loading members…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="pxl-btn" onclick="leaveGuild()" style="padding:6px 14px;font-size:8px;color:#ff4757;border-color:#ff4757;background:#1a0a0a;">LEAVE GUILD</button>
+      <button class="pxl-btn" onclick="disbandGuild()" style="padding:6px 14px;font-size:8px;color:#ff4757;border-color:#ff4757;background:#1a0a0a;" id="disbandBtn">💥 DISBAND GUILD</button>
+    </div>
+    <div style="color:#666;font-size:12px;font-family:'VT323',monospace;margin-top:8px;" id="guildHint">Only the leader can disband. The leader can never be removed.</div>
+  </div>
+  {% else %}
+  <!-- Create Guild -->
+  <div class="pxl" style="margin-bottom:20px;">
+    <h3 class="pixel" style="color:#ffd54a;font-size:9px;margin-bottom:12px;">⚔️ FOUND A GUILD — 500 🪙</h3>
+    <div style="display:grid;gap:10px;">
+      <input id="guildName" placeholder="Guild Name (max 32 chars)" maxlength="32"
+        style="background:#0d0d0d;border:2px solid #333;color:#e8e8e8;padding:10px;font-family:'VT323',monospace;font-size:16px;width:100%;box-sizing:border-box;">
+      <input id="guildTag" placeholder="Tag (max 5 chars, e.g. DRAGO)" maxlength="5"
+        style="background:#0d0d0d;border:2px solid #333;color:#e8e8e8;padding:10px;font-family:'VT323',monospace;font-size:16px;width:100%;box-sizing:border-box;">
+      <textarea id="guildDesc" placeholder="Description (optional)" maxlength="200"
+        style="background:#0d0d0d;border:2px solid #333;color:#e8e8e8;padding:10px;font-family:'VT323',monospace;font-size:14px;width:100%;box-sizing:border-box;height:60px;resize:vertical;"></textarea>
+      <button class="pxl-btn" onclick="createGuild()" style="padding:10px;font-size:9px;">⚔️ CREATE GUILD (500 coins)</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Browse Guilds -->
+  <div class="pxl">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:12px;">🏆 ALL GUILDS</h3>
+    <div id="guildList" style="display:grid;gap:8px;">
+      <div style="color:#888;font-family:'VT323',monospace;font-size:15px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+const MY_USER_ID = "{{ session.get('user_id','') if session else '' }}";
+function challengeMember(uid){
+  fetch('/api/duel/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target_user_id:uid})})
+  .then(r=>r.json()).then(d=>{
+    if(d.message) showToast(d.message,'ok');
+    else showToast(d.error||'Failed','err');
+  });
+}
+function loadGuilds(){
+  fetch('/api/guild/list').then(r=>r.json()).then(d=>{
+    var el=document.getElementById('guildList');
+    if(!d.guilds||d.guilds.length===0){el.innerHTML='<div style="color:#888;font-family:VT323,monospace;font-size:15px;">No guilds yet. Be the first!</div>';return;}
+    el.innerHTML=d.guilds.map(g=>{
+      var action;
+      if(g.is_leader)      action='<span style="color:#ffd54a;font-family:VT323,monospace;font-size:15px;">👑 YOUR GUILD</span>';
+      else if(g.is_member) action='<span style="color:#4ade80;font-family:VT323,monospace;font-size:15px;">✓ IN GUILD</span>';
+      else                 action='<button class="pxl-btn" onclick="joinGuild(\''+g.id+'\')" style="padding:5px 12px;font-size:8px;">JOIN</button>';
+      return `
+      <div style="border:2px solid #333;padding:12px;display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;">
+        <div>
+          <span style="font-family:VT323,monospace;font-size:18px;color:#ffd54a;">[${g.tag}] ${g.name}</span>
+          <span style="color:#888;font-size:13px;font-family:VT323,monospace;margin-left:12px;">👥${g.members}  ⭐Lv${g.level}  XP:${g.xp}</span>
+        </div>
+        ${action}
+      </div>`;
+    }).join('');
+  });
+}
+function loadMembers(){
+  fetch('/api/guild/members').then(r=>r.json()).then(d=>{
+    var el=document.getElementById('memberList');
+    if(!d.all_members||d.all_members.length===0){el.innerHTML='<div style="color:#888;font-family:VT323,monospace;font-size:15px;">No members.</div>';return;}
+    el.innerHTML=d.all_members.map(m=>{
+      var isLeader = String(m.user_id) === String(d.leader);
+      var isMe = String(m.user_id) === MY_USER_ID;
+      var chal = (m.online && !isMe) ? `<button class="pxl-btn" onclick="challengeMember('${m.user_id}')" style="padding:4px 10px;font-size:7px;">⚔️ CHALLENGE</button>` : '';
+      return `
+      <div style="border:2px solid #333;padding:8px 12px;display:flex;align-items:center;gap:10px;background:#0d0d0d;flex-wrap:wrap;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${m.online?'#4ade80':'#555'};flex-shrink:0;"></span>
+        <span style="font-family:VT323,monospace;font-size:17px;color:${isLeader?'#ffd54a':'#e8e8e8'};">${m.username || m.name || m.user_id}</span>
+        ${isLeader?'<span style="color:#ffd54a;font-family:VT323,monospace;font-size:12px;">👑 LEADER</span>':''}
+        <span style="margin-left:auto;color:#888;font-family:VT323,monospace;font-size:14px;">⭐Lv${m.level}</span>
+        ${chal}
+      </div>`;
+    }).join('');
+  });
+}
+function createGuild(){
+  var name=document.getElementById('guildName').value.trim();
+  var tag=document.getElementById('guildTag').value.trim();
+  var desc=document.getElementById('guildDesc').value.trim();
+  if(!name||!tag){showToast('Name and tag required','err');return;}
+  fetch('/api/guild/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,tag,description:desc})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function joinGuild(id){
+  fetch('/api/guild/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guild_id:id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function leaveGuild(){
+  if(!confirm('Leave your guild?'))return;
+  fetch('/api/guild/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function disbandGuild(){
+  if(!confirm('Disband your guild? All members will be released and the guild will be deleted.'))return;
+  fetch('/api/guild/disband',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+// Hide disband button for non-leaders (server also enforces it)
+fetch('/api/guild/list').then(r=>r.json()).then(d=>{
+  var mine = (d.guilds||[]).find(g=>g.is_member || g.is_leader);
+  var btn = document.getElementById('disbandBtn');
+  if(btn && mine && !mine.is_leader) btn.style.display='none';
+});
+loadGuilds();
+loadMembers();
+</script>

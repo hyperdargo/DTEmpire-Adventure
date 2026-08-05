@@ -1,0 +1,17 @@
+{
+  "version": "3.5.0",
+  "release": "Wave 2 — Loot, Jobs, Guild Tasks, Level Gates",
+  "date": "2026-07-29",
+  "features": [
+    "🎮 Premium Dashboard — full RPG homepage",
+    "💬 World/Guild/DM Chat with friends system",
+    "⚔️ 2D Duel Arena with AI + PvP",
+    "🐾 Pet System — egg hatch, 5 rarities, equip",
+    "⚒️ Jobs Board — 10 professions with job XP/levels/daily tasks",
+    "🎁 Loot Everywhere — coins, potions, XP scrolls, gear, eggs, skill books",
+    "🏰 Guild Tasks — 3 daily cooperative missions",
+    "🔒 Level Gates — progressive content unlock (Dungeon Lv5, Duels Lv10, etc)",
+    "🤖 Discord slash commands — /status /fight /dungeon /leaderboard /daily"
+  ],
+  "signed": "By Hermes"
+}

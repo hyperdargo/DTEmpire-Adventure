@@ -1,0 +1,369 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+.chat-wrap{display:flex;height:calc(100vh - 80px);max-width:1200px;margin:0 auto;padding:12px;gap:12px;font-family:'VT323',monospace}
+
+/* Sidebar */
+.chat-sidebar{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-right{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+
+.pxl-box{background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #ffd54a;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000;
+  padding:10px;overflow:hidden}
+.box-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#ffd54a;
+  margin-bottom:8px;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+
+/* Tabs */
+.tab-bar{display:flex;gap:4px;margin-bottom:10px}
+.tab{border:2px solid #444;background:#0d0d13;color:#888;padding:6px 10px;
+  font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;
+  transition:all .1s;flex:1;text-align:center}
+.tab.active{border-color:#ffd54a;color:#ffd54a;background:#1a1a0a}
+.tab:hover{border-color:#888;color:#ccc}
+
+/* Messages */
+.msg-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:6px;
+  background:#080810;border:2px solid #222;margin-bottom:8px;min-height:0}
+.msg-area::-webkit-scrollbar{width:8px}
+.msg-area::-webkit-scrollbar-track{background:#0a0a0a}
+.msg-area::-webkit-scrollbar-thumb{background:#ffd54a;border:1px solid #000}
+
+.msg-bubble{display:flex;gap:8px;align-items:flex-start;animation:fadeInUp .3s ease-out}
+.msg-bubble.mine{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border:2px solid #ffd54a;flex-shrink:0;
+  background:#111;display:flex;align-items:center;justify-content:center;
+  font-size:14px;overflow:hidden}
+.msg-av img{width:100%;height:100%}
+.msg-content{max-width:70%}
+.msg-meta{font-size:13px;color:#666;margin-bottom:2px}
+.msg-meta .sender{color:#ffd54a;margin-right:6px}
+.msg-text{background:#1a1a22;border:2px solid #333;padding:6px 10px;
+  font-size:16px;color:#e8e8e8;word-break:break-word;line-height:1.3}
+.msg-bubble.mine .msg-text{background:#1a1a0a;border-color:#ffd54a}
+
+/* Input area */
+.msg-input-row{display:flex;gap:8px}
+.msg-input{flex:1;background:#0a0a0f;color:#ffd54a;border:2px solid #444;
+  padding:8px 10px;font-family:'VT323',monospace;font-size:18px;resize:none;height:48px;
+  box-shadow:inset 0 0 0 1px #000}
+.msg-input:focus{outline:none;border-color:#ffd54a;box-shadow:0 0 8px rgba(255,213,74,0.4)}
+.send-btn{font-family:'Press Start 2P',monospace;font-size:8px;padding:0 14px;
+  background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#ffd54a;
+  border:2px solid #ffd54a;cursor:pointer;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,0.6),3px 3px 0 #000}
+.send-btn:hover{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000}
+
+/* Friends */
+.friend-item{display:flex;align-items:center;gap:8px;padding:6px;
+  border-bottom:1px solid #1a1a1a;cursor:pointer;transition:background .1s}
+.friend-item:hover{background:rgba(255,213,74,0.07)}
+.friend-item .f-dot{width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0}
+.friend-item .f-dot.online{background:#4ade80}
+.friend-item .f-name{flex:1;font-size:16px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.friend-item .f-name.active{color:#ffd54a}
+
+.req-card{padding:8px;border:2px solid #555;margin-bottom:6px;background:#0d0d1a}
+.req-card .req-name{font-size:15px;color:#ffd54a;margin-bottom:4px}
+.req-btns{display:flex;gap:4px}
+.req-btn{font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;
+  border:2px solid;cursor:pointer;background:#0d0d1a}
+.req-btn.acc{border-color:#4ade80;color:#4ade80}
+.req-btn.acc:hover{background:#4ade80;color:#000}
+.req-btn.dec{border-color:#ff4757;color:#ff4757}
+.req-btn.dec:hover{background:#ff4757;color:#000}
+
+/* Online players */
+.online-player{display:flex;align-items:center;gap:6px;padding:4px;
+  border-bottom:1px solid #1a1a1a;font-size:14px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0}
+.dot-offline{width:6px;height:6px;border-radius:50%;background:#444;flex-shrink:0}
+
+.add-friend{display:flex;gap:6px;margin-top:8px}
+.add-friend input{flex:1;background:#0a0a0f;color:#ffd54a;border:2px solid #444;
+  padding:5px 8px;font-family:'VT323',monospace;font-size:16px;min-width:0}
+.add-friend input:focus{outline:none;border-color:#ffd54a}
+.add-friend button{font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 8px;
+  background:#1a1a22;color:#ffd54a;border:2px solid #ffd54a;cursor:pointer}
+.add-friend button:hover{background:#ffd54a;color:#000}
+.dm-btn{background:none;border:1px solid #444;color:#888;cursor:pointer;font-size:11px;line-height:1;padding:2px 5px;margin-left:6px;vertical-align:middle}
+.dm-btn:hover{border-color:#ffd54a;color:#ffd54a}
+
+/* DM select */
+.dm-select{font-size:14px;color:#888;padding:10px;text-align:center}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:800px){.chat-right{display:none}.chat-sidebar{width:180px}}
+@media(max-width:580px){.chat-sidebar{display:none}}
+</style>
+
+<div class="chat-wrap">
+
+<!-- LEFT: Channel list + Friends -->
+<div class="chat-sidebar">
+  <div class="pxl-box">
+    <div class="box-title">💬 CHANNELS</div>
+    <div class="tab-bar" style="flex-direction:column">
+      <div class="tab active" id="tab-world" onclick="switchTab('world')">🌍 World</div>
+      <div class="tab" id="tab-guild" onclick="switchTab('guild')">🛡️ Guild</div>
+      <div class="tab" id="tab-dm" onclick="switchTab('dm')">📩 DMs</div>
+    </div>
+  </div>
+  <div class="pxl-box" style="flex:1;overflow-y:auto">
+    <div class="box-title">👥 FRIENDS</div>
+    <div id="friendList"><div style="color:#555;font-size:14px">Loading...</div></div>
+    <div class="add-friend">
+      <input type="text" id="addFriendInput" placeholder="User ID">
+      <button onclick="sendFriendReq()">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN: Chat area -->
+<div class="chat-main">
+  <div class="pxl-box" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:10px">
+    <div class="box-title" id="chatTitle">🌍 WORLD CHAT</div>
+    <!-- DM friend selector -->
+    <div id="dmSelectArea" style="display:none;margin-bottom:8px">
+      <div class="dm-select">Select a friend to DM ↑</div>
+    </div>
+    <div class="msg-area" id="msgArea">
+      <div style="color:#555;font-size:14px;text-align:center;padding:20px">Loading messages...</div>
+    </div>
+    <div class="msg-input-row">
+      <textarea class="msg-input" id="msgInput" placeholder="Type a message..." onkeydown="onKey(event)"></textarea>
+      <button class="send-btn" onclick="sendMsg()">SEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT: Online + Friend requests -->
+<div class="chat-right">
+  <div class="pxl-box">
+    <div class="box-title">🟢 ONLINE</div>
+    <div id="onlineList"><div style="color:#555;font-size:13px">Loading...</div></div>
+  </div>
+  <div class="pxl-box" style="flex:1;overflow-y:auto">
+    <div class="box-title">📬 REQUESTS</div>
+    <div id="friendRequests"><div style="color:#555;font-size:13px">None</div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const MY_USER_ID = "{{ session.get('user_id','') if session else '' }}";
+const MY_NAME = "{{ username }}";
+let currentTab = 'world';
+let activeDmUser = null;
+let lastTs = 0;
+let pollTimer = null;
+
+function relTime(ts){
+  const d = Math.floor((Date.now()/1000) - ts);
+  if(d < 5) return 'now';
+  if(d < 60) return d+'s';
+  if(d < 3600) return Math.floor(d/60)+'m';
+  return Math.floor(d/3600)+'h';
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  lastTs = 0;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const titles = {world:'🌍 WORLD CHAT',guild:'🛡️ GUILD CHAT',dm:'📩 DIRECT MESSAGES'};
+  document.getElementById('chatTitle').textContent = titles[tab];
+  document.getElementById('dmSelectArea').style.display = (tab==='dm') ? 'block' : 'none';
+  document.getElementById('msgArea').innerHTML = '<div style="color:#555;font-size:14px;text-align:center;padding:20px">Loading...</div>';
+  if(pollTimer) clearInterval(pollTimer);
+  if(tab !== 'dm' || activeDmUser){
+    poll();
+    pollTimer = setInterval(poll, 3000);
+  }
+  loadOnline();
+}
+
+function renderMsgs(msgs){
+  const area = document.getElementById('msgArea');
+  const atBottom = (area.scrollHeight - area.clientHeight - area.scrollTop) < 40;
+  msgs.forEach(m => {
+    if(m.ts <= lastTs) return;
+    lastTs = m.ts;
+    const mine = m.user_id === MY_USER_ID;
+    const div = document.createElement('div');
+    div.className = 'msg-bubble' + (mine ? ' mine' : '');
+    div.innerHTML = `
+      <div class="msg-av">${m.avatar ? `<img src="${m.avatar}">` : '👤'}</div>
+      <div class="msg-content">
+        <div class="msg-meta"><span class="sender">${m.user}</span><span>${relTime(m.ts)}</span>${mine?'':`<button class="dm-btn" onclick="startDm('${m.user_id}','${escHtml(m.user)}')" title="DM ${escHtml(m.user)}">✉</button>`}</div>
+        <div class="msg-text">${escHtml(m.msg)}</div>
+      </div>`;
+    area.appendChild(div);
+  });
+  if(atBottom || msgs.length > 0) area.scrollTop = area.scrollHeight;
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function poll(){
+  if(currentTab==='dm' && !activeDmUser) return;
+  let url = currentTab==='world' ? `/api/chat/world?since=${lastTs}`
+          : currentTab==='guild' ? `/api/chat/guild?since=${lastTs}`
+          : `/api/chat/dm?with_user_id=${activeDmUser}&since=${lastTs}`;
+  try{
+    const r = await fetch(url, {credentials:'include'});
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d.messages && d.messages.length){
+      const area = document.getElementById('msgArea');
+      if(area.children.length===1 && area.children[0].style.color==='rgb(85, 85, 85)') area.innerHTML='';
+      renderMsgs(d.messages);
+    }
+  }catch(e){}
+}
+
+async function sendMsg(){
+  const inp = document.getElementById('msgInput');
+  const msg = inp.value.trim();
+  if(!msg) return;
+  inp.value = '';
+  let url = currentTab==='world' ? '/api/chat/world'
+          : currentTab==='guild' ? '/api/chat/guild'
+          : '/api/chat/dm';
+  const body = currentTab==='dm' ? {to_user_id: activeDmUser, msg} : {msg};
+  try{
+    const r = await fetch(url, {method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const d = await r.json();
+    if(d.error){ showToast(d.error, true); return; }
+    poll();
+  }catch(e){ showToast('Send failed', true); }
+}
+
+function onKey(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); } }
+
+async function loadFriends(){
+  try{
+    const r = await fetch('/api/friends/list', {credentials:'include'});
+    const d = await r.json();
+    const fl = document.getElementById('friendList');
+    fl.innerHTML = '';
+    (d.friends||[]).forEach(f=>{
+      const div = document.createElement('div');
+      div.className = 'friend-item';
+      div.onclick = () => startDm(f.user_id, f.username);
+      div.innerHTML = `<span class="f-dot ${f.online?'online':''}"></span><span class="f-name ${activeDmUser===f.user_id?'active':''}">${f.username}</span>`;
+      fl.appendChild(div);
+    });
+    if(!d.friends || !d.friends.length) fl.innerHTML = '<div style="color:#555;font-size:13px">No friends yet</div>';
+    // Requests
+    const rqEl = document.getElementById('friendRequests');
+    rqEl.innerHTML = '';
+    (d.requests||[]).forEach(req=>{
+      const div = document.createElement('div');
+      div.className = 'req-card';
+      div.innerHTML = `<div class="req-name">${req.from}</div><div class="req-btns">
+        <button class="req-btn acc" onclick="acceptFriend('${req.from_id}')">✓ Accept</button>
+        <button class="req-btn dec" onclick="declineFriend('${req.from_id}')">✗ Decline</button></div>`;
+      rqEl.appendChild(div);
+    });
+    if(!d.requests || !d.requests.length) rqEl.innerHTML = '<div style="color:#555;font-size:13px">None</div>';
+  }catch(e){}
+}
+
+function startDm(uid, name){
+  activeDmUser = uid;
+  switchTab('dm');
+  document.getElementById('chatTitle').textContent = `📩 DM — ${name}`;
+  document.getElementById('dmSelectArea').style.display = 'none';
+  lastTs = 0;
+  poll();
+  pollTimer = setInterval(poll, 3000);
+  loadFriends();
+}
+
+async function sendFriendReq(){
+  const inp = document.getElementById('addFriendInput');
+  const uid = inp.value.trim();
+  if(!uid) return;
+  inp.value = '';
+  try{
+    const r = await fetch('/api/friends/request',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})});
+    const d = await r.json();
+    showToast(d.error || d.message || 'Request sent!', !!d.error);
+  }catch(e){}
+}
+async function acceptFriend(uid){
+  const r = await fetch('/api/friends/accept',{method:'POST',credentials:'include',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({from_user_id:uid})});
+  loadFriends();
+}
+async function declineFriend(uid){
+  const r = await fetch('/api/friends/decline',{method:'POST',credentials:'include',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({from_user_id:uid})});
+  loadFriends();
+}
+
+async function loadOnline(){
+  try{
+    const isGuild = currentTab === 'guild';
+    const url = isGuild ? '/api/guild/members' : '/api/players/online';
+    const r = await fetch(url, {credentials:'include'});
+    if(!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById('onlineList');
+    const players = isGuild ? d.all_members||[] : d.online||[];
+    if(!players.length){
+      el.innerHTML = '<div style="color:#555;font-size:13px">'+ (isGuild ? 'Not in a guild' : 'None online') +'</div>';
+      return;
+    }
+    el.innerHTML = players.map(p => {
+      const dot = p.online !== false ? 'online-dot' : 'dot-offline';
+      const color = p.online !== false ? '#ccc' : '#555';
+      const label = p.online !== false ? p.username : p.username + ' (offline)';
+      return `<div class="online-player">
+        <span class="${dot}"></span>
+        <span style="color:${color};font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+        <span style="color:#888;font-size:11px;margin-left:auto;">Lv${p.level||'?'}</span>
+        <span style="display:flex;gap:4px;margin-left:6px;">
+          <button class="dm-btn" onclick="event.stopPropagation();quickAddFriend('${p.user_id}')" title="Add friend">+</button>
+          <button class="dm-btn" onclick="event.stopPropagation();startDm('${p.user_id}','${escHtml(p.username)}')" title="DM ${escHtml(p.username)}">✉</button>
+        </span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function quickAddFriend(uid){
+  if(uid === MY_USER_ID){ showToast("That's you!", true); return; }
+  try{
+    const r = await fetch('/api/friends/request',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})});
+    const d = await r.json();
+    showToast(d.error || d.message || 'Request sent!', !!d.error);
+    if(!d.error) loadFriends();
+  }catch(e){ showToast('Failed', true); }
+}
+
+function showToast(msg, err=false){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:80px;right:20px;z-index:9999;
+    background:${err?'#3a0a0a':'#0a1a0a'};border:2px solid ${err?'#ff4757':'#4ade80'};
+    color:${err?'#ff4757':'#4ade80'};padding:10px 16px;font-family:'VT323',monospace;font-size:18px;
+    box-shadow:3px 3px 0 #000;animation:fadeInUp .3s ease-out`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// Init
+switchTab('world');
+loadFriends();
+loadOnline();
+(function(){ var q=new URLSearchParams(location.search); var dmU=q.get('dm'); if(dmU) startDm(dmU, q.get('name')||dmU); })();
+setInterval(loadFriends, 15000);
+setInterval(loadOnline, 20000);
+</script>

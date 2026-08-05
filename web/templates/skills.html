@@ -1,0 +1,141 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="pxl" style="max-width:800px;margin:0 auto;padding:20px;">
+  <h2 class="pixel" style="color:#ffd54a;margin-bottom:4px;font-size:13px;">⚡ SKILLS</h2>
+  <div style="color:#888;font-size:16px;margin-bottom:20px;font-family:'VT323',monospace;">
+    🪙 <span id="coinDisplay" style="color:#ffd54a;">{{ player.coins|default(0) }}</span> coins
+  </div>
+
+  <!-- Owned Skills -->
+  <div class="pxl" style="margin-bottom:16px;">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:12px;">⚙️ OWNED SKILLS</h3>
+    <div id="ownedSkills" style="display:grid;gap:8px;">
+      <div style="color:#666;font-size:16px;text-align:center;padding:20px;font-family:'VT323',monospace;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Available Skills -->
+  <div class="pxl">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:12px;">🏪 AVAILABLE</h3>
+    <div id="availableSkills" style="display:grid;gap:8px;">
+      <div style="color:#666;font-size:16px;text-align:center;padding:20px;font-family:'VT323',monospace;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d0d0d;border:2px solid #ffd54a;padding:12px 24px;font-family:'VT323',monospace;font-size:18px;color:#ffd54a;z-index:9999;display:none;box-shadow:0 0 20px rgba(255,213,74,0.3);"></div>
+
+<script>
+function showToast(msg, isGood){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = isGood ? '#4ade80' : '#ff4757';
+  t.style.color = isGood ? '#4ade80' : '#ff4757';
+  t.style.display = 'block';
+  setTimeout(function(){t.style.display='none'}, 3000);
+}
+
+function skillCardHTML(info, isOwned){
+  var lv = info.level || 1;
+  var stars = '';
+  for(var i=0; i<lv; i++) stars += '⭐';
+  if(info.max_level && lv >= info.max_level) stars = 'MAX';
+  var rarityColor = lv >= 5 ? '#ffd54a' : lv >= 4 ? '#c084fc' : lv >= 3 ? '#4a9eff' : lv >= 2 ? '#4ade80' : '#bbb';
+
+  var statText = info.desc || '';
+  var btnHtml = '';
+  if(isOwned){
+    var upgradeCost = info.upgrade_cost;
+    if(upgradeCost){
+      btnHtml = '<button class="skill-btn" data-skill="'+info.name+'" data-action="upgrade" data-cost="'+upgradeCost+'" style="font-size:8px;padding:6px 12px;">⬆ UPGRADE <span style="color:#ffd54a;">'+upgradeCost+'🪙</span></button>';
+    } else {
+      btnHtml = '<span style="color:#ffd54a;font-family:\'Press Start 2P\',monospace;font-size:7px;">MAXED ★</span>';
+    }
+  } else {
+    btnHtml = '<button class="skill-btn" data-skill="'+info.name+'" data-action="buy" data-cost="'+info.cost+'" style="font-size:8px;padding:6px 12px;">📖 LEARN <span style="color:#ffd54a;">'+info.cost+'🪙</span></button>';
+  }
+
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border:2px solid '+(isOwned?'#4ade80':'#333')+';background:#0d0d0d;box-shadow:2px 2px 0 #000;">'+
+    '<div>'+
+      '<div style="color:'+(isOwned?'#4ade80':'#ffd54a')+';font-family:\'Press Start 2P\',monospace;font-size:7px;">'+(info.emoji||'')+' '+info.name+'</div>'+
+      (statText ? '<div style="color:#888;font-size:13px;font-family:\'VT323\',monospace;">'+statText+'</div>' : '')+
+      (isOwned ? '<div style="color:'+rarityColor+';font-size:12px;font-family:\'VT323\',monospace;margin-top:2px;">'+stars+'</div>' : '')+
+    '</div>'+
+    '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'+
+      (isOwned ? '<span style="background:#222;color:'+rarityColor+';padding:2px 6px;font-size:8px;font-family:\'Press Start 2P\',monospace;">LV '+lv+'</span>' : '<span style="background:#222;color:#8b5cf6;padding:2px 6px;font-size:8px;font-family:\'Press Start 2P\',monospace;">SKILL</span>')+
+      btnHtml+
+    '</div>'+
+  '</div>';
+}
+
+function loadSkills(){
+  fetch('/api/skills').then(function(r){return r.json()}).then(function(data){
+    document.getElementById('coinDisplay').textContent = data.coins;
+    var ownedEl = document.getElementById('ownedSkills');
+    var availEl = document.getElementById('availableSkills');
+    var ownedHtml = '';
+    var availHtml = '';
+
+    var keys = Object.keys(data.skills);
+    var hasOwned = false;
+    var hasAvail = false;
+
+    for(var i=0; i<keys.length; i++){
+      var name = keys[i];
+      var info = data.skills[name];
+      if(data.owned_names.indexOf(name) !== -1){
+        ownedHtml += skillCardHTML(info, true);
+        hasOwned = true;
+      } else {
+        availHtml += skillCardHTML(info, false);
+        hasAvail = true;
+      }
+    }
+    ownedEl.innerHTML = hasOwned ? ownedHtml : '<div style="color:#666;font-size:16px;text-align:center;padding:20px;font-family:\'VT323\',monospace;">No skills yet — climb the tower to unlock!</div>';
+    availEl.innerHTML = hasAvail ? availHtml : '<div style="color:#666;font-size:16px;text-align:center;padding:20px;font-family:\'VT323\',monospace;">All skills mastered! Check back later.</div>';
+  }).catch(function(){
+    document.getElementById('ownedSkills').innerHTML = '<div style="color:#ff4757;font-size:16px;text-align:center;padding:20px;font-family:\'VT323\',monospace;">⚠ Failed to load skills.</div>';
+  });
+}
+
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('.skill-btn');
+  if(!btn) return;
+  var skill = btn.getAttribute('data-skill');
+  var action = btn.getAttribute('data-action');
+  var cost = parseInt(btn.getAttribute('data-cost')) || 0;
+  var coins = parseInt(document.getElementById('coinDisplay').textContent) || 0;
+
+  if(action === 'buy' && coins < cost){
+    showToast('Not enough coins! Need '+cost+', have '+coins, false);
+    return;
+  }
+  if(action === 'upgrade' && coins < cost){
+    showToast('Not enough coins! Need '+cost+', have '+coins, false);
+    return;
+  }
+
+  var endpoint = action === 'buy' ? '/api/skills/buy' : '/api/skills/upgrade';
+  btn.disabled = true;
+  btn.textContent = '...';
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({skill: skill})
+  }).then(function(r){return r.json()}).then(function(res){
+    if(res.success){
+      showToast(res.message || 'Done!', true);
+      loadSkills();
+    } else {
+      showToast(res.error || 'Something went wrong.', false);
+      loadSkills();
+    }
+  }).catch(function(){
+    showToast('Network error.', false);
+    loadSkills();
+  });
+});
+
+loadSkills();
+</script>

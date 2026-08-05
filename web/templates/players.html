@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTEmpire Adventure - Players</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<style>
+body{font-family:system-ui;background:#0f0f1a;color:#fff;margin:0;padding:0;}
+.nav a{color:#aaa;text-decoration:none;padding:6px 10px;border-radius:4px;}
+.nav a:hover{background: rgba(10,10,10,0.95);color:#fff;}
+.container{padding:20px;max-width:800px;margin:0 auto;}
+</style>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Join DTEmpire Adventure, the ultimate browser-based RPG. Climb the tower, hatch mythic pets, battle bosses, forge epic gear, and dominate the leaderboard.">
+<meta name="keywords" content="DTEmpire, adventure game, browser RPG, idle RPG, tower climbing, gacha pets, mmorpg, discord bot game">
+<meta name="author" content="Dargo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://adventure.ankitgupta.com.np/">
+
+<!-- Open Graph / Social -->
+<meta property="og:title" content="DTEmpire Adventure - The Ultimate Browser RPG">
+<meta property="og:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta property="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+<meta property="og:url" content="https://adventure.ankitgupta.com.np/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DTEmpire Adventure">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DTEmpire Adventure">
+<meta name="twitter:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta name="twitter:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="container">
+<h1>Players</h1>
+<p>Coming soon!</p>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all others first
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close dropdowns if clicking anywhere else
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
+</body>
+
+</html>

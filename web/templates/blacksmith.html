@@ -1,0 +1,231 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:1000px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;">🔨 BLACKSMITH</h2>
+    <p style="color:#888;font-size:14px;font-family:'VT323',monospace;">Forge weapons and armor from materials collected in the tower.</p>
+  </div>
+
+  <!-- Player Materials -->
+  <div class="pxl" style="margin-bottom:20px;">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:10px;">🎒 YOUR MATERIALS</h3>
+    {% set materials = player.inventory|default([])|selectattr('type','equalto','material')|list %}
+    {% if materials %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% set mat_counts = {} %}
+      {% for m in materials %}
+        {% if m.name not in mat_counts %}{% set _ = mat_counts.update({m.name: 0}) %}{% endif %}
+        {% set _ = mat_counts.update({m.name: mat_counts[m.name] + 1}) %}
+      {% endfor %}
+      {% for name, cnt in mat_counts.items() %}
+      <div style="border:2px solid #333;padding:8px 14px;background:#0d0d0d;font-family:'VT323',monospace;font-size:16px;color:#e8e8e8;">
+        {{ name }} <span style="color:#ffd54a;">x{{ cnt }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:15px;">No materials yet. Defeat monsters in the Tower to collect Iron Ore, Dragon Scales, etc.</div>
+    {% endif %}
+    <div style="margin-top:8px;color:#555;font-size:12px;font-family:'VT323',monospace;">Coins: <span style="color:#ffd54a;">{{ player.coins|default(0) }} 🪙</span></div>
+  </div>
+
+  <!-- 🤖 Auto Smith — one-time unlock -->
+  <div style="background:#0d0d0d;border:2px solid #ffd54a;padding:14px;margin-bottom:16px;">
+    <div class="pixel" style="color:#ffd54a;font-size:9px;margin-bottom:4px;">🤖 AUTO SMITH — FORGE ALL GEAR</div>
+    {% if player.get('unlocks', {}).get('auto_smith', False) %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:14px;margin-bottom:10px;">
+      Merges <b style="color:#e8e8e8;">every pair</b> of same-rarity, same-type gear in one click — results keep merging until nothing is left. One-time unlock, forever.
+    </div>
+    <button class="pxl-btn" onclick="autoForge()" style="padding:8px 16px;font-size:9px;">⚒️ AUTO FORGE ALL</button>
+    {% else %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:14px;margin-bottom:10px;">
+      Unlock <b style="color:#ffd54a;">Auto Smith</b>: forge <b style="color:#e8e8e8;">ALL</b> same-rarity gear pairs automatically in one click. One-time payment — never expires.
+    </div>
+    <button class="pxl-btn" onclick="unlockAuto('smith')" style="padding:8px 16px;font-size:9px;">🔓 UNLOCK AUTO SMITH — 50,000 🪙</button>
+    {% endif %}
+  </div>
+
+  <!-- Recipes -->
+  <div class="pxl">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:14px;">📜 CRAFT RECIPES</h3>
+    <div id="recipeList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+      <div style="color:#888;font-family:'VT323',monospace;font-size:15px;">Loading recipes...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ⚒️ FORGE: merge 2 same-rarity gear into one upgraded item -->
+<div style="background:#0d0d0d;border:1px solid #ffd54a;padding:14px;margin-bottom:16px;">
+  <div class="pixel" style="color:#ffd54a;font-size:9px;margin-bottom:4px;">⚒️ FORGE — MERGE 2 GEAR → UPGRADED RARITY</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:10px;">
+    <span style="color:#666">RARITY ROADMAP (lowest → highest):</span>
+    <span style="padding:4px 8px;border:1px solid #666;color:#aaa">COMMON</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #22c55e;color:#22c55e">UNCOMMON</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #4ade80;color:#4ade80">RARE</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #a855f7;color:#a855f7">EPIC</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #ff6b00;color:#ff6b00">LEGENDARY</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #ff4757;color:#ff4757">MYTHIC</span><span style="color:#444">→</span>
+    <span style="padding:4px 8px;border:1px solid #ffd54a;color:#ffd54a;box-shadow:0 0 8px rgba(255,213,74,.45)">UNIQUE ⭐</span>
+  </div>
+  <div style="color:#888;font-family:'VT323',monospace;font-size:14px;margin-bottom:10px;">
+    Pick 2 items of the <b style="color:#e8e8e8;">same rarity</b>. Both are consumed. Result is one item of a higher rarity:<br>
+    +1 tier <b style="color:#4ade80;">70%</b> · +2 tiers <b style="color:#60a5fa;">20%</b> · +3 <b style="color:#a855f7;">7%</b> · +4 <b style="color:#ff6b00;">2.5%</b> · +5 <b style="color:#ffd54a;">0.5%</b> — capped at <b style="color:#ffd54a;">UNIQUE</b> ⭐
+  </div>
+  <!-- Controls stay above the potentially huge gear list. -->
+  <div id="forgeControls" style="position:sticky;top:8px;z-index:10;background:#0d0d0d;border:1px solid #333;padding:10px;margin-bottom:10px;box-shadow:0 4px 10px #000;">
+    <div id="forgeChance" style="display:none;font-family:'VT323',monospace;font-size:14px;color:#aaa;border:1px dashed #333;padding:6px 10px;margin-bottom:8px;"></div>
+    <div id="forgeHint" style="font-family:'VT323',monospace;font-size:14px;color:#888;margin-bottom:8px;">👆 Tap 2 gear cards of the <b style="color:#aaa;">same rarity</b>. Selected: <b id="forgeSelected" style="color:#ffd54a;">0/2</b></div>
+    <button class="pxl-btn" id="forgeBtn" onclick="doForge()" disabled
+      style="padding:8px 16px;font-size:9px;opacity:0.4;cursor:not-allowed;">⚒️ FORGE SELECTED GEAR</button>
+  </div>
+  <div style="color:#666;font-family:'VT323',monospace;font-size:14px;margin-bottom:6px;">Gear is automatically grouped highest rarity first, then strongest first.</div>
+  <div id="forgeList" style="display:flex;flex-wrap:wrap;gap:8px;max-height:65vh;overflow-y:auto;padding-right:4px;"></div>
+</div>
+
+<script>
+var playerCoins = {{ player.coins|default(0) }};
+var playerMats = {};
+{% for item in player.inventory|default([]) %}
+{% if item.type == 'material' %}
+playerMats["{{ item.name }}"] = (playerMats["{{ item.name }}"]||0)+1;
+{% endif %}
+{% endfor %}
+
+var RARITY_COLOR={common:'#ccc',uncommon:'#22c55e',rare:'#4ade80',epic:'#a855f7',legendary:'#ff6b00',mythic:'#ff4757',unique:'#ffd54a'};
+var RORDER=['common','uncommon','rare','epic','legendary','mythic','unique'];
+
+var GEAR=[];
+{% for item in player.inventory|default([]) %}
+{% if item is mapping and item.get('type') in ['weapon','armor','helmet'] %}
+GEAR.push({id:"{{ item.get('id') }}",name:"{{ item.get('name') }}",rarity:"{{ (item.get('rarity') or 'common')|lower }}",icon:"{{ item.get('icon') or '📦' }}",type:"{{ item.get('type') }}",stats:{{ (item.get('stats') or {})|tojson }}});
+{% endif %}
+{% endfor %}
+
+var forgeSel=[];
+function gearPower(g){var s=g.stats||{};return (s.attack||0)+(s.defense||0)+(s.hp||0);}
+function renderForge(){
+  var el=document.getElementById('forgeList');
+  if(!GEAR.length){el.innerHTML='<div style="color:#555;font-family:VT323;font-size:15px;">No gear in inventory — buy or craft weapons/armor/helmets first.</div>';return;}
+  // Highest rarity first, then strongest (attack+defense+hp), so the best
+  // forgable pairs are always at the top of a huge list.
+  var sorted=GEAR.slice().sort(function(a,b){
+    var rd=((RORDER.indexOf(b.rarity)>=0?RORDER.indexOf(b.rarity):-1)-(RORDER.indexOf(a.rarity)>=0?RORDER.indexOf(a.rarity):-1));
+    if(rd!==0)return rd;
+    var p=gearPower(b)-gearPower(a);
+    return p!==0?p:a.name.localeCompare(b.name);
+  });
+  el.innerHTML=sorted.map(function(g){
+    var rc=RARITY_COLOR[g.rarity]||'#888';
+    var sel=forgeSel.indexOf(g.id)!==-1;
+    var st=g.stats||{};
+    var statsStr=(st.attack?'⚔️+'+st.attack+' ':'')+(st.defense?'🛡️+'+st.defense+' ':'')+(st.hp?'❤️+'+st.hp+' ':'');
+    return `<div onclick="toggleForge('${g.id}')" style="cursor:pointer;border:2px solid ${sel?'#ffd54a':'#333'};background:${sel?'#1a1a0a':'#0d0d0d'};padding:8px 10px;font-family:VT323;font-size:14px;color:#e8e8e8;">
+      ${g.icon} ${g.name}<br><span style="color:${rc};font-size:12px;">${g.rarity.toUpperCase()} ${g.type.toUpperCase()}</span>
+      <div style="color:#aaa;font-size:12px;">${statsStr}</div></div>`;
+  }).join('');
+}
+function toggleForge(id){
+  var i=forgeSel.indexOf(id);
+  if(i!==-1){forgeSel.splice(i,1);}
+  else{
+    if(forgeSel.length>=2){showToast('Only 2 items can be forged at once','err');return;}
+    forgeSel.push(id);
+  }
+  var picked=GEAR.filter(g=>forgeSel.indexOf(g.id)!==-1);
+  if(forgeSel.length===2){
+    if(picked[0].rarity!==picked[1].rarity){
+      showToast('Both items must be the SAME rarity','err');
+      forgeSel=[];renderForge();updateForgeChance(null);
+      document.getElementById('forgeSelected').textContent='0/2';
+      return;
+    }
+    updateForgeChance(picked[0].rarity);
+  } else { updateForgeChance(null); }
+  document.getElementById('forgeSelected').textContent=forgeSel.length+'/2';
+  renderForge();
+}
+function updateForgeChance(r){
+  var el=document.getElementById('forgeChance');
+  var b=document.getElementById('forgeBtn');
+  if(!r){el.style.display='none';el.innerHTML='';b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed';return;}
+  var idx=RORDER.indexOf(r);
+  if(idx<0||idx>=RORDER.length-1){el.style.display='block';el.innerHTML='<span style="color:#ffd54a;">'+r.toUpperCase()+' items are already the highest rank — cannot forge higher.</span>';b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed';return;}
+  // Reachable outcomes only; renormalize so the shown odds always total 100%
+  // (server rolls with random.choices(weights), which normalizes the same way).
+  var reach=[],j=1,total=0;
+  [70,20,7,2.5,0.5].forEach(function(w){ if(idx+j<=RORDER.length-1){reach.push({r:RORDER[idx+j],w:w});total+=w;} j++; });
+  var parts=reach.map(function(x){var pct=(x.w/total*100);pct=(Math.round(pct*10)/10);return '<span style="color:'+(RARITY_COLOR[x.r]||'#888')+';">'+x.r+' '+pct+'%</span>';});
+  el.style.display='block';
+  el.innerHTML='🎲 Result chances: '+parts.join(' · ')+' — always 100% total';
+  b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';
+}
+function doForge(){
+  if(forgeSel.length!==2)return;
+  fetch('/api/blacksmith/forge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_ids:forgeSel})})
+  .then(r=>r.json()).then(d=>{
+    if (d.success) { showToast(d.message,'ok'); setTimeout(()=>location.reload(),1200); }
+    else showToast(d.error||'Forge failed','err');
+  }).catch(e=>showToast('Error','err'));
+}
+renderForge();
+
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+
+function loadRecipes(){
+  fetch('/api/blacksmith/recipes').then(r=>r.json()).then(d=>{
+    var el=document.getElementById('recipeList');
+    el.innerHTML=d.recipes.map(r=>{
+      var rc=RARITY_COLOR[r.rarity]||'#888';
+      var matLines=Object.entries(r.cost).map(([m,q])=>{
+        var have=playerMats[m]||0;
+        var ok=have>=q;
+        return `<span style="color:${ok?'#4ade80':'#ff4757'};">${m} x${q} (have ${have})</span>`;
+      }).join(' &nbsp;');
+      var canCraft=Object.entries(r.cost).every(([m,q])=>(playerMats[m]||0)>=q) && playerCoins>=r.coins;
+      var statsStr=Object.entries(r.stats).map(([k,v])=>k.toUpperCase()+':+'+v).join(' ');
+      return `<div style="border:2px solid #333;padding:14px;background:#0d0d0d;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:1.5em;">${r.icon}</span>
+          <div>
+            <div class="pixel" style="font-size:8px;color:#ffd54a;">${r.name}</div>
+            <div style="color:${rc};font-family:'VT323',monospace;font-size:13px;">${r.rarity} ${r.type}</div>
+          </div>
+        </div>
+        <div style="color:#4ade80;font-family:'VT323',monospace;font-size:14px;margin-bottom:6px;">${statsStr}</div>
+        <div style="font-family:'VT323',monospace;font-size:13px;margin-bottom:6px;">${matLines}</div>
+        <div style="color:${playerCoins>=r.coins?'#4ade80':'#ff4757'};font-family:'VT323',monospace;font-size:13px;margin-bottom:8px;">Cost: ${r.coins} 🪙</div>
+        <button class="pxl-btn" onclick="craft('${r.id}')" ${canCraft?'':'disabled style="opacity:0.4;cursor:not-allowed;"'}
+          style="padding:6px 14px;font-size:8px;width:100%;">${canCraft?'🔨 CRAFT':'🔒 CAN\'T CRAFT'}</button>
+      </div>`;
+    }).join('');
+  });
+}
+
+function craft(recipe_id){
+  fetch('/api/blacksmith/craft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipe_id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),1000);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+
+loadRecipes();
+
+async function unlockAuto(feature){
+  if(!confirm('Pay 50,000 coins ONCE to unlock Auto Smith forever?')) return;
+  const res = await fetch('/api/unlock/auto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature})}).then(r=>r.json());
+  if(res.success){showToast(res.message,'ok');setTimeout(()=>location.reload(),1200);}
+  else showToast(res.error||'Failed','err');
+}
+async function autoForge(){
+  if(!confirm('Auto-forge ALL same-rarity gear pairs? This consumes gear — no undo.')) return;
+  const res = await fetch('/api/blacksmith/auto_forge',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());
+  if(res.success){showToast(res.message,'ok');setTimeout(()=>location.reload(),1200);}
+  else showToast(res.error||'Failed','err');
+}
+</script>

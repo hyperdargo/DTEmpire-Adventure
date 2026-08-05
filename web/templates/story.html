@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 Chronicle — DTEmpire Adventure</title>
+<style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;border-radius:8px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e2e8f0;min-height:100vh}
+.container{max-width:780px;margin:0 auto;padding:24px}
+h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.subtitle{color:#888;margin-bottom:24px;font-size:.95em}
+/* Current chapter card */
+.current-chapter{background:rgba(255,255,255,0.02);border:1px solid #333;border-radius:14px;padding:28px;margin-bottom:28px}
+.chapter-header{text-align:center;margin-bottom:20px}
+.ch-num{font-size:.8em;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.ch-subtitle{color:#888;font-size:.9em;margin-bottom:6px}
+.ch-title{font-size:1.6em;font-weight:800;margin-bottom:8px}
+.ch-floors{color:#555;font-size:.82em}
+.ch-narrative{padding:16px 0}
+.ch-narrative p{color:#b0b0b0;line-height:1.8;margin-bottom:14px;font-size:.95em}
+.ch-boss-box{background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:14px 18px;margin:16px 0 12px}
+.ch-boss-box .boss-label{font-size:.78em;color:#ffd54a;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.ch-boss-box .boss-name{font-weight:700;font-size:1.05em;margin-bottom:2px}
+.ch-boss-box .boss-line{color:#999;font-style:italic;font-size:.88em}
+.ch-enemies{color:#666;font-size:.85em;margin-top:10px;padding-top:10px;border-top:1px solid #222}
+.ch-lore{background:rgba(100,150,255,0.04);border:1px solid rgba(100,150,255,0.1);border-radius:8px;padding:12px 16px;margin-top:14px;font-size:.85em;color:#8899cc}
+.ch-lore::before{content:"📜 Lore: ";font-weight:600;color:#7a9aff}
+.ch-actions{text-align:center;margin-top:20px}
+.btn{display:inline-block;padding:10px 24px;border-radius:8px;font-weight:600;text-decoration:none;transition:.2s;font-size:.9em}
+.btn-tower{background:#fff;color:#0a0a0a}
+.btn-tower:hover{background:#ccc}
+
+/* New reward notification */
+.reward-toast{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:18px;margin-bottom:24px;text-align:center}
+.reward-toast .rt-icon{font-size:2em;margin-bottom:6px}
+.reward-toast .rt-title{font-weight:700;font-size:1.1em;color:#22c55e;margin-bottom:4px}
+.reward-toast .rt-detail{color:#888;font-size:.9em}
+
+/* Chapter progress */
+.section-title{font-size:1.15em;font-weight:700;margin-bottom:14px;border-bottom:1px solid #222;padding-bottom:8px}
+.chapter-list{display:flex;flex-direction:column;gap:8px}
+.chapter-item{background:rgba(255,255,255,0.015);border:1px solid #222;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:.2s}
+.chapter-item:hover{border-color:#444}
+.chapter-item.active{border-color:#fff;background:rgba(255,255,255,0.04)}
+.chapter-item.locked{opacity:.35}
+.chapter-num{font-size:1.2em;font-weight:800;min-width:32px;text-align:center}
+.chapter-info{flex:1}
+.chapter-title{font-weight:600;font-size:.92em}
+.chapter-floors{font-size:.8em;color:#666}
+.chapter-status{font-size:.72em;padding:3px 10px;border-radius:10px;white-space:nowrap}
+.status-active{background:rgba(255,255,255,0.08);color:#fff}
+.status-coming{color:#555;font-size:.85em}
+/* Progress bar */
+.progress-section{background:rgba(255,255,255,0.015);border:1px solid #222;border-radius:10px;padding:16px 20px;margin-bottom:24px}
+.progress-label{display:flex;justify-content:space-between;font-size:.82em;color:#888;margin-bottom:6px}
+.progress-bar{height:6px;background:#222;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#666,#fff);border-radius:3px;transition:width .5s}
+</style>
+<meta name="description" content="DTEmpire Adventure — The Tower Chronicle. Follow your story through the Tower of Ascension.">
+<meta name="og:title" content="DTEmpire Adventure - The Tower Chronicle">
+<meta name="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="container">
+
+  <!-- New reward notification -->
+  {% if new_rewards %}
+  {% for r in new_rewards %}
+  <div class="reward-toast">
+    <div class="rt-icon">📖</div>
+    <div class="rt-title">Chapter {{ r.chapter }}: {{ r.title }} — Complete!</div>
+    <div class="rt-detail">
+      🪙 +{{ r.rewards.coins|default(0) }} coins · ⭐ +{{ r.rewards.xp|default(0) }} XP
+      {% if r.rewards.skills %} · ✨ {{ r.rewards.skills|join(', ') }} skill(s) unlocked{% endif %}
+      {% if r.rewards.items %} · 🎒 {{ r.rewards.items|join(', ') }}{% endif %}
+      {% if r.bonus_item %} · 🎁 **{{ r.bonus_item }}** dropped!{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <h2>📖 The Tower Chronicle</h2>
+  <div class="subtitle">Your climb tells a story. Each chapter unlocks as you ascend.</div>
+
+  <!-- Progress bar -->
+  {% set total_chapters = all_chapters|length %}
+  {% set completed_count = completed|length %}
+  {% set pct = (completed_count / total_chapters * 100)|int if total_chapters > 0 else 0 %}
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>Progress</span>
+      <span>{{ completed_count }} / {{ total_chapters }} chapters ({{ pct }}%)</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:{{ pct }}%"></div></div>
+  </div>
+
+  <!-- Current chapter -->
+  <div class="current-chapter">
+    <div class="chapter-header">
+      <div class="ch-num">Chapter {{ chapter.chapter|default(1) }}</div>
+      {% if chapter.subtitle %}<div class="ch-subtitle">{{ chapter.subtitle }}</div>{% endif %}
+      <div class="ch-title">{{ chapter.title }}</div>
+      <div class="ch-floors">Tower Floors {{ chapter.floors }} · Your Floor: {{ floor }}</div>
+    </div>
+
+    <div class="ch-narrative">
+      {% for paragraph in chapter.text.split('\n\n') %}
+      <p>{{ paragraph }}</p>
+      {% endfor %}
+    </div>
+
+    {% if chapter.boss %}
+    <div class="ch-boss-box">
+      <div class="boss-label">⚔️ Boss Encounter</div>
+      <div class="boss-name">{{ chapter.boss.emoji|default('') }} {{ chapter.boss.name }}</div>
+      <div class="boss-line">{{ chapter.boss.line }}</div>
+    </div>
+    {% endif %}
+
+    {% if chapter.enemies %}
+    <div class="ch-enemies">Enemies: {{ chapter.enemies }}</div>
+    {% endif %}
+
+    {% if chapter.lore %}
+    <div class="ch-lore">{{ chapter.lore }}</div>
+    {% endif %}
+
+    <div class="ch-actions">
+      <a href="/tower" class="btn btn-tower">🏰 Enter the Tower</a>
+    </div>
+  </div>
+
+  <!-- Progress to next chapter -->
+  {% set ns = namespace(found_next=false) %}
+  {% for ch in all_chapters %}
+  {% if ch.chapter not in completed and not ns.found_next and ch.chapter > chapter.chapter|default(0) %}
+  {% set ns.found_next = true %}
+  {% set parts = ch.floors.split('-') %}
+  {% set next_floor = parts[0]|int %}
+  {% set next_lvl = ch.level_required|default(1) %}
+  <div style="background:rgba(100,150,255,0.04);border:1px solid rgba(100,150,255,0.12);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+    <div style="font-size:1.5em">🔮</div>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:.92em">Next: {{ ch.title }}</div>
+      <div style="color:#888;font-size:.82em">
+        {% if floor < next_floor %}🏰 Reach Floor {{ next_floor }}{% endif %}
+        {% if floor < next_floor and player_level < next_lvl %} · {% endif %}
+        {% if player_level < next_lvl %}⭐ Level {{ next_lvl }}{% endif %}
+      </div>
+    </div>
+    <div style="font-size:.8em;color:#555">
+      {% if floor >= next_floor and player_level >= next_lvl %}
+      <span style="color:#22c55e">✅ Available</span>
+      {% else %}
+      🔒 Locked
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <!-- All chapters list -->
+  <div class="section-title">📚 All Chapters</div>
+  <div class="chapter-list">
+    {% for ch in all_chapters %}
+    {% set parts = ch.floors.split('-') %}
+    {% set floor_min = parts[0]|int %}
+    {% set floor_max = parts[1]|int if parts|length > 1 else parts[0]|int %}
+    {% set ch_completed = ch.chapter in completed %}
+    {% set is_active = ch.chapter == chapter.chapter|default(1) and not ch_completed %}
+    {% set is_locked = floor < floor_min %}
+    <div class="chapter-item {% if is_active %}active{% elif is_locked %}locked{% endif %}" title="{% if ch.lore %}{{ ch.lore }}{% endif %}">
+      <div class="chapter-num">{{ ch.chapter }}</div>
+      <div class="chapter-info">
+        <div class="chapter-title">{{ ch.title }}</div>
+        <div class="chapter-floors">Floors {{ ch.floors }}
+          {% if ch.level_required > 1 %} · Level {{ ch.level_required }}+{% endif %}
+        </div>
+      </div>
+      {% if ch_completed %}
+      <span class="chapter-status" style="color:#22c55e;font-size:1em">✅</span>
+      {% elif is_active %}
+      <span class="chapter-status status-active">Active</span>
+      {% elif is_locked %}
+      <span style="color:#444;font-size:1em">🔒</span>
+      {% else %}
+      <span class="chapter-status status-coming">🔓 Ready</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+function updateMailCount() {
+  fetch('/api/mail/count').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('mail-count');
+    if(el){el.textContent=d.unclaimed||0;el.style.background=d.unclaimed>0?'#ef4444':'#374151'}
+  }).catch(()=>{});
+}
+updateMailCount();
+setInterval(updateMailCount,30000);
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
+</body>
+</html>

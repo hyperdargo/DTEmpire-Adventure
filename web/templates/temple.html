@@ -1,0 +1,81 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="container" style="max-width:800px;margin:0 auto;padding:24px;">
+  <h2 class="pixel" style="color:#ffd54a;text-align:center;margin-bottom:24px;">🏛️ Temple of Elders</h2>
+
+  <div class="pxl" style="margin-bottom:20px;">
+    <div style="text-align:center;font-size:3em;margin-bottom:8px;">🏛️</div>
+    <p style="color:#e8e8e8;font-size:18px;text-align:center;letter-spacing:1px;">
+      The ancient temple hums with forgotten power. Offer gold to receive the blessings of the old gods.
+    </p>
+    <p style="text-align:center;color:#ffd54a;font-size:16px;margin-top:10px;">🪙 <span id="templeCoins">{{ player.coins|default(0) }}</span></p>
+    {% if player.temple_buff and player.temple_buff.expires > now %}
+    <p id="activeBuff" style="text-align:center;color:#4ade80;font-size:14px;">✨ Active: {{ player.temple_buff.name }}</p>
+    {% else %}
+    <p id="activeBuff" style="text-align:center;color:#4ade80;font-size:14px;display:none;"></p>
+    {% endif %}
+  </div>
+
+  <div class="pxl" style="margin-bottom:20px;">
+    <h3 class="pixel" style="color:#ffd54a;margin-bottom:14px;">✨ Available Blessings</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:2px solid #ffd54a;">
+        <th class="pixel" style="color:#ffd54a;padding:8px;text-align:left;font-size:9px;">Blessing</th>
+        <th class="pixel" style="color:#ffd54a;padding:8px;text-align:left;font-size:9px;">Cost</th>
+        <th class="pixel" style="color:#ffd54a;padding:8px;text-align:left;font-size:9px;">Effect</th>
+        <th class="pixel" style="color:#ffd54a;padding:8px;font-size:9px;"></th>
+      </tr>
+      <tr style="border-bottom:1px solid #333;">
+        <td style="padding:10px 8px;"><span style="color:#4ade80;">🛡️</span> Guardian's Boon</td>
+        <td style="padding:10px 8px;color:#ffd54a;">500 🪙</td>
+        <td style="padding:10px 8px;color:#888;">+20% Defense for 1 hour</td>
+        <td style="padding:8px;"><button class="pxl-btn" onclick="templePray('defense')">Pray</button></td>
+      </tr>
+      <tr style="border-bottom:1px solid #333;">
+        <td style="padding:10px 8px;"><span style="color:#ffd54a;">⚔️</span> Warrior's Fury</td>
+        <td style="padding:10px 8px;color:#ffd54a;">800 🪙</td>
+        <td style="padding:10px 8px;color:#888;">+25% Attack for 30 min</td>
+        <td style="padding:8px;"><button class="pxl-btn" onclick="templePray('attack')">Pray</button></td>
+      </tr>
+      <tr style="border-bottom:1px solid #333;">
+        <td style="padding:10px 8px;"><span style="color:#c084fc;">🔮</span> Fortune's Grace</td>
+        <td style="padding:10px 8px;color:#ffd54a;">1,200 🪙</td>
+        <td style="padding:10px 8px;color:#888;">+30% Coin Find for 2 hours</td>
+        <td style="padding:8px;"><button class="pxl-btn" onclick="templePray('fortune')">Pray</button></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="pxl">
+    <h3 class="pixel" style="color:#ffd54a;margin-bottom:14px;">🙏 Make an Offering</h3>
+    <p style="color:#888;font-size:16px;margin-bottom:12px;">Donate coins to gain favor with the gods.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="pxl-btn" onclick="templeOffer(100)">🪙 100</button>
+      <button class="pxl-btn" onclick="templeOffer(500)">🪙 500</button>
+      <button class="pxl-btn" onclick="templeOffer(1000)">🪙 1,000</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function templePray(blessing) {
+  fetch('/api/temple/pray', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({blessing: blessing})})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { alert(data.error); return; }
+      document.getElementById('templeCoins').textContent = data.coins;
+      var buffEl = document.getElementById('activeBuff');
+      buffEl.style.display = '';
+      buffEl.textContent = '✨ Active: ' + data.buff.name;
+    });
+}
+function templeOffer(amount) {
+  fetch('/api/temple/offer', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: amount})})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.error) { alert(data.error); return; }
+      document.getElementById('templeCoins').textContent = data.coins;
+      alert('The gods favor you. +' + data.xp_gain + ' XP' + (data.leveled_up ? ' — LEVEL UP! Now Level ' + data.level : ''));
+    });
+}
+</script>

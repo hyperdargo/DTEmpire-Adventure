@@ -1,34 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Profile</title>
+<title>DTEmpire Adventure — Profile</title>
 <style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;border-radius:8px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:800px;margin:0 auto;padding:24px}
-.profile-header{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:16px;padding:32px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden}
-.profile-header::before{content:'';position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(108,60,224,0.1));border-radius:16px 16px 0 0}
-.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6c3ce0,#a855f7);display:flex;align-items:center;justify-content:center;font-size:2.5em;margin:0 auto 16px;border:3px solid #a855f7;position:relative;z-index:1}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background: #0a0a0a;color:#e2e8f0;min-height:100vh}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background: #0a0a0a;display:flex;align-items:center;justify-content:center;font-size:2.5em;margin:0 auto 16px;border:3px solid #a855f7;position:relative;z-index:1}
 .profile-name{font-size:1.6em;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
-.profile-title{color:#a855f7;font-size:0.95em;margin-bottom:8px;position:relative;z-index:1}
+.profile-title{color: #ffffff;font-size:0.95em;margin-bottom:8px;position:relative;z-index:1}
 .online-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.85em;font-weight:600;position:relative;z-index:1}
-.online-status.online{background:rgba(34,197,94,0.15);color:#22c55e}
-.online-status.offline{background:rgba(100,100,100,0.15);color:#888}
+.online-status.online{background: rgba(10,10,10,0.95);color:#22c55e}
+.online-status.offline{background: rgba(10,10,10,0.95);color:#888}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
-.stat-box{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:16px;text-align:center}
+.stat-box{background: rgba(10,10,10,0.95);border: 1px solid #333;border-radius:12px;padding:16px;text-align:center}
 .stat-box .stat-icon{font-size:1.5em;margin-bottom:4px}
-.stat-box .stat-value{font-size:1.4em;font-weight:700;color:#a855f7}
+.stat-box .stat-value{font-size:1.4em;font-weight:700;color: #ffffff}
 .stat-box .stat-label{color:#888;font-size:0.8em;margin-top:2px}
-.info-section{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:16px;padding:24px;margin-bottom:24px}
-.info-section h3{color:#a855f7;margin-bottom:16px;font-size:1.1em}
+.info-section{background: rgba(10,10,10,0.95);border: 1px solid #333;border-radius:16px;padding:24px;margin-bottom:24px}
+.info-section h3{color: #ffffff;margin-bottom:16px;font-size:1.1em}
 .info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #222}
 .info-row:last-child{border-bottom:none}
 .info-label{color:#888}
@@ -36,31 +30,42 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
 .role-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-weight:600}
 .duel-ranks{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .rank-badge{padding:6px 12px;border-radius:6px;font-size:0.85em;display:flex;align-items:center;gap:4px}
-.rank-badge.active{border:1px solid #a855f7;background:rgba(168,85,247,0.15);color:#a855f7}
-.rank-badge.inactive{background:rgba(50,50,50,0.5);color:#666}
+.rank-badge.active{border: 1px solid #333;background: rgba(10,10,10,0.95);color: #ffffff}
+.rank-badge.inactive{background: rgba(10,10,10,0.95);color:#666}
 .btn{padding:12px 24px;border:none;border-radius:8px;font-size:0.95em;font-weight:600;cursor:pointer;transition:all 0.3s}
-.btn-challenge{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff;width:100%;margin-top:16px}
+.btn-challenge{background: #0a0a0a;color:#fff;width:100%;margin-top:16px}
 .btn-challenge:hover{box-shadow:0 4px 20px rgba(168,85,247,0.4)}
 .titles-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.title-tag{padding:4px 10px;border-radius:6px;font-size:0.8em;background:rgba(168,85,247,0.1);border:1px solid #6c3ce0;color:#a855f7}
+.title-tag{padding:4px 10px;border-radius:6px;font-size:0.8em;background: rgba(10,10,10,0.95);border: 1px solid #333;color: #ffffff}
 .title-tag.locked{opacity:0.4;border-color:#333;color:#666}
 .not-found{text-align:center;padding:60px 20px;color:#888}
 </style>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Join DTEmpire Adventure, the ultimate browser-based RPG. Climb the tower, hatch mythic pets, battle bosses, forge epic gear, and dominate the leaderboard.">
+<meta name="keywords" content="DTEmpire, adventure game, browser RPG, idle RPG, tower climbing, gacha pets, mmorpg, discord bot game">
+<meta name="author" content="Dargo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://adventure.ankitgupta.com.np/">
+
+<!-- Open Graph / Social -->
+<meta property="og:title" content="DTEmpire Adventure - The Ultimate Browser RPG">
+<meta property="og:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta property="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+<meta property="og:url" content="https://adventure.ankitgupta.com.np/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DTEmpire Adventure">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DTEmpire Adventure">
+<meta name="twitter:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta name="twitter:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+
 </head>
 <body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/adventure">Adventure</a>
-    <a href="/shop">Shop</a>
-    <a href="/inventory">Inventory</a>
-    <a href="/duels">⚔️ Duels</a>
-    <a href="/leaderboard" class="active">Leaderboard</a>
-    <a href="/roles">Roles</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
+{% include '_nav.html' %}
+
 <div class="container">
 
 {% if not player %}
@@ -75,7 +80,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
   <!-- Profile Header -->
   <div class="profile-header">
     <div class="profile-avatar">
-      {% if player.role_data %}{{ player.role_data.emoji }}{% else %}👤{% endif %}
+      {% if avatar_url %}<img src="{{ avatar_url }}" alt="avatar" style="width:100%;height:100%;object-fit:cover;">{% elif player.role_data %}{{ player.role_data.emoji }}{% else %}👤{% endif %}
     </div>
     <div class="profile-name">{{ player.name or ('User#' + (player.user_id|string)[-4:]) }}</div>
     <div class="profile-title">🏷️ {{ player.active_title or 'Adventurer' }}</div>
@@ -135,14 +140,19 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     </div>
     <div class="info-row">
       <span class="info-label">XP Progress</span>
-      <span class="info-value" style="color:#a855f7">⭐ {{ player.xp }}/{{ player.level * 50 }}</span>
+      <span class="info-value" style="color: #ffffff">⭐ {{ player.xp }}/{{ xp_for_level(player.level) }}</span>
     </div>
-    {% if player.equipped_weapon or player.equipped_armor %}
+    <div style="height:10px;background:#222;border:1px solid #333;border-radius:5px;margin-top:8px;overflow:hidden">
+      {% set xp_pct = (player.xp / xp_for_level(player.level) * 100) | round(1) %}
+      <div style="height:100%;width:{{ xp_pct if xp_pct <= 100 else 100 }}%;background:#ffd54a"></div>
+    </div>
+    {% if player.equipped_weapon or player.equipped_armor or player.equipped_helmet %}
     <div class="info-row">
       <span class="info-label">Equipment</span>
       <span class="info-value">
-        {% if player.equipped_weapon %}⚔️ {{ player.equipped_weapon }}{% endif %}
-        {% if player.equipped_armor %} | 🛡️ {{ player.equipped_armor }}{% endif %}
+        {% if player.equipped_weapon %}{% if player.equipped_weapon is mapping %}⚔️ {{ player.equipped_weapon.name }}{% else %}⚔️ {{ player.equipped_weapon }}{% endif %}{% endif %}
+        {% if player.equipped_helmet %}{% if player.equipped_helmet is mapping %}| ⛑️ {{ player.equipped_helmet.name }}{% else %}| ⛑️ {{ player.equipped_helmet }}{% endif %}{% endif %}
+        {% if player.equipped_armor %}{% if player.equipped_armor is mapping %}| 🛡️ {{ player.equipped_armor.name }}{% else %}| 🛡️ {{ player.equipped_armor }}{% endif %}{% endif %}
       </span>
     </div>
     {% endif %}
@@ -153,13 +163,51 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
     <h3>🎭 Role & Rank</h3>
     {% if player.role_data %}
     <div style="margin-bottom:16px">
-      <div class="role-badge" style="background:rgba(168,85,247,0.1);border:1px solid {{ player.role_data.color }};color:{{ player.role_data.color }}">
+      <div class="role-badge" style="background: rgba(10,10,10,0.95);border:1px solid {{ player.role_data.color }};color:{{ player.role_data.color }}">
         {{ player.role_data.emoji }} {{ player.role_data.name }}
       </div>
       <p style="color:#888;font-size:0.9em;margin-top:8px">{{ player.role_data.desc }}</p>
+      {% if player.role_rank %}
+      <div style="margin-top:12px;padding:12px;background:#0d0d0d;border:1px solid #333;border-radius:10px;font-size:0.95em">
+        <span style="color:#ffd54a;font-weight:700">{{ player.role_rank.icon }} {{ player.role_rank.stage_name }}</span>
+        <span style="color:#fff"> — Rank {{ player.role_rank.rank }}/{{ player.role_rank.rank_max }}</span>
+        <div style="height:8px;background:#222;border-radius:4px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:{{ player.role_rank.rank * 10 }}%;background:#ffd54a"></div>
+        </div>
+        <div style="color:#666;font-size:0.8em;margin-top:6px">{{ player.role_rank.hint }}</div>
+      </div>
+      {% endif %}
     </div>
     {% else %}
-    <p style="color:#888;margin-bottom:16px">No role chosen yet. <a href="/roles" style="color:#a855f7">Choose one!</a></p>
+    <p style="color:#888;margin-bottom:16px">No role chosen yet. <a href="/roles" style="color: #ffffff">Choose one!</a></p>
+    {% endif %}
+
+    {% if player.class_name %}
+    <div class="info-row">
+      <span class="info-label">🎲 Class Roll</span>
+      <span class="info-value">{{ player.class_emoji }} {{ player.class_name }} <span style="color:{{ {'common':'#9ca3af','uncommon':'#4ade80','rare':'#60a5fa','epic':'#c084fc','legendary':'#ffd54a','unique':'#ff4757'}[player.class_rarity|lower] }};font-size:0.85em;font-weight:700">({{ player.class_rarity|default('common')|upper }})</span></span>
+    </div>
+    {% endif %}
+    {% if player.has_second_class and player.second_class_name %}
+    <div style="margin-top:14px;padding:14px;background:#0d0d0d;border:1px solid #333;border-radius:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <span style="color:#ffd54a;font-weight:700;letter-spacing:1px">🔀 DUAL CLASS</span>
+        <span style="color:#4ade80;font-size:0.8em">✅ 33% of {{ player.second_class_name }} stats added</span>
+      </div>
+      <div style="margin-top:10px;font-size:1.05em">
+        {{ player.second_class_emoji }} <b>{{ player.second_class_name }}</b>
+        <span style="color:{{ {'common':'#9ca3af','uncommon':'#4ade80','rare':'#60a5fa','epic':'#c084fc','legendary':'#ffd54a','unique':'#ff4757'}[player.second_class_rarity|lower] }};font-weight:700;text-shadow:{{ '0 0 10px #ff4757' if player.second_class_rarity|lower == 'unique' else 'none' }}">[{{ player.second_class_rarity|upper }}]</span>
+      </div>
+      <div style="margin-top:8px;color:#aaa;font-size:0.9em">
+        {{ player.second_rank.icon }} {{ player.second_rank.circle }} — <b style="color:#fff">Lv.{{ player.second_rank.level }}/25</b>
+        <span style="color:#666;font-size:0.8em"> (rarity up at Lv.5/10/15/20 — 👑 UNIQUE at Lv.25, one player only)</span>
+      </div>
+      <div style="height:10px;background:#222;border:1px solid #333;border-radius:5px;margin-top:8px;overflow:hidden">
+        {% set scp = (player.second_rank.xp / player.second_rank.xp_needed * 100) | round(1) %}
+        <div style="height:100%;width:{{ scp if scp <= 100 else 100 }}%;background:#ffd54a"></div>
+      </div>
+      <div style="color:#888;font-size:0.8em;margin-top:6px">⭐ {{ player.second_rank.xp }}/{{ player.second_rank.xp_needed }} — earn XP by adventuring & dueling</div>
+    </div>
     {% endif %}
     
     <div class="info-row">
@@ -183,19 +231,86 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-g
   <!-- Titles -->
   <div class="info-section">
     <h3>🏷️ Titles Unlocked</h3>
-    <div class="titles-list">
-      {% for title in player.titles_unlocked or ['Adventurer'] %}
-      <span class="title-tag {% if title != player.active_title %}locked{% endif %}">{{ title }}</span>
+    {% set t_owned = player.titles_unlocked or ['Adventurer'] %}
+    {% set t_active = player.active_title or 'Adventurer' %}
+    {% if t_owned|length > 1 %}
+    <div class="titles-list" style="margin-bottom:8px">
+      {% for title in t_owned %}
+      <button class="title-tag {% if title == t_active %}locked{% endif %}"
+              style="cursor:pointer;font-family:inherit;font-size:inherit;border:1px solid #333;border-radius:8px;padding:4px 10px;margin:2px;background:{% if title == t_active %}#222{% else %}transparent{% endif %};color:{% if title == t_active %}#ffd54a{% else %}#ccc{% endif %}"
+              onclick="equipTitle({{ title|tojson }})"
+              title="Click to equip">{{ title }}{% if title == t_active %} ✓{% endif %}</button>
       {% endfor %}
     </div>
+    {% else %}
+    <div class="titles-list">
+      {% for title in t_owned %}
+      <span class="title-tag">{{ title }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
-  <!-- Challenge Button -->
+  <!-- Challenge / Social Buttons -->
   {% if username and player.user_id != session_user_id %}
-  <a href="/duels" class="btn btn-challenge" style="display:block;text-align:center;text-decoration:none">⚔️ Challenge This Player</a>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <a href="/duels" class="btn btn-challenge" style="flex:1;display:block;text-align:center;text-decoration:none">⚔️ Challenge</a>
+    <button class="btn btn-challenge" style="flex:1" onclick="sendFriendReq('{{ player.user_id }}')">➕ Add Friend</button>
+    <a class="btn btn-challenge" style="flex:1;display:block;text-align:center;text-decoration:none" href="/chat?dm={{ player.user_id }}&name={{ player.name|urlencode }}">✉️ DM</a>
+  </div>
   {% endif %}
 
 {% endif %}
 </div>
+<script>
+function updateMailCount() {
+  fetch('/api/mail/count').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('mail-count');
+    if(el){el.textContent=d.unclaimed||0;el.style.background=d.unclaimed>0?'#ef4444':'#374151'}
+  }).catch(()=>{});
+}
+updateMailCount();
+setInterval(updateMailCount,30000);
+function sendFriendReq(uid){
+  fetch('/api/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})})
+  .then(r=>r.json()).then(d=>{
+    if(d.error) alert(d.error); else alert(d.message||'Friend request sent!');
+  }).catch(()=>alert('Failed'));
+}
+function equipTitle(title){
+  fetch('/api/title/equip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){location.reload();}
+    else alert(d.error||'Could not equip title');
+  }).catch(()=>alert('Failed'));
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all others first
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close dropdowns if clicking anywhere else
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
 </body>
+
 </html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎰 Lucky Roll — DTEmpire Adventure</title>
+<style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;border-radius:8px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background: #0a0a0a;color:#e2e8f0;min-height:100vh}
+.nav{background: rgba(10,10,10,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.nav-brand{font-size:1.4em;font-weight:700;background: #0a0a0a;}
+.nav-links{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all .3s;font-size:.9em}
+.nav a:hover,.nav a.active{color:#fff;background: rgba(10,10,10,0.95)}
+.nav .logout{margin-left:16px;color:#ff6666}
+.container{max-width:700px;margin:0 auto;padding:24px;text-align:center}
+h2{margin-bottom:24px;font-size:1.8em}
+.tabs{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.tab{padding:10px 24px;border: 1px solid #333;border-radius:8px;cursor:pointer;font-weight:600;transition:all .3s;background: rgba(10,10,10,0.95);color:#aaa}
+.tab:hover,.tab.active{background: rgba(10,10,10,0.95);border-color: #ffffff;color:#fff}
+.roll-section{display:none}
+.roll-section.active{display:block}
+.current-class{background: rgba(10,10,10,0.95);border: 1px solid #333;border-radius:12px;padding:20px;margin-bottom:24px}
+.current-class .emoji{font-size:3em}
+.current-class .name{font-size:1.5em;font-weight:700;margin-top:8px}
+.current-class .rarity{display:inline-block;padding:4px 16px;border-radius:20px;font-size:.9em;font-weight:600;margin-top:8px}
+.rarity-common{color:#9ca3af;border:1px solid #9ca3af}
+.rarity-uncommon{color:#22c55e;border:1px solid #22c55e}
+.rarity-rare{color:#3b82f6;border:1px solid #3b82f6}
+.rarity-epic{color: #ffffff;border: 1px solid #333}
+.rarity-legendary{color:#f59e0b;border:1px solid #f59e0b}
+.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.stat-box{background: rgba(10,10,10,0.95);padding:8px 16px;border-radius:8px}
+.stat-box .label{font-size:.75em;color:#888}
+.stat-box .value{font-size:1.2em;font-weight:700}
+.btn{padding:14px 32px;border:none;border-radius:10px;font-size:1.1em;font-weight:700;cursor:pointer;transition:all .3s;margin-top:16px}
+.btn-roll{background: #0a0a0a;color:#fff}
+.btn-roll:hover{box-shadow:0 4px 20px rgba(168,85,247,0.4);transform:translateY(-2px)}
+.btn-roll:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-second{background: #0a0a0a;color:#fff}
+.btn-second:hover{box-shadow:0 4px 20px rgba(245,158,11,0.4);transform:translateY(-2px)}
+.coin-cost{color:#f59e0b;font-size:.9em;margin-top:8px}
+.result-card{display:none;background: rgba(10,10,10,0.95);border-radius:16px;padding:32px;margin-top:24px;animation:fadeIn .5s}
+.result-card.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.result-emoji{font-size:4em}
+.result-name{font-size:1.8em;font-weight:800;margin-top:8px}
+.result-rarity{display:inline-block;padding:4px 20px;border-radius:20px;font-size:1em;font-weight:600;margin-top:12px}
+.result-stats{display:flex;gap:16px;justify-content:center;margin-top:16px}
+.info-text{color:#888;font-size:.9em;margin-top:16px;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.5}
+</style>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Join DTEmpire Adventure, the ultimate browser-based RPG. Climb the tower, hatch mythic pets, battle bosses, forge epic gear, and dominate the leaderboard.">
+<meta name="keywords" content="DTEmpire, adventure game, browser RPG, idle RPG, tower climbing, gacha pets, mmorpg, discord bot game">
+<meta name="author" content="Dargo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://adventure.ankitgupta.com.np/">
+
+<!-- Open Graph / Social -->
+<meta property="og:title" content="DTEmpire Adventure - The Ultimate Browser RPG">
+<meta property="og:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta property="og:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+<meta property="og:url" content="https://adventure.ankitgupta.com.np/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DTEmpire Adventure">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DTEmpire Adventure">
+<meta name="twitter:description" content="Climb the tower, forge gear, and hatch mythic pets. Start your adventure now!">
+<meta name="twitter:image" content="https://adventure.ankitgupta.com.np/static/icon-192.png">
+
+</head>
+<body>
+{% include '_nav.html' %}
+
+
+<div class="container">
+  <h2>🎰 Lucky Roll</h2>
+  <div style="color:#888;margin-bottom:16px">🪙 <strong style="color:#f59e0b">{{ player.coins|default(0) }}</strong> coins</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('class-roll')">🎲 Class Roll</div>
+    <div class="tab" onclick="switchTab('second-class')">🔀 Dual Class</div>
+  </div>
+
+  <div id="class-roll" class="roll-section active">
+    <div class="current-class">
+      <div class="emoji">{{ player.class_emoji|default('⚔️') }}</div>
+      <div class="name">{{ player.class_name|default('Adventurer') }}</div>
+      <div class="rarity rarity-{{ player.class_rarity|default('common') }}">{{ player.class_rarity|default('common')|title }}</div>
+      <div class="stats">
+        <div class="stat-box"><div class="label">❤️ HP</div><div class="value">{{ player.max_health|default(100) }}</div></div>
+        <div class="stat-box"><div class="label">⚔️ ATK</div><div class="value">{{ player.atk|default(10) }}</div></div>
+        <div class="stat-box"><div class="label">🛡️ DEF</div><div class="value">{{ player.def|default(5) }}</div></div>
+        <div class="stat-box"><div class="label">💨 SPD</div><div class="value">{{ player.spd|default(6) }}</div></div>
+      </div>
+    </div>
+    <div class="info-text">Re-roll your class for <strong>200 coins</strong>! You might get a higher rarity!<br>
+    Rarity chances: 45% Common · 30% Uncommon · 15% Rare · 8% Epic · <span style="color:#f59e0b">2% Legendary</span></div>
+    <button class="btn btn-roll" id="classRollBtn" onclick="rollClass()">🎲 Roll New Class (200🪙)</button>
+    <div class="result-card" id="classResult"></div>
+  </div>
+
+  <div id="second-class" class="roll-section">
+    {% if player.has_second_class %}
+    <div class="current-class">
+      <div style="font-size:1em;color:#888;margin-bottom:8px">Your Dual Classes</div>
+      <div style="display:flex;gap:16px;justify-content:center;align-items:center">
+        <div>
+          <div style="font-size:2.5em">{{ player.class_emoji|default('⚔️') }}</div>
+          <div style="font-weight:600">{{ player.class_name|default('') }}</div>
+        </div>
+        <div style="font-size:2em;color: #ffffff">+</div>
+        <div>
+          <div style="font-size:2.5em">{{ classes[player.second_class].emoji if player.second_class and classes.get(player.second_class) else '❓' }}</div>
+          <div style="font-weight:600">{{ classes[player.second_class].name if player.second_class and classes.get(player.second_class) else '???' }}</div>
+          {% if player.second_class_rarity %}<div class="rarity rarity-{{ player.second_class_rarity }}">{{ player.second_class_rarity|title }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-box"><div class="label">❤️ HP</div><div class="value">{{ player.max_health|default(100) }}</div></div>
+        <div class="stat-box"><div class="label">⚔️ ATK</div><div class="value">{{ player.atk|default(10) }}</div></div>
+        <div class="stat-box"><div class="label">🛡️ DEF</div><div class="value">{{ player.def|default(5) }}</div></div>
+        <div class="stat-box"><div class="label">💨 SPD</div><div class="value">{{ player.spd|default(6) }}</div></div>
+      </div>
+    </div>
+    <div class="info-text" style="color:#22c55e">✅ Dual class unlocked! Both classes combined make you stronger.</div>
+    {% else %}
+    <div class="current-class">
+      <div style="font-size:3em;opacity:.3">🔀</div>
+      <div style="font-size:1.2em;color:#888;margin-top:8px">Unlock a second class!</div>
+      <div style="font-size:.9em;color:#666;margin-top:4px">Combine two classes for boosted stats and dual-class bonuses</div>
+    </div>
+    <div class="info-text">Roll a second class for <strong>500 coins</strong>! The stats of both classes combine (33% of second class added).<br>
+    Rarity chances: 45% Common · 30% Uncommon · 15% Rare · 8% Epic · <span style="color:#f59e0b">2% Legendary</span></div>
+    <button class="btn btn-second" id="secondBtn" onclick="rollSecond()">🔀 Unlock Dual Class (500🪙)</button>
+    {% endif %}
+    <div class="result-card" id="secondResult"></div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.roll-section').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.tab[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById(tab).classList.add('active');
+}
+
+function rollClass() {
+  const btn = document.getElementById('classRollBtn');
+  btn.disabled = true; btn.textContent = '🎲 Rolling...';
+  fetch('/api/class-roll', {method:'POST'})
+    .then(r => r.json()).then(d => {
+      if (!d.success) { alert(d.error||'Failed'); btn.disabled=false; btn.textContent='🎲 Roll New Class (200🪙)'; return; }
+      const card = document.getElementById('classResult');
+      card.className = 'result-card show';
+      card.innerHTML = `
+        <div class="result-emoji">${d.class_emoji}</div>
+        <div class="result-name">${d.class_name}</div>
+        <div class="result-rarity rarity-${d.class_rarity}">${d.class_rarity.toUpperCase()}</div>
+        <div class="result-stats">
+          <div class="stat-box"><div class="label">❤️ HP</div><div class="value">${d.hp}</div></div>
+          <div class="stat-box"><div class="label">⚔️ ATK</div><div class="value">${d.atk}</div></div>
+          <div class="stat-box"><div class="label">🛡️ DEF</div><div class="value">${d.def}</div></div>
+          <div class="stat-box"><div class="label">💨 SPD</div><div class="value">${d.spd}</div></div>
+        </div>
+        <div style="color:#888;font-size:.85em;margin-top:12px">🪙 ${d.coins} coins remaining</div>`;
+      btn.disabled = false; btn.textContent = '🎲 Roll Again (200🪙)';
+      btn.disabled = d.coins < 200;
+    });
+}
+
+function rollSecond() {
+  const btn = document.getElementById('secondBtn');
+  btn.disabled = true; btn.textContent = '🔀 Rolling...';
+  fetch('/api/second-class-roll', {method:'POST'})
+    .then(r => r.json()).then(d => {
+      if (!d.success) { alert(d.error||'Failed'); btn.disabled=false; btn.textContent='🔀 Unlock Dual Class (500🪙)'; return; }
+      const card = document.getElementById('secondResult');
+      card.className = 'result-card show';
+      card.innerHTML = `
+        <div style="color:#f59e0b;font-weight:700;font-size:1.2em">🎉 DUAL CLASS UNLOCKED!</div>
+        <div class="result-emoji">${d.class_emoji}</div>
+        <div class="result-name">${d.class_name}</div>
+        <div class="result-rarity rarity-${d.class_rarity}">${d.class_rarity.toUpperCase()}</div>
+        <div class="result-stats">
+          <div class="stat-box"><div class="label">❤️ HP</div><div class="value">${d.max_health}</div></div>
+          <div class="stat-box"><div class="label">⚔️ ATK</div><div class="value">${d.atk}</div></div>
+          <div class="stat-box"><div class="label">🛡️ DEF</div><div class="value">${d.def}</div></div>
+          <div class="stat-box"><div class="label">💨 SPD</div><div class="value">${d.spd}</div></div>
+        </div>
+        <div style="color: #ffffff;margin-top:12px">Stats boosted from both classes!</div>
+        <div style="color:#888;font-size:.85em;margin-top:8px">🪙 ${d.coins} remaining</div>`;
+      btn.disabled = false; btn.textContent = '✅ Unlocked!';
+      btn.style.opacity = 0.5; btn.style.cursor = 'default';
+    });
+}
+</script>
+<script>
+function updateMailCount() {
+  fetch('/api/mail/count').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('mail-count');
+    if(el){el.textContent=d.unclaimed||0;el.style.background=d.unclaimed>0?'#ef4444':'#374151'}
+  }).catch(()=>{});
+}
+updateMailCount();
+setInterval(updateMailCount,30000);
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const btn = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close all others first
+            document.querySelectorAll('.dropdown-content').forEach(c => {
+                if (c !== content) c.style.display = 'none';
+            });
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close dropdowns if clicking anywhere else
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-content').forEach(c => {
+            c.style.display = 'none';
+        });
+    });
+});
+</script>
+</body>
+
+</html>

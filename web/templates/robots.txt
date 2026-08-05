@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /dashboard
+Allow: /leaderboard
+Disallow: /api/
+Disallow: /profile/
+
+Sitemap: https://adventure.ankitgupta.com.np/sitemap.xml

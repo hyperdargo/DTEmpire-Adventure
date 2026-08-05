@@ -1,0 +1,14 @@
+services:
+  adventure:
+    build: .
+    container_name: dtempire-adventure
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      WEB_PORT: "8081"
+      WEB_RELOADER: "0"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./web/static/uploads:/app/web/static/uploads

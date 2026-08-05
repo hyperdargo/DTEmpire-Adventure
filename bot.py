@@ -6,7 +6,7 @@
 ║                                                              ║
 ║  Features: Auto-Mod, Welcome, Tickets, Music, Games,        ║
 ║            Logging, Watchdog, Self-Upgrade, Changelog       ║
-║  Locked to home server. No DMs. Logs → central channel.     ║
+║  Multi-guild. No DMs. Logs → central channel.               ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -21,6 +21,7 @@ import time
 import datetime
 import logging
 import re
+import random
 from pathlib import Path
 from collections import defaultdict
 
@@ -40,6 +41,8 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
 HOME_GUILD_ID = int(os.environ.get("DISCORD_HOME_GUILD_ID") or "0")
 LOG_CHANNEL_ID = 1514565322882158602
 ALLOWED_USERS = [int(u) for u in os.environ.get("DISCORD_ALLOWED_USERS", "").split(",") if u.strip()]
+
+CLI_MODE = None  # ("announce", text, title) when launched as: bot.py announce <message> [title]
 
 # Data paths
 DATA_DIR = BASE_DIR / "data"
@@ -382,6 +385,62 @@ intents.moderation = False
 
 bot = commands.Bot(command_prefix=">", intents=intents, help_command=None)
 bot.start_time = time.time()
+
+# ═══════════════════════════════════════════════════════════════
+# PER-GUILD ANNOUNCEMENT CHANNELS — /advannoucement + /setchannel
+# ═══════════════════════════════════════════════════════════════
+
+ANN_FILE = DATA_DIR / "announce_channels.json"   # {guild_id: channel_id}
+HOME_UPDATES_CHANNEL_ID = 1531265353949253742    # home "updates" channel
+
+def load_announce_channels():
+    try:
+        return json.loads(ANN_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+def save_announce_channels(data):
+    tmp = ANN_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    tmp.replace(ANN_FILE)
+
+def check_announce_channel_perms(channel):
+    """Return error string if the bot can't use the channel, else None."""
+    if not isinstance(channel, discord.TextChannel):
+        return "channel must be a text channel"
+    perms = channel.permissions_for(channel.guild.me)
+    missing = []
+    if not perms.view_channel:
+        missing.append("View Channel")
+    if not perms.send_messages:
+        missing.append("Send Messages")
+    if not perms.embed_links:
+        missing.append("Embed Links")
+    return ("bot is missing: " + ", ".join(missing)) if missing else None
+
+async def broadcast_announcement(text: str, title: str = "📢 DTEmpire Update"):
+    """Post an update embed to the home updates channel + every guild's announcement channel."""
+    sent = []
+    embed = discord.Embed(title=title, description=text[:4000], color=discord.Color.gold(),
+                          timestamp=datetime.datetime.utcnow())
+    embed.set_footer(text="⚔️ DTEmpire Adventure · By Hermes")
+    home = bot.get_channel(HOME_UPDATES_CHANNEL_ID)
+    if home:
+        try:
+            await home.send(embed=embed)
+            sent.append(f"home #{home.name}")
+        except Exception as e:
+            logger.error(f"Home announcement send failed: {e}")
+    for gid, cid in load_announce_channels().items():
+        ch = bot.get_channel(int(cid))
+        if not ch:
+            continue
+        try:
+            await ch.send(embed=embed)
+            sent.append(f"{ch.guild.name} #{ch.name}")
+        except Exception as e:
+            logger.error(f"Announcement to guild {gid} failed: {e}")
+    return sent
 bot.home_guild_id = HOME_GUILD_ID
 bot.log_channel_id = LOG_CHANNEL_ID
 
@@ -452,12 +511,8 @@ async def log_event(title: str, description: str, color: discord.Color, fields: 
 
 @bot.check
 async def server_only(ctx):
-    """Block ALL DMs. Only allow home server."""
-    if ctx.guild is None:
-        return False  # No DMs — ever
-    if bot.home_guild_id and ctx.guild.id != bot.home_guild_id:
-        return False
-    return True
+    """Block ALL DMs. Prefix commands work in any guild."""
+    return ctx.guild is not None
 
 @bot.event
 async def on_ready():
@@ -473,6 +528,10 @@ async def on_ready():
     for task_loop in [watchdog_loop, self_upgrade_check, status_rotate]:
         if not task_loop.is_running():
             task_loop.start()
+    # New-player watcher (fires repeatedly; guard against reconnects)
+    if not getattr(bot, "_np_watcher_started", False):
+        bot._np_watcher_started = True
+        bot.loop.create_task(check_new_players())
 
     # Online notification
     await log_event(
@@ -485,20 +544,37 @@ async def on_ready():
         source_user="HermesBot"
     )
 
+    # Sync slash commands per guild so /advannoucement & /setchannel appear instantly
+    for g in bot.guilds:
+        try:
+            await bot.tree.sync(guild=g)
+        except Exception as e:
+            logger.warning(f"tree.sync failed for {g.name}: {e}")
+    logger.info(f"Synced slash commands for {len(bot.guilds)} guild(s)")
+
+    # CLI announce mode: broadcast once, then exit
+    if CLI_MODE and CLI_MODE[0] == "announce":
+        logger.info("CLI announce mode — broadcasting once, then exiting")
+        try:
+            sent = await broadcast_announcement(CLI_MODE[1], CLI_MODE[2])
+            print("ANNOUNCED_TO=" + (", ".join(sent) if sent else "NOWHERE"))
+        except Exception as e:
+            logger.error(f"CLI announce failed: {e}")
+            print(f"ANNOUNCE_ERROR={e}")
+        finally:
+            await bot.close()
+
 @bot.event
 async def on_message(message):
     # Block ALL DMs
     if message.guild is None:
         return
-    # Block other servers
-    if bot.home_guild_id and message.guild.id != bot.home_guild_id:
-        return
     # Ignore bots
     if message.author.bot:
         return
 
-    # Auto-mod check (before commands)
-    if automod_config["enabled"]:
+    # Auto-mod only in home guild
+    if automod_config["enabled"] and (not bot.home_guild_id or message.guild.id == bot.home_guild_id):
         await check_automod(message)
 
     await bot.process_commands(message)
@@ -825,7 +901,7 @@ async def self_upgrade_check():
     """Check git for updates and self-upgrade."""
     try:
         result = subprocess.run(["git", "pull"], capture_output=True, text=True, timeout=30, cwd=str(BASE_DIR))
-        if "Already up to date" not in result.stdout:
+        if result.returncode == 0 and "Already up to date" not in result.stdout:
             await log_event("🔄 Self-Upgrade", f"Updated from git. Restarting...\n```{result.stdout[:300]}```", discord.Color.blue())
             await bot.close()
             os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -964,6 +1040,175 @@ async def status_cmd(ctx):
     embed.add_field(name="Prefix", value="`>`", inline=True)
     await ctx.send(embed=embed)
 
+# ── ADVENTURE GAME COMMANDS (ported from discord_bot.py) ──
+def xp_for_level(level):
+    return int(100 * (1.35 ** (level - 1)))
+
+def get_level(player):
+    xp = player.get("xp", 0); lv = 1
+    while True:
+        needed = xp_for_level(lv)
+        if xp >= needed: xp -= needed; lv += 1
+        else: return lv
+
+RARITY_EMOJIS = {"common":"⬜","uncommon":"🟩","rare":"🟦","epic":"🟪","legendary":"🟧"}
+
+def _save_player_d(player, guild_id, user_id):
+    data = load_players()
+    data[f"{guild_id}_{user_id}"] = player
+    save_players(data)
+
+@bot.command(name="daily")
+async def daily(ctx):
+    """Claim daily reward!"""
+    player = get_player(HOME_GUILD_ID, ctx.author.id)
+    if not player:
+        await ctx.send("❌ Register on the website!"); return
+    now = time.time()
+    last = player.get("last_daily", 0)
+    if now - last < 86400:
+        remain = int(86400 - (now - last))
+        await ctx.send(f"⏳ Come back in **{remain//3600}h {(remain%3600)//60}m**"); return
+    reward = random.randint(50, 200)
+    player["coins"] = player.get("coins", 0) + reward
+    player["last_daily"] = now
+    _save_player_d(player, HOME_GUILD_ID, ctx.author.id)
+    await ctx.send(f"🎁 **Daily:** 🪙+{reward} coins!")
+
+@bot.command(name="heal")
+async def heal(ctx):
+    """Heal your character."""
+    player = get_player(HOME_GUILD_ID, ctx.author.id)
+    if not player:
+        await ctx.send("❌ Register first!"); return
+    cost = max(5, int((player.get("max_hp", 100) - player.get("hp", 0)) * 0.5))
+    if player.get("coins", 0) < cost:
+        await ctx.send(f"❌ Need {cost} coins"); return
+    old = player.get("hp", 0)
+    player["coins"] -= cost
+    player["hp"] = player.get("max_hp", 100)
+    _save_player_d(player, HOME_GUILD_ID, ctx.author.id)
+    await ctx.send(f"💚 **Healed!** ❤️ {old}→{player['hp']} (🪙-{cost})")
+
+@bot.command(name="fishlb")
+async def fishlb(ctx):
+    """Coin leaderboard."""
+    data = load_players()
+    scores = []
+    for key, p in data.items():
+        uid = key.split("_")[-1]
+        scores.append((p.get("coins", 0), p.get("username", uid[:8])))
+    scores.sort(reverse=True)
+    embed = discord.Embed(title="🏆 Coin Leaderboard", color=discord.Color.gold())
+    medals = ["🥇","🥈","🥉","","","","","","",""]
+    for i, (coins, name) in enumerate(scores[:10]):
+        embed.add_field(name=f"{medals[i]} {name}", value=f"🪙 {coins}", inline=False)
+    await ctx.send(embed=embed)
+
+@bot.command(name="fishstats")
+async def fishstats(ctx):
+    """Your adventure stats."""
+    player = get_player(HOME_GUILD_ID, ctx.author.id)
+    if not player:
+        await ctx.send("❌ No profile!"); return
+    lv = get_level(player)
+    embed = discord.Embed(title=f"📊 {ctx.author.display_name}", color=discord.Color.blue())
+    for n, v in [("Level", lv), ("Coins", player.get("coins",0)), ("Tower", player.get("tower_floor",1)),
+                 ("Pets", len(player.get("pets",[]))), ("Skills", len(player.get("skills",{}))),
+                 ("W/L", f'{player.get("total_wins",0)}/{player.get("total_losses",0)}')]:
+        embed.add_field(name=n, value=v, inline=True)
+    await ctx.send(embed=embed)
+
+@bot.command(name="duel")
+async def duel(ctx, member: discord.Member = None):
+    """Duel another player!"""
+    if not member or member == ctx.author:
+        await ctx.send("⚠️ `!duel @user`"); return
+    p1, p2 = get_player(HOME_GUILD_ID, ctx.author.id), get_player(HOME_GUILD_ID, member.id)
+    if not p1 or not p2:
+        await ctx.send("❌ Both need profiles!"); return
+    d1 = max(1, p1.get("atk",10) - p2.get("def",5)//2 + random.randint(-5,5))
+    d2 = max(1, p2.get("atk",10) - p1.get("def",5)//2 + random.randint(-5,5))
+    if d1 > d2:
+        p1["coins"] += 10; p2["coins"] = max(0, p2.get("coins",0)-5)
+        _save_player_d(p1, HOME_GUILD_ID, ctx.author.id); _save_player_d(p2, HOME_GUILD_ID, member.id)
+        await ctx.send(f"⚔️ **{ctx.author.display_name}** beats **{member.display_name}**! 💥 {d1} vs {d2} 🪙+10")
+    elif d2 > d1:
+        p2["coins"] += 10; p1["coins"] = max(0, p1.get("coins",0)-5)
+        _save_player_d(p1, HOME_GUILD_ID, ctx.author.id); _save_player_d(p2, HOME_GUILD_ID, member.id)
+        await ctx.send(f"⚔️ **{member.display_name}** beats **{ctx.author.display_name}**! 💥 {d2} vs {d1} 🪙+10")
+    else:
+        await ctx.send(f"⚔️ **DRAW!** Both strike for {d1}!")
+
+@bot.tree.command(name="profile", description="View your adventure profile")
+async def profile(interaction: discord.Interaction):
+    player = get_player(HOME_GUILD_ID, interaction.user.id)
+    if not player:
+        await interaction.response.send_message("❌ No profile!", ephemeral=True); return
+    lv = get_level(player)
+    embed = discord.Embed(title=f"🛡️ {interaction.user.display_name}", color=discord.Color.gold())
+    for n, v in [("Level", lv), ("HP", f'{player.get("hp",0)}/{player.get("max_hp",100)}'),
+                 ("ATK", player.get('atk',0)), ("DEF", player.get('def',0)), ("SPD", player.get('spd',0)),
+                 ("Coins", player.get('coins',0)), ("Pets", len(player.get('pets',[]))),
+                 ("Skills", len(player.get('skills',{})))]:
+        embed.add_field(name=n, value=v, inline=True)
+    pets = player.get("pets", [])
+    if pets:
+        embed.add_field(name="🐾 Pets", value=", ".join(f"{RARITY_EMOJIS.get(p,p)} {p.title()}" for p in pets), inline=False)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="tower", description="Check tower progress")
+async def tower(interaction: discord.Interaction):
+    player = get_player(HOME_GUILD_ID, interaction.user.id)
+    if not player:
+        await interaction.response.send_message("❌ No profile!", ephemeral=True); return
+    f, h, w, l = player.get("tower_floor",1), player.get("highest_floor",1), player.get("total_wins",0), player.get("total_losses",0)
+    embed = discord.Embed(title="🏰 Tower of Trials", color=discord.Color.dark_gold())
+    for n, v in [("Current", f"**{f}**"), ("Highest", f"**{h}**"), ("Level", get_level(player)),
+                 ("Wins", w), ("Losses", l), ("Win Rate", f"{w/(w+l)*100:.0f}%" if w+l>0 else "N/A")]:
+        embed.add_field(name=n, value=v, inline=True)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="players", description="Show all adventurers")
+async def players(interaction: discord.Interaction):
+    data = load_players()
+    gid = str(HOME_GUILD_ID)
+    guild_data = {k: p for k, p in data.items() if k.startswith(f"{gid}_")}
+    if not guild_data:
+        await interaction.response.send_message("📭 No players yet."); return
+    lines = []
+    for key, p in guild_data.items():
+        uid = key.split("_")[-1]
+        lines.append(f"{p.get('username',uid[:8])} Lv.{get_level(p)} Floor {p.get('tower_floor',1)}")
+    embed = discord.Embed(title=f"🌍 Adventurers ({len(guild_data)})", description="\n".join(lines[:20]), color=discord.Color.green())
+    if len(guild_data) > 20: embed.set_footer(text=f"+ {len(guild_data)-20} more")
+    await interaction.response.send_message(embed=embed)
+
+# New player watcher: announce new adventurers to the guild channel
+_known_players = set()
+
+async def check_new_players():
+    await bot.wait_until_ready()
+    data = load_players()
+    for key in data.keys():
+        _known_players.add(key.split("_")[-1])
+    while not bot.is_closed():
+        await asyncio.sleep(60)
+        try:
+            data = load_players()
+            channels = load_announce_channels()
+            for key, p in data.items():
+                uid = key.split("_")[-1]
+                if uid in _known_players: continue
+                _known_players.add(uid)
+                gid = key.split("_")[0]
+                cid = channels.get(str(gid)) or channels.get(gid)
+                ch = bot.get_channel(int(cid)) if cid else None
+                if ch:
+                    await ch.send(f"🌍 **{p.get('username',uid[:8])}** started as {p.get('class_emoji','')} **{p.get('class_name','')}**!")
+        except Exception as e:
+            print(f"[check_new_players] tick failed: {e}")
+
 @bot.command(name="latestnews")
 async def latestnews(ctx):
     """Show the latest changelog / new features."""
@@ -982,6 +1227,67 @@ async def latestnews(ctx):
     embed.set_footer(text="Use >help to see all commands")
     await ctx.send(embed=embed)
 
+def build_help_embed():
+    """Complete command reference — all real commands the bot has."""
+    embed = discord.Embed(
+        title="🤖 DTEmpire Adventurer — Command Help",
+        description="**Prefix:** `>` for text commands · `/` for slash commands\nSame save as the web dashboard — play both!",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.add_field(name="⚔️ Adventure",
+        value="Use the dedicated **DTEmpire Adventure** bot's `/adventure` command.\n"
+              "All gameplay is on **adventure.ankitgupta.com.np**.",
+        inline=False)
+    embed.add_field(name="🎮 Games",
+        value="`>roll [NdN]` `>coinflip` `>8ball <q>` `>rps` `>trivia` `>guess` `>hack [@user]`",
+        inline=False)
+    embed.add_field(name="📋 General",
+        value="`>help [category]` `>ping` `>uptime` `>status` `>latestnews` `>serverinfo` `>serverstats` `>userinfo [@user]` `>avatar [@user]`",
+        inline=False)
+    embed.add_field(name="🎫 Tickets",
+        value="`>ticket <subject>` `>close` `>add @user` `>remove @user`",
+        inline=False)
+    embed.add_field(name="🛡️ Auto-Mod",
+        value="`>automod` — toggle, badwords, caps, mentions",
+        inline=False)
+    embed.add_field(name="🔧 Utility",
+        value="`>poll` `>say` `>purge` `>announce` `>remind`",
+        inline=False)
+    embed.add_field(name="⚙️ Admin",
+        value="`/advannoucement` `/setchannel` `>setwelcome` `>setleave`",
+        inline=False)
+    embed.add_field(name="🌐 Web Dashboard",
+        value="Full game in browser — shop, dungeon, forging, PvP arena with retro music!\n**adventure.ankitgupta.com.np**",
+        inline=False)
+    embed.set_footer(text="DTEmpire Adventurer | Use >help <category> for details")
+    return embed
+
+
+async def adventure_help(ctx):
+    """Detailed adventure & RPG guide."""
+    embed = discord.Embed(
+        title="⚔️ Adventure & RPG Guide",
+        description="Your adventurer lives in the **DTEmpire realm** — same save in Discord and on the web dashboard.",
+        color=discord.Color.gold(),
+        timestamp=datetime.datetime.utcnow()
+    )
+    embed.add_field(name="🌐 Play Adventure",
+        value="Use the dedicated Adventure bot's `/adventure` command, or open\n"
+              "**adventure.ankitgupta.com.np**",
+        inline=False)
+    embed.add_field(name="🌐 Web Dashboard",
+        value="**adventure.ankitgupta.com.np** — shop, equipment, forging, dungeons, PvP arena, quests & retro music!",
+        inline=False)
+    embed.set_footer(text="DTEmpire Adventurer | >help for all commands")
+    await ctx.send(embed=embed)
+
+
+@bot.tree.command(name="help", description="List all DTEmpire Adventure & bot commands")
+async def slash_help(interaction: discord.Interaction):
+    await interaction.response.send_message(embed=build_help_embed())
+
+
 @bot.command(name="help")
 async def help_cmd(ctx, category: str = None):
     """Show all available commands. Use >help [category] for details. Categories: general, games, adventure, tickets, automod, utility, admin"""
@@ -998,7 +1304,7 @@ async def help_cmd(ctx, category: str = None):
     if category and category.lower() == "general":
         embed = discord.Embed(title="📋 General Commands", color=discord.Color.blurple(), timestamp=datetime.datetime.utcnow())
         embed.add_field(name="`>help [category]`", value="Show help (categories: general, games, adventure, tickets, automod, utility, admin)", inline=False)
-        embed.add_field(name="`>adventurehelp`", value="Detailed adventure & RPG help", inline=False)
+        embed.add_field(name="`>help adventure`", value="Detailed adventure & RPG guide", inline=False)
         embed.add_field(name="`>ping`", value="Check bot latency", inline=False)
         embed.add_field(name="`>uptime`", value="Show bot uptime", inline=False)
         embed.add_field(name="`>status`", value="Bot system status", inline=False)
@@ -1067,38 +1373,7 @@ async def help_cmd(ctx, category: str = None):
         return await ctx.send(embed=embed)
 
     # Default: show all commands (main help)
-    embed = discord.Embed(
-        title="🤖 HermesBot — Command Help",
-        description="Multi-purpose Discord bot. Prefix: `>`\nLocked to this server. No DMs.\nUse `>help <category>` for details or `>adventurehelp` for RPG guide.",
-        color=discord.Color.blurple(),
-        timestamp=datetime.datetime.utcnow()
-    )
-    embed.add_field(name="📋 General",
-        value="`>help` `>ping` `>uptime` `>status` `>serverinfo` `>serverstats` `>userinfo` `>avatar` `>latestnews`",
-        inline=False)
-    embed.add_field(name="🎮 Games",
-        value="`>roll` `>coinflip` `>8ball` `>rps` `>trivia` `>guess` `>hack` `>fish` `>fishlb` `>fishstats`",
-        inline=False)
-    embed.add_field(name="⚔️ Adventure & RPG",
-        value="`>adventure` `>profile` `>shop` `>buy` `>equip` `>inventory` `>heal` `>daily` `>locations` `>leaderboard` `>duel`\\n`>adventurehelp` — Full RPG guide",
-        inline=False)
-    embed.add_field(name="🎫 Tickets",
-        value="`>ticket` `>close` `>add` `>remove`",
-        inline=False)
-    embed.add_field(name="🛡️ Auto-Mod",
-        value="`>automod` — Bad words, caps, spam, invites",
-        inline=False)
-    embed.add_field(name="🔧 Utility",
-        value="`>poll` `>say` `>purge` `>announce` `>remind`",
-        inline=False)
-    embed.add_field(name="⚙️ Admin",
-        value="`>upgrade` `>restart` `>logs` `>setwelcome` `>setleave` `>eval`",
-        inline=False)
-    embed.add_field(name="🌐 Web Dashboard",
-        value="Play in browser! Same data as Discord.\nPort **8081** — Open in your browser!",
-        inline=False)
-    embed.set_footer(text="HermesBot v2.0 | Everything is logged 🔒 | Use >help <category> for details")
-    await ctx.send(embed=embed)
+    await ctx.send(embed=build_help_embed())
 
 @bot.command(name="serverinfo")
 async def serverinfo(ctx):
@@ -1186,6 +1461,36 @@ async def announce(ctx, *, message: str):
     embed = discord.Embed(title="📢 Announcement", description=message, color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
     embed.set_footer(text=f"By {ctx.author}")
     await ctx.send(embed=embed)
+
+# ═══════════════════════════════════════════════════════════════
+# SLASH COMMANDS — per-guild announcement channel (admin only)
+# ═══════════════════════════════════════════════════════════════
+
+async def _set_announcement_channel(interaction, channel: discord.TextChannel):
+    """Shared logic for /advannoucement and /setchannel."""
+    err = check_announce_channel_perms(channel)
+    if err:
+        return await interaction.response.send_message(f"❌ Can't use {channel.mention}: {err}", ephemeral=True)
+    data = load_announce_channels()
+    data[str(interaction.guild_id)] = channel.id
+    save_announce_channels(data)
+    await interaction.response.send_message(
+        f"✅ Announcement channel set to {channel.mention}.\n"
+        f"New features & updates for DTEmpire Adventure will be posted here.\n"
+        f"Use `>latestnews` in {channel.mention} to check the latest changelog."
+    )
+
+@bot.tree.command(name="advannoucement", description="Set the announcement/update channel for this server (admin only)")
+@discord.app_commands.describe(channel="Text channel where updates get posted")
+@discord.app_commands.default_permissions(administrator=True)
+async def advannoucement(interaction, channel: discord.TextChannel):
+    await _set_announcement_channel(interaction, channel)
+
+@bot.tree.command(name="setchannel", description="Set the channel the bot uses for updates & commands (admin only)")
+@discord.app_commands.describe(channel="Text channel for bot updates")
+@discord.app_commands.default_permissions(administrator=True)
+async def setchannel(interaction, channel: discord.TextChannel):
+    await _set_announcement_channel(interaction, channel)
 
 @bot.command(name="purge")
 @commands.has_permissions(manage_messages=True)
@@ -1481,9 +1786,9 @@ async def hack(ctx, member: discord.Member = None):
 @bot.command(name="fish", aliases=["fishing", "cast"])
 async def fish(ctx):
     """Go fishing! Catch fish, treasure, and rare items. 60s cooldown."""
-    player = get_player(ctx.guild.id, ctx.author.id)
+    player = get_player(HOME_GUILD_ID, ctx.author.id)
     players = load_players()
-    key = f"{ctx.guild.id}_{ctx.author.id}"
+    key = f"{HOME_GUILD_ID}_{ctx.author.id}"
 
     # Cooldown check
     now = time.time()
@@ -1549,17 +1854,17 @@ async def fish(ctx):
     if rarity in ("epic", "legendary"):
         player["fish_legendary"] = player.get("fish_legendary", 0) + 1
 
-    # Level up check
-    xp_needed = player["level"] * 50
+    # Level up check (cap 100, same curve as the web: level N needs N*100 XP)
+    xp_needed = player["level"] * 100
     leveled_up = False
-    while player["xp"] >= xp_needed:
+    while player["xp"] >= xp_needed and player["level"] < 100:
         player["level"] += 1
         player["xp"] -= xp_needed
         player["max_health"] += 10
         player["health"] = player["max_health"]
         player["attack"] += 3
         player["defense"] += 2
-        xp_needed = player["level"] * 50
+        xp_needed = player["level"] * 100
         leveled_up = True
 
     players[key] = player
@@ -1602,16 +1907,27 @@ import random as _rand
 PLAYER_FILE = DATA_DIR / "players.json"
 GUILD_SHOP_FILE = DATA_DIR / "guild_shops.json"
 
+_PLAYER_STORE = None
+
+def _player_store():
+    """Use the Flask app's locked, rollback-protected player store everywhere."""
+    global _PLAYER_STORE
+    if _PLAYER_STORE is None:
+        web_dir = str(BASE_DIR / "web")
+        if web_dir not in sys.path:
+            sys.path.insert(0, web_dir)
+        import importlib
+        protected_store = importlib.import_module("app")
+        _PLAYER_STORE = protected_store
+    return _PLAYER_STORE
+
+
 def load_players():
-    try:
-        with open(PLAYER_FILE) as f:
-            return json.load(f)
-    except:
-        return {}
+    return _player_store().load_players()
+
 
 def save_players(data):
-    with open(PLAYER_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    return _player_store().save_players(data)
 
 def load_guild_shops():
     try:
@@ -1657,8 +1973,8 @@ def get_default_shop(guild_id):
     if gid not in shops:
         shops[gid] = {
             "weapons": [
-                {"id": "wooden_sword", "name": "🗡️ Wooden Sword", "attack": 5, "price": 50, "desc": "A basic wooden sword. +5 ATK"},
-                {"id": "iron_sword", "name": "⚔️ Iron Sword", "attack": 12, "price": 150, "desc": "A sturdy iron blade. +12 ATK"},
+                {"id": "wooden_sword", "name": "🗡️ Wooden Sword", "attack": 5, "price": 100, "desc": "A basic wooden sword. +5 ATK"},
+                {"id": "iron_sword", "name": "⚔️ Iron Sword", "attack": 12, "price": 300, "desc": "A sturdy iron blade. +12 ATK"},
                 {"id": "steel_sword", "name": "🔪 Steel Sword", "attack": 20, "price": 350, "desc": "Sharp steel. +20 ATK"},
                 {"id": "flame_blade", "name": "🔥 Flame Blade", "attack": 35, "price": 750, "desc": "Burns with eternal fire. +35 ATK"},
                 {"id": "obsidian_katana", "name": "🗾 Obsidian Katana", "attack": 45, "price": 1100, "desc": "A razor-sharp volcanic glass blade. +45 ATK"},
@@ -1692,7 +2008,7 @@ def get_default_shop(guild_id):
             ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
-                {"id": "chainmail", "name": "⛓️ Chainmail", "defense": 8, "price": 120, "desc": "Linked metal rings. +8 DEF"},
+                {"id": "chainmail", "name": "⛓️ Chainmail", "defense": 8, "price": 250, "desc": "Linked metal rings. +8 DEF"},
                 {"id": "iron_armor", "name": "🛡️ Iron Armor", "defense": 15, "price": 300, "desc": "Solid iron plates. +15 DEF"},
                 {"id": "steel_armor", "name": "🏰 Steel Armor", "defense": 25, "price": 600, "desc": "Heavy steel protection. +25 DEF"},
                 {"id": "titanium_armor", "name": "🛡️ Titanium Armor", "defense": 32, "price": 900, "desc": "Lightweight yet nearly unbreakable. +32 DEF"},
@@ -1727,7 +2043,7 @@ def get_default_shop(guild_id):
             "potions": [
                 {"id": "health_potion", "name": "❤️ Health Potion", "heal": 30, "price": 25, "desc": "Restores 30 HP"},
                 {"id": "large_potion", "name": "💖 Large Potion", "heal": 75, "price": 60, "desc": "Restores 75 HP"},
-                {"id": "elixir", "name": "🧪 Elixir", "heal": 200, "price": 150, "desc": "Fully restores HP"},
+                {"id": "elixir", "name": "🧪 Elixir", "heal": 400, "price": 300, "desc": "Fully restores HP"},
                 {"id": "mega_elixir", "name": "💫 Mega Elixir", "heal": 500, "price": 350, "desc": "Heals 500 HP instantly"},
                 {"id": "xp_potion", "name": "⭐ XP Potion", "xp_boost": 50, "price": 80, "desc": "Grants 50 XP"},
                 {"id": "elixir_of_power", "name": "🧬 Elixir of Power", "xp_boost": 200, "price": 500, "desc": "Grants 200 XP instantly"},
@@ -1750,7 +2066,7 @@ def get_default_shop(guild_id):
                 {"id": "deep_tide_potion", "name": "🌊 Deep Tide Potion", "heal": 18000, "xp_boost": 18000, "price": 130000, "desc": "Bottled pressure from the Abyssal Trench. Restores 18000 HP and 18000 XP"},
             ],
             "special": [
-                {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 200, "desc": "Increases rare drop chance"},
+                {"id": "lucky_charm", "name": "🍀 Lucky Charm", "price": 400, "desc": "Increases rare drop chance"},
                 {"id": "shield_ring", "name": "💍 Shield Ring", "price": 350, "desc": "+5 permanent DEF"},
                 {"id": "power_ring", "name": "💎 Power Ring", "price": 350, "desc": "+5 permanent ATK"},
                 {"id": "life_crystal", "name": "💠 Life Crystal", "price": 500, "desc": "+20 permanent max HP"},
@@ -2141,6 +2457,8 @@ ADVENTURE_LOCATIONS = [
 
 async def load_extensions():
     """Load all cogs."""
+    # Adventure gameplay belongs to the dedicated website-help bot. Loading the
+    # legacy cog here caused duplicate commands and another players.json writer.
     cogs = ["cogs.music"]
     for cog in cogs:
         try:
@@ -2152,11 +2470,14 @@ async def load_extensions():
 _started = False
 
 def main():
-    global _started
+    global _started, CLI_MODE
     if _started:
         logger.warning("main() called again — ignoring")
         return
     _started = True
+    if len(sys.argv) >= 3 and sys.argv[1] == "announce":
+        CLI_MODE = ("announce", sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "📢 DTEmpire Update")
+        logger.info("CLI announce mode requested")
     if not BOT_TOKEN:
         logger.error("DISCORD_BOT_TOKEN not set!")
         sys.exit(1)

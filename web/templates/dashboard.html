@@ -1,250 +1,338 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HermesBot — Dashboard</title>
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);min-height:100vh;color:#e0e0e0}
-.nav{background:rgba(15,15,30,0.95);border-bottom:1px solid #333;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
-.nav-brand{font-size:1.4em;font-weight:700;background:linear-gradient(135deg,#a855f7,#6c3ce0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:8px;flex-wrap:wrap}
-.nav a{color:#aaa;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all 0.3s;font-size:0.9em}
-.nav a:hover,.nav a.active{color:#fff;background:rgba(168,85,247,0.2)}
-.nav .logout{margin-left:16px;color:#ff6666}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
-.stat-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;text-align:center;transition:transform 0.2s}
-.stat-card:hover{transform:translateY(-2px);border-color:#6c3ce0}
-.stat-card .icon{font-size:2em;margin-bottom:8px}
-.stat-card .value{font-size:1.8em;font-weight:700;color:#a855f7}
-.stat-card .label{color:#888;font-size:0.85em;margin-top:4px}
-.bar-container{background:rgba(255,255,255,0.1);border-radius:8px;height:12px;margin-top:8px;overflow:hidden}
-.bar-fill{height:100%;border-radius:8px;transition:width 0.5s}
-.bar-hp{background:linear-gradient(90deg,#ef4444,#f97316)}
-.bar-xp{background:linear-gradient(90deg,#a855f7,#3b82f6)}
-.section-title{font-size:1.3em;margin:24px 0 16px;color:#a855f7}
-.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.action-card{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:24px;text-decoration:none;color:#e0e0e0;transition:all 0.3s;display:block}
-.action-card:hover{border-color:#a855f7;transform:translateY(-3px);box-shadow:0 8px 30px rgba(168,85,247,0.2)}
-.action-card .icon{font-size:2.5em;margin-bottom:12px}
-.action-card h3{margin-bottom:8px;color:#a855f7}
-.action-card p{color:#888;font-size:0.9em}
-.role-banner{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(108,60,224,0.05));border:1px solid #6c3ce0;border-radius:12px;padding:20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.role-banner .role-icon{font-size:3em}
-.role-banner .role-info{flex:1}
-.role-banner .role-name{font-size:1.2em;font-weight:700;color:#a855f7}
-.role-banner .role-desc{color:#888;font-size:0.9em}
-.role-banner .role-bonus{font-size:0.85em;color:#22c55e;margin-top:4px}
-.duel-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
-.duel-stat{background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:8px;padding:10px 16px;text-align:center}
-.duel-stat .ds-value{font-size:1.3em;font-weight:700}
-.duel-stat .ds-label{font-size:0.75em;color:#888}
-.streak-fire{color:#f59e0b}
-.btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.3s}
-.btn-heal{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
-.btn-daily{background:linear-gradient(135deg,#6c3ce0,#a855f7);color:#fff}
-.btn:hover{opacity:0.9;transform:translateY(-1px)}
+.dash-wrap{max-width:1050px;margin:0 auto;padding:20px 16px;font-family:'VT323',monospace}
+@media(max-width:600px){
+  .dash-wrap{padding:10px 8px}
+  .hero-banner{flex-direction:column;align-items:flex-start;padding:14px;margin-bottom:14px}
+  .hero-avatar{width:60px;height:60px}
+  .hero-banner h1,.hero-banner h2{overflow-wrap:anywhere}
+}
+
+/* ── Hero Banner ─────────────────────────────── */
+.hero-banner{
+  position:relative;display:flex;gap:20px;align-items:center;
+  background:linear-gradient(135deg,#0d0d18 0%,#1a1a0a 100%);
+  border:3px solid #ffd54a;padding:20px 24px;margin-bottom:24px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #0d0d18,0 0 0 1px #000,4px 4px 0 #000;
+  animation:heroFloat 3s ease-in-out infinite;overflow:hidden;
+}
+.hero-banner::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 30% 40%,rgba(255,213,74,0.06),transparent 70%);
+  pointer-events:none}
+.hero-avatar{
+  width:72px;height:72px;border:3px solid #ffd54a;flex-shrink:0;
+  box-shadow:inset 0 0 0 2px #000,3px 3px 0 #000;position:relative;z-index:1;
+  background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.hero-avatar img{width:100%;height:100%;display:block;image-rendering:pixelated}
+.hero-avatar .level-badge{
+  position:absolute;bottom:-8px;right:-8px;
+  background:#ffd54a;color:#000;font-family:'Press Start 2P',monospace;
+  font-size:7px;padding:3px 5px;border:2px solid #000;white-space:nowrap;
+  box-shadow:2px 2px 0 #000;z-index:2;
+}
+.hero-info{flex:1;position:relative;z-index:1}
+.hero-info .name{
+  font-family:'Press Start 2P',monospace;font-size:18px;color:#ffd54a;
+  text-shadow:2px 2px 0 #000,0 0 20px rgba(255,213,74,0.4);
+  margin-bottom:2px;letter-spacing:1px;
+}
+.hero-info .class{font-size:18px;color:#888;margin-bottom:6px}
+.hero-info .class span{color:#4ade80}
+.hero-bars{width:240px;flex-shrink:0;position:relative;z-index:1}
+.hero-bars .bar-row{margin-bottom:6px}
+.hero-bars .bar-label{display:flex;justify-content:space-between;font-size:14px;color:#aaa;margin-bottom:2px}
+.hero-bars .bar-track{width:100%;height:14px;background:#111;border:2px solid #000;box-shadow:inset 0 0 0 1px #333;overflow:hidden}
+.hero-bars .bar-fill{height:100%;transition:width 1.2s ease-out}
+.bar-hp{background:linear-gradient(180deg,#ff4757,#8b0000);box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+.bar-xp{background:linear-gradient(180deg,#ffd54a,#c99a1a);box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+.bar-mp{background:linear-gradient(180deg,#4a9eff,#1a4a8b);box-shadow:inset 0 -3px 0 rgba(0,0,0,0.4)}
+
+/* floating particles */
+.particle{position:absolute;width:4px;height:4px;background:#ffd54a;border-radius:50%;pointer-events:none;opacity:0;z-index:0}
+.p1{top:15%;left:10%;animation:particleDrift 5s linear infinite}
+.p2{top:60%;left:80%;animation:particleDrift 7s linear infinite 1s}
+.p3{top:30%;left:70%;animation:particleDrift 6s linear infinite 2.5s}
+.p4{top:70%;left:20%;animation:particleDrift 8s linear infinite 3s}
+.p5{top:50%;left:50%;animation:particleDrift 4s linear infinite 0.5s}
+
+@keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes particleDrift{
+  0%{transform:translateY(0) scale(1);opacity:0}
+  20%{opacity:0.8}
+  100%{transform:translateY(-120px) scale(0);opacity:0}
+}
+
+/* ── Stat Grid ────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px}
+.stat-card{
+  background:linear-gradient(180deg,#1a1a22,#0d0d13);
+  border:3px solid #ffd54a;padding:12px 8px;text-align:center;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000;
+  animation:statPulse 2s ease-in-out infinite;transition:transform .15s;
+}
+.stat-card:hover{transform:scale(1.05);z-index:2}
+.stat-card .icon{font-size:22px;margin-bottom:4px}
+.stat-card .value{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd54a}
+.stat-card .label{font-size:14px;color:#888;margin-top:2px}
+
+@keyframes statPulse{0%,100%{box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000,0 0 10px rgba(255,213,74,0.1)}50%{box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000,0 0 20px rgba(255,213,74,0.25)}}
+
+/* ── Quick Actions ────────────────────────────── */
+.actions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.action-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#2a2a34,#1a1a22);border:3px solid #ffd54a;
+  padding:18px 10px;text-align:center;text-decoration:none;color:#e8e8e8;
+  font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,3px 3px 0 #000;
+  transition:transform .12s,box-shadow .12s,background .12s;cursor:pointer;
+}
+.action-btn:hover{transform:translateY(-4px);box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 6px 20px rgba(255,213,74,0.25),0 0 0 1px #000,3px 3px 0 #000;background:linear-gradient(180deg,#3a3a44,#2a2a32)}
+.action-btn .ico{font-size:28px;margin-bottom:6px}
+.action-btn .lbl{text-transform:uppercase}
+
+/* ── World Events Ticker ──────────────────────── */
+.events-panel{
+  background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #ffd54a;
+  margin-bottom:24px;overflow:hidden;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000;
+}
+.events-header{background:#ffd54a;color:#000;padding:4px 12px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;text-align:center}
+.events-ticker{overflow:hidden;white-space:nowrap;padding:8px 0}
+.events-ticker .track{
+  display:inline-block;white-space:nowrap;
+  animation:tickerScroll 30s linear infinite;padding-left:100%;font-size:16px;color:#aaa;
+}
+.events-ticker .track span{display:inline-block;margin-right:60px}
+
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+
+/* ── Equipment Showcase ───────────────────────── */
+.equip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.equip-slot{
+  background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #ffd54a;
+  padding:16px;text-align:center;min-height:100px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.equip-slot .slot-icon{font-size:28px;margin-bottom:6px}
+.equip-slot .slot-name{font-family:'Press Start 2P',monospace;font-size:7px;color:#ffd54a;text-transform:uppercase;word-break:break-all}
+.equip-slot .slot-label{font-size:14px;color:#666;margin-top:4px}
+.equip-empty{opacity:0.35;filter:grayscale(1)}
+
+/* ── Activity Log ─────────────────────────────── */
+.activity-log{
+  background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #ffd54a;
+  padding:16px;margin-bottom:24px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,0 0 0 1px #000,3px 3px 0 #000;
+}
+.activity-log h3{font-family:'Press Start 2P',monospace;font-size:9px;color:#ffd54a;margin-bottom:10px}
+.activity-log .entry{font-size:16px;padding:4px 0;border-bottom:1px solid #222;color:#aaa}
+.activity-log .entry:last-child{border-bottom:none}
+.activity-log .entry .ts{color:#555;margin-right:8px}
+
+/* ── Level Gates ──────────────────────────────── */
+.gate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:24px}
+.gate-card{
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(180deg,#1a1a22,#0d0d13);border:3px solid #444;
+  padding:10px 14px;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 0 4px #1a1a22,2px 2px 0 #000;
+  font-family:'Press Start 2P',monospace;font-size:7px;
+}
+.gate-card.unlocked{border-color:#4ade80}
+.gate-card.locked{border-color:#444;opacity:0.6}
+.gate-card .gate-icon{font-size:18px}
+.gate-card .gate-name{flex:1;text-transform:uppercase;color:#e8e8e8}
+.gate-card .gate-lvl{color:#888;font-size:6px;white-space:nowrap}
+.gate-card.unlocked .gate-lvl{color:#4ade80}
+
+@media(max-width:700px){
+  .hero-banner{flex-direction:column;text-align:center}
+  .hero-bars{width:100%}
+  .stat-grid{grid-template-columns:repeat(3,1fr)}
+  .actions-grid{grid-template-columns:repeat(2,1fr)}
+  .equip-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
-</head>
-<body>
-<nav class="nav">
-  <div class="nav-brand">⚡ HermesBot</div>
-  <div class="nav-links nav">
-    <a href="/dashboard" class="active">Dashboard</a>
-    <a href="/adventure">Adventure</a>
-    <a href="/shop">Shop</a>
-    <a href="/inventory">Inventory</a>
-    <a href="/duels">⚔️ Duels</a>
-    <a href="/leaderboard">Leaderboard</a>
-    <a href="/roles">Roles</a>
-    <a href="/logout" class="logout">Logout</a>
-  </div>
-</nav>
-<div class="container">
-  <h2 style="margin-bottom:20px">Welcome, {{ username }}! <span style="font-size:0.6em;color:#888;font-weight:400">🏷️ {{ player.active_title or 'Adventurer' }}</span></h2>
 
-  <!-- Role Banner -->
-  {% if role_info %}
-  <div class="role-banner">
-    <div class="role-icon">{{ role_info.emoji }}</div>
-    <div class="role-info">
-      <div class="role-name">{{ role_info.name }}</div>
-      <div class="role-desc">{{ role_info.desc }}</div>
-      <div class="role-bonus">
-        🎁 Bonuses:
-        {% for stat, val in role_info.bonus.items() %}
-        +{{ val }} {{ stat|replace('_', ' ')|title }}{% if not loop.last %} | {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    <a href="/roles" class="btn btn-daily" style="text-decoration:none">Change Role</a>
-  </div>
-  {% elif available_roles %}
-  <div class="role-banner" style="border-color:#f59e0b;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.05))">
-    <div class="role-icon">❓</div>
-    <div class="role-info">
-      <div class="role-name" style="color:#f59e0b">No Role Selected</div>
-      <div class="role-desc">Choose a role to gain special bonuses and titles!</div>
-    </div>
-    <a href="/roles" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-decoration:none">Choose Role</a>
-  </div>
-  {% endif %}
+<div class="dash-wrap">
 
-  <!-- Stats Grid -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="icon">📊</div>
-      <div class="value">{{ player.level }}</div>
-      <div class="label">Level</div>
-    </div>
-    <div class="stat-card">
-      <div class="icon">🪙</div>
-      <div class="value">{{ player.coins }}</div>
-      <div class="label">Coins</div>
-    </div>
-    <div class="stat-card">
-      <div class="icon">⚔️</div>
-      <div class="value">{{ player.monsters_killed }}</div>
-      <div class="label">Monsters Killed</div>
-    </div>
-    <div class="stat-card">
-      <div class="icon">👑</div>
-      <div class="value">{{ player.bosses_killed }}</div>
-      <div class="label">Bosses Slain</div>
-    </div>
-  </div>
+<!-- ═══ HERO BANNER ═══ -->
+<div class="hero-banner">
+  <div class="particle p1"></div>
+  <div class="particle p2"></div>
+  <div class="particle p3"></div>
+  <div class="particle p4"></div>
+  <div class="particle p5"></div>
 
-  <!-- HP & XP Bars -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-    <div class="stat-card">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span>❤️ HP</span>
-        <span>{{ player.health }}/{{ player.max_health }}</span>
-      </div>
-      <div class="bar-container"><div class="bar-fill bar-hp" style="width:{{ hp_percent }}%"></div></div>
-    </div>
-    <div class="stat-card">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span>⭐ XP</span>
-        <span>{{ player.xp }}/{{ xp_needed }}</span>
-      </div>
-      <div class="bar-container"><div class="bar-fill bar-xp" style="width:{{ xp_percent }}%"></div></div>
-    </div>
+  <div class="hero-avatar">
+    {% if avatar_url %}<img src="{{ avatar_url }}" alt="">{% else %}👤{% endif %}
+    <div class="level-badge">LV{{ player.get('level',1) }}</div>
   </div>
-
-  <!-- Combat Stats -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-    <div class="stat-card">
-      <div class="icon">⚔️</div>
-      <div class="value">{{ player.attack }}</div>
-      <div class="label">Attack</div>
-    </div>
-    <div class="stat-card">
-      <div class="icon">🛡️</div>
-      <div class="value">{{ player.defense }}</div>
-      <div class="label">Defense</div>
-    </div>
+  <div class="hero-info">
+    <div class="name">{{ username }}</div>
+    <div class="class">{{ player.get('class_name','Adventurer') }} <span>{{ player.get('class_tier','')|title }}</span></div>
+    <div style="font-size:16px;color:#666;margin-top:2px">{{ duel_rank_emoji }} {{ player.get('duel_rank','Rookie') }}</div>
   </div>
-
-  <!-- Duel Stats -->
-  <h3 class="section-title">⚔️ Duel Stats</h3>
-  <div class="duel-stats">
-    <div class="duel-stat">
-      <div class="ds-value" style="color:#22c55e">{{ player.duel_wins }}W</div>
-      <div class="ds-label">Wins</div>
+  <div class="hero-bars">
+    <div class="bar-row">
+      <div class="bar-label"><span>❤️ HP</span><span>{{ player.get('health',100) }}/{{ player.get('max_health',100) }}</span></div>
+      <div class="bar-track"><div class="bar-fill bar-hp" style="width:{{ hp_percent|default(0) }}%"></div></div>
     </div>
-    <div class="duel-stat">
-      <div class="ds-value" style="color:#ef4444">{{ player.duel_losses }}L</div>
-      <div class="ds-label">Losses</div>
+    <div class="bar-row">
+      <div class="bar-label"><span>⭐ XP</span><span>{{ player.get('xp',0) }}/{{ (xp_for_level(player.get('level',1))) if player.get('level',1) < 100 else 'MAX' }}</span></div>
+      <div class="bar-track"><div class="bar-fill bar-xp" style="width:{{ xp_percent|default(0) }}%"></div></div>
     </div>
-    <div class="duel-stat">
-      <div class="ds-value {% if player.duel_streak >= 3 %}streak-fire{% endif %}">
-        {% if player.duel_streak >= 3 %}🔥{% endif %}{{ player.duel_streak }}
-      </div>
-      <div class="ds-label">Streak</div>
-    </div>
-    <div class="duel-stat">
-      <div class="ds-value">{{ duel_rank_emoji }} {{ player.duel_rank }}</div>
-      <div class="ds-label">Rank</div>
-    </div>
-    <div class="duel-stat">
-      <div class="ds-value" style="color:#f59e0b">{{ player.ai_duel_wins }}</div>
-      <div class="ds-label">AI Wins</div>
-    </div>
-  </div>
-
-  <!-- Quick Actions -->
-  <h3 class="section-title">Quick Actions</h3>
-  <div class="actions">
-    <a href="/adventure" class="action-card">
-      <div class="icon">⚔️</div>
-      <h3>Go Adventure</h3>
-      <p>Fight monsters, earn XP and coins!</p>
-    </a>
-    <a href="/shop" class="action-card">
-      <div class="icon">🏪</div>
-      <h3>Visit Shop</h3>
-      <p>Buy weapons, armor, and potions</p>
-    </a>
-    <a href="/duels" class="action-card">
-      <div class="icon">⚔️</div>
-      <h3>Duels</h3>
-      <p>Challenge players or fight AI!</p>
-    </a>
-    <a href="/leaderboard" class="action-card">
-      <div class="icon">🏆</div>
-      <h3>Leaderboard</h3>
-      <p>See top players on the server</p>
-    </a>
-  </div>
-
-  <!-- Web Actions -->
-  <h3 class="section-title" style="margin-top:32px">Web Actions</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
-    <button class="btn btn-heal" onclick="heal()">💚 Heal (10 coins)</button>
-    <button class="btn btn-daily" onclick="claimDaily()">🎁 Claim Daily</button>
-  </div>
-
-  <!-- Discord Commands Reference -->
-  <h3 class="section-title">Discord Commands</h3>
-  <div style="background:rgba(20,20,40,0.8);border:1px solid #333;border-radius:12px;padding:20px;margin-top:8px">
-    <p style="color:#888;margin-bottom:12px">Available via Discord bot:</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎣 &gt;fish</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🏆 &gt;fishlb</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📊 &gt;fishstats</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">🎁 &gt;daily</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">💚 &gt;heal</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">⚔️ &gt;duel @user</span>
-      <span style="background:rgba(168,85,247,0.15);border:1px solid #6c3ce0;border-radius:6px;padding:6px 12px;font-size:0.85em">📰 &gt;latestnews</span>
+    <div class="bar-row">
+      <div class="bar-label"><span>🪙 COINS</span><span>{{ player.get('coins',0) }}</span></div>
+      <div class="bar-track"><div class="bar-fill bar-mp" style="width:100%"></div></div>
     </div>
   </div>
 </div>
+
+<!-- ═══ PROGRESSION AT A GLANCE ═══ -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-bottom:24px;">
+  <div class="pxl" style="border-color:#ffd54a;padding:14px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#ffd54a;">👑 {{ master_title }} — RANK {{ master_rank }}/10</div>
+    <div style="font-size:16px;color:#aaa;margin-top:8px;">Climb Tower to advance Master rank!</div>
+    <div style="height:10px;background:#111;border:2px solid #333;margin-top:9px;">
+      <div style="height:100%;width:{{ master_rank * 10 }}%;background:#ffd54a;"></div>
+    </div>
+    <div style="font-size:14px;color:#666;margin-top:5px;">🏰 Highest floor {{ player.get('highest_floor', player.get('tower_floor',1)) }}</div>
+  </div>
+
+  <div class="pxl" style="border-color:#888;padding:14px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e8e8e8;">🔀 DUAL CLASS</div>
+    {% if player.get('has_second_class') %}
+    <div style="font-size:16px;color:#4ade80;margin-top:8px;">✅ 33% of {{ player.get('second_class_name','Warrior') }} stats added</div>
+    <div style="font-size:17px;color:#ffd54a;">{{ player.get('second_class_emoji','⚔️') }} {{ player.get('second_class_name','Warrior') }} [{{ player.get('second_class_rarity','common')|upper }}]</div>
+    <div style="font-size:15px;color:#aaa;">🌱 Circle {{ second_circle }} — Lv.{{ second_level }}/25</div>
+    <div style="font-size:13px;color:#666;">rarity up at Lv.5/10/15/20 — 👑 UNIQUE at Lv.25, one player only</div>
+    <div style="font-size:15px;color:#e8e8e8;margin-top:4px;">⭐ {{ second_xp }}/{{ second_xp_needed }} — earn XP by adventure &amp; duel</div>
+    {% else %}
+    <div style="font-size:16px;color:#888;margin-top:8px;">🔒 Unlock at Level 25</div>
+    {% endif %}
+  </div>
+
+  <div class="pxl" style="border-color:#333;padding:14px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e8e8e8;">🏆 LEADERBOARD</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:20px;color:#ffd54a;margin:12px 0;">#{{ leaderboard_position or '—' }}</div>
+    <div style="font-size:15px;color:#888;">Your place out of {{ leaderboard_total }} players</div>
+    <a href="/leaderboard" style="display:inline-block;margin-top:7px;color:#ffd54a;">VIEW LEADERBOARD →</a>
+  </div>
+
+  <div class="pxl" style="border-color:#333;padding:14px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e8e8e8;">🏷️ ACTIVE TITLE</div>
+    <select id="titleSelect" onchange="equipTitle(this.value)" style="width:100%;margin-top:10px;background:#050505;border:2px solid #333;color:#ffd54a;padding:8px;font-family:'VT323',monospace;font-size:16px;">
+      {% for title in player.get('titles_unlocked', ['Adventurer']) %}
+      <option value="{{ title }}" {% if title == player.get('active_title','Adventurer') %}selected{% endif %}>{{ title }}</option>
+      {% endfor %}
+    </select>
+    <div id="titleMsg" style="color:#4ade80;font-size:14px;margin-top:6px;"></div>
+  </div>
+</div>
 <script>
-function heal() {
-  fetch('/api/heal', {method:'POST', headers:{'Content-Type':'application/json'}})
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) { alert(data.message); location.reload(); }
-    else alert(data.error);
-  });
-}
-function claimDaily() {
-  fetch('/api/daily', {method:'POST', headers:{'Content-Type':'application/json'}})
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      let msg = `🎁 Daily Reward!\n🪙 +${data.coins} coins\n⭐ +${data.xp} XP`;
-      if (data.bonus) msg += '\n' + data.bonus;
-      alert(msg);
-      location.reload();
-    } else {
-      alert(data.error);
-    }
+function equipTitle(title){
+  fetch('/api/title/equip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})})
+  .then(function(r){return r.json()}).then(function(d){
+    document.getElementById('titleMsg').textContent=d.success?'✅ '+title+' equipped':(d.error||'Failed');
   });
 }
 </script>
-</body>
-</html>
+
+<!-- ═══ ACCOUNT LINK ═══ -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for m in messages %}<div style="background:#0d0d13;border:3px solid #ffd54a;padding:10px 16px;margin-bottom:24px;font-family:'VT323',monospace;font-size:17px;color:#ffd54a;box-shadow:inset 0 0 0 1px #000,2px 2px 0 #000">{{ m }}</div>{% endfor %}
+  {% endif %}
+{% endwith %}
+{% if player.get('discord_id') %}
+<div style="display:flex;align-items:center;gap:14px;background:#0d0d13;border:3px solid #333;padding:12px 16px;margin-bottom:24px;box-shadow:inset 0 0 0 1px #000,2px 2px 0 #000">
+  <span style="font-size:22px">🔗</span>
+  <div style="flex:1;font-family:'VT323',monospace;font-size:16px;color:#aaa">
+    <b style="color:#4ade80">Discord linked</b> — sign in with Discord <i>or</i> your username + password.
+  </div>
+</div>
+{% else %}
+<div style="display:flex;align-items:center;gap:14px;background:#0d0d13;border:3px solid #333;padding:12px 16px;margin-bottom:24px;box-shadow:inset 0 0 0 1px #000,2px 2px 0 #000">
+  <span style="font-size:22px">🔗</span>
+  <div style="flex:1;font-family:'VT323',monospace;font-size:16px;color:#aaa">
+    <b style="color:#e8e8e8">Link Discord</b> — sign in with Discord anytime, no password needed.
+  </div>
+  <a href="/login/discord" style="background:#ffd54a;color:#000;font-family:'Press Start 2P',monospace;font-size:8px;padding:10px 14px;text-decoration:none;border:2px solid #000;box-shadow:2px 2px 0 #000">LINK</a>
+</div>
+{% endif %}
+
+<!-- ═══ STAT GRID ═══ -->
+<div class="stat-grid">
+  <div class="stat-card"><div class="icon">❤️</div><div class="value">{{ player.get('max_health',100) }}</div><div class="label">Max HP</div></div>
+  <div class="stat-card"><div class="icon">⚔️</div><div class="value">{{ player.get('attack',10) }}</div><div class="label">Attack</div></div>
+  <div class="stat-card"><div class="icon">🛡️</div><div class="value">{{ player.get('defense',5) }}</div><div class="label">Defense</div></div>
+  <div class="stat-card"><div class="icon">⭐</div><div class="value">{{ player.get('level',1) }}</div><div class="label">Level</div></div>
+  <div class="stat-card"><div class="icon">🪙</div><div class="value">{{ player.get('coins',0) }}</div><div class="label">Coins</div></div>
+  <div class="stat-card"><div class="icon">🏰</div><div class="value">{{ player.get('tower_floor',1) }}</div><div class="label">Tower</div></div>
+</div>
+
+<!-- ═══ QUICK ACTIONS ═══ -->
+<div class="actions-grid">
+  <a href="/adventure" class="action-btn"><span class="ico">🗺️</span><span class="lbl">Adventure</span></a>
+  <a href="/tower" class="action-btn"><span class="ico">🏰</span><span class="lbl">Tower</span></a>
+  <a href="/dungeon" class="action-btn"><span class="ico">🏚️</span><span class="lbl">Dungeon</span></a>
+  <a href="/duels" class="action-btn"><span class="ico">⚔️</span><span class="lbl">Duel</span></a>
+  <a href="/shop" class="action-btn"><span class="ico">🏪</span><span class="lbl">Shop</span></a>
+  <a href="/inventory" class="action-btn"><span class="ico">🎒</span><span class="lbl">Bag</span></a>
+</div>
+
+<!-- ═══ WORLD EVENTS ═══ -->
+<div class="events-panel">
+  <div class="events-header">🌍 WORLD EVENTS</div>
+  <div class="events-ticker">
+    <div class="track">
+      <span>🐉 Ancient Dragon spotted in Void Realm</span>
+      <span>💀 A rare Soul Devourer has awakened!</span>
+      <span>⚔️ Guild wars have begun in Vaslanka</span>
+      <span>🗡️ Treasure hoard discovered in Crystal Caves</span>
+      <span>🔥 Fire Drake migration spotted near Naposvég</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EQUIPMENT ═══ -->
+<div class="equip-grid">
+  {% for slot, ico in [('head','🪖'),('weapon','⚔️'),('armor','🥼'),('boots','👢')] %}
+  {% set item = equipped_slots.get(slot,'') %}
+  <div class="equip-slot {% if not item or item == '—' %}equip-empty{% endif %}">
+    <div class="slot-icon">{{ ico }}</div>
+    <div class="slot-name">{% if item and item != '—' %}{{ item }}{% else %}———{% endif %}</div>
+    <div class="slot-label">{{ slot|upper }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ═══ ACTIVITY LOG ═══ -->
+<div class="activity-log">
+  <h3>📋 RECENT ACTIVITY</h3>
+  <div class="entry"><span class="ts">now</span>🗡️ Entered the realm of DTEmpire</div>
+  <div class="entry"><span class="ts">--</span>⚔️ Ready for adventure!</div>
+  <div class="entry"><span class="ts">--</span>🏰 Tower awaits your challenge</div>
+  <div class="entry"><span class="ts">--</span>🛡️ Stay strong, hero!</div>
+</div>
+
+<!-- ═══ LEVEL GATES ═══ -->
+<h3 style="font-family:'Press Start 2P',monospace;font-size:9px;color:#ffd54a;margin-bottom:12px">🔓 FEATURE GATES</h3>
+<div class="gate-grid">
+  {% set lvl = player.get('level',1) %}
+  {% set features = [('Pets',8,'🐾'),('Jobs',10,'⚒️'),('Blacksmith',15,'🔨'),('Auction',20,'🏛️')] %}
+  {% for name, minlvl, ico in features %}
+  <div class="gate-card {{ 'unlocked' if lvl >= minlvl else 'locked' }}">
+    <span class="gate-icon">{{ ico }}</span>
+    <span class="gate-name">{{ name }}</span>
+    <span class="gate-lvl">{% if lvl >= minlvl %}✅{% else %}🔒 Lv{{ minlvl }}{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+
+</div>

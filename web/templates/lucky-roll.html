@@ -1,0 +1,181 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="pxl" style="max-width:620px;margin:0 auto;padding:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <h2 class="pixel" style="color:#ffd54a;font-size:13px;">🎰 LUCKY ROLL</h2>
+    <div style="font-family:'VT323',monospace;font-size:18px;">🪙 <span id="luckyCoins" style="color:#ffd54a;">{{ player.coins|default(0) }}</span></div>
+  </div>
+
+  <!-- SLOT MACHINE -->
+  <div class="pxl" style="padding:20px;text-align:center;">
+    <div style="display:flex;gap:12px;justify-content:center;margin:16px 0;">
+      <div id="slot1" class="slot-cell" style="width:90px;height:90px;display:flex;align-items:center;justify-content:center;font-size:38px;border:3px solid #ffd54a;background:#0a0a0a;box-shadow:inset 0 0 0 2px #000;animation:glow 2s ease-in-out infinite;">🎲</div>
+      <div id="slot2" class="slot-cell" style="width:90px;height:90px;display:flex;align-items:center;justify-content:center;font-size:38px;border:3px solid #ffd54a;background:#0a0a0a;box-shadow:inset 0 0 0 2px #000;animation:glow 2s ease-in-out infinite 0.3s;">🎲</div>
+      <div id="slot3" class="slot-cell" style="width:90px;height:90px;display:flex;align-items:center;justify-content:center;font-size:38px;border:3px solid #ffd54a;background:#0a0a0a;box-shadow:inset 0 0 0 2px #000;animation:glow 2s ease-in-out infinite 0.6s;">🎲</div>
+    </div>
+    <div id="rollResult" style="font-family:'VT323',monospace;font-size:22px;color:#888;margin-bottom:12px;min-height:28px;">Pull the lever!</div>
+    <button id="rollBtn" class="pxl-btn" onclick="rollSlots()" style="background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;padding:12px 36px;font-size:11px;">🎰 SPIN (50 coins)</button>
+    <div id="rollCd" style="display:none;color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:9px;margin-top:8px;">Cooldown <span id="rollCdSec">3</span></div>
+  </div>
+
+  <!-- CLASS ROLL -->
+  <div class="pxl" style="padding:20px;margin-top:16px;">
+    <h2 class="pixel" style="color:#ffd54a;font-size:11px;margin-bottom:12px;">🎲 CLASS ROLL</h2>
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;">
+      <div style="font-size:36px;border:2px solid #333;background:#0a0a0a;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">{{ player.class_emoji|default('⚔️') }}</div>
+      <div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:10px;color:#e8e8e8;">{{ player.class_name|default('Adventurer') }}</div>
+        <div class="rarity-{{ player.class_rarity|default('common') }}" style="font-size:9px;font-family:'Press Start 2P',monospace;">{{ player.class_rarity|default('common')|upper }}</div>
+        <div style="font-family:'VT323',monospace;font-size:16px;color:#aaa;margin-top:4px;">
+          {% if player.has_second_class %}🔀 {{ player.second_class_emoji|default('') }} {{ player.second_class_name|default('') }} <span class="rarity-{{ player.second_class_rarity|default('common') }}">({{ player.second_class_rarity|default('common')|upper }})</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'VT323',monospace;font-size:15px;color:#aaa;margin-bottom:12px;">
+      <span>❤️ {{ player.max_hp|default(player.max_health|default(100)) }}</span>
+      <span>⚔️ {{ player.atk|default(10) }}</span>
+      <span>🛡️ {{ player.def|default(5) }}</span>
+      <span>💨 {{ player.spd|default(6) }}</span>
+    </div>
+    <div style="font-family:'VT323',monospace;font-size:15px;color:#888;margin-bottom:12px;">
+      Rarity chances: 45% Common · 30% Uncommon · 15% Rare · 8% Epic · <span style="color:#ffd54a;">2% Legendary</span>
+    </div>
+    <button class="pxl-btn" id="classRollBtn" onclick="rollClass()" style="font-size:10px;padding:10px 22px;">🎲 ROLL NEW CLASS (200)</button>
+    <div id="classResult" style="display:none;margin-top:14px;border:2px solid #ffd54a;background:#0a0a0a;padding:14px;text-align:center;"></div>
+  </div>
+
+  <!-- DUAL CLASS -->
+  <div class="pxl" style="padding:20px;margin-top:16px;">
+    <h2 class="pixel" style="color:#ffd54a;font-size:11px;margin-bottom:12px;">🔀 DUAL CLASS</h2>
+    {% if player.has_second_class %}
+    <div style="font-family:'VT323',monospace;font-size:17px;color:#4ade80;">✅ Dual class active — 33% of second class stats added.</div>
+    {% else %}
+    <div style="font-family:'VT323',monospace;font-size:15px;color:#888;margin-bottom:12px;">
+      Combine two classes for boosted stats. Roll a second class for <strong style="color:#ffd54a;">500 coins</strong> (33% of its stats stack).
+    </div>
+    <button class="pxl-btn" id="secondBtn" onclick="rollSecond()" style="font-size:10px;padding:10px 22px;">🔀 UNLOCK DUAL CLASS (500)</button>
+    {% endif %}
+    <div id="secondResult" style="display:none;margin-top:14px;border:2px solid #4ade80;background:#0a0a0a;padding:14px;text-align:center;"></div>
+  </div>
+</div>
+
+<style>
+@keyframes glow{0%,100%{box-shadow:inset 0 0 0 2px #000,0 0 8px rgba(255,213,74,0.3)}50%{box-shadow:inset 0 0 0 2px #000,0 0 20px rgba(255,213,74,0.6)}}
+.slot-spin{animation:slotSpin 0.1s linear infinite!important}
+@keyframes slotSpin{0%{transform:rotateX(0)}100%{transform:rotateX(360deg)}}
+</style>
+
+<script>
+var rolling = false;
+
+function rollSlots() {
+  if(rolling) return;
+  rolling = true;
+  var btn = document.getElementById('rollBtn');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+
+  var slots = ['slot1','slot2','slot3'];
+  slots.forEach(function(id){ document.getElementById(id).classList.add('slot-spin'); });
+  document.getElementById('rollResult').innerHTML = '🎰 Rolling...';
+  document.getElementById('rollResult').style.color = '#ffd54a';
+
+  fetch('/api/lucky-roll', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    slots.forEach(function(id){ document.getElementById(id).classList.remove('slot-spin'); });
+    if(d.error) {
+      document.getElementById('rollResult').innerHTML = d.error;
+      document.getElementById('rollResult').style.color = '#ff4757';
+      rolling = false;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+    if(d.symbols) {
+      document.getElementById('slot1').textContent = d.symbols[0] || '❓';
+      document.getElementById('slot2').textContent = d.symbols[1] || '❓';
+      document.getElementById('slot3').textContent = d.symbols[2] || '❓';
+    }
+    if(typeof d.balance !== 'undefined') {
+      document.getElementById('luckyCoins').textContent = d.balance;
+    }
+    if(d.won) {
+      document.getElementById('rollResult').innerHTML = '🎉 JACKPOT! +' + d.coins + ' coins!';
+      document.getElementById('rollResult').style.color = '#ffd54a';
+    } else {
+      document.getElementById('rollResult').innerHTML = 'No luck! Try again.';
+      document.getElementById('rollResult').style.color = '#888';
+    }
+
+    document.getElementById('rollCd').style.display = 'block';
+    var cd = 3;
+    document.getElementById('rollCdSec').textContent = cd;
+    var iv = setInterval(function(){
+      cd--;
+      document.getElementById('rollCdSec').textContent = cd;
+      if(cd <= 0) {
+        clearInterval(iv);
+        document.getElementById('rollCd').style.display = 'none';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        rolling = false;
+      }
+    }, 1000);
+  })
+  .catch(function(err){
+    document.getElementById('rollResult').innerHTML = 'Error: ' + err;
+    rolling = false;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  });
+}
+
+function statRow(d, hpKey) {
+  return '<div style="font-family:\'VT323\',monospace;font-size:15px;color:#aaa;margin-top:8px;">❤️ ' + (d[hpKey]||d.hp||'?') +
+         ' · ⚔️ ' + (d.atk||'?') + ' · 🛡️ ' + (d.def||'?') + ' · 💨 ' + (d.spd||'?') + '</div>';
+}
+
+function rollClass() {
+  var btn = document.getElementById('classRollBtn');
+  btn.disabled = true; btn.textContent = '🎲 ROLLING...';
+  fetch('/api/class-roll', {method:'POST'})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(!d.success) { alert(d.error||'Failed'); btn.disabled=false; btn.textContent='🎲 ROLL NEW CLASS (200)'; return; }
+    var card = document.getElementById('classResult');
+    card.style.display = 'block';
+    card.innerHTML = '<div style="font-size:34px;">' + d.class_emoji + '</div>' +
+      '<div class="pixel" style="font-size:11px;color:#e8e8e8;margin-top:6px;">' + d.class_name + '</div>' +
+      '<div class="rarity-' + d.class_rarity + '" style="font-size:9px;font-family:\'Press Start 2P\',monospace;margin-top:6px;">' + d.class_rarity.toUpperCase() + '</div>' +
+      statRow(d, 'hp') +
+      '<div style="color:#888;font-family:\'VT323\',monospace;font-size:14px;margin-top:6px;">🪙 ' + d.coins + ' remaining</div>';
+    btn.disabled = false; btn.textContent = '🎲 ROLL AGAIN (200)';
+    if(d.coins < 200) btn.disabled = true;
+  })
+  .catch(function(e){ alert('Error'); btn.disabled=false; btn.textContent='🎲 ROLL NEW CLASS (200)'; });
+}
+
+function rollSecond() {
+  var btn = document.getElementById('secondBtn');
+  if(!btn) return;
+  btn.disabled = true; btn.textContent = '🔀 ROLLING...';
+  fetch('/api/second-class-roll', {method:'POST'})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(!d.success) { alert(d.error||'Failed'); btn.disabled=false; btn.textContent='🔀 UNLOCK DUAL CLASS (500)'; return; }
+    var card = document.getElementById('secondResult');
+    card.style.display = 'block';
+    card.innerHTML = '<div class="pixel" style="font-size:10px;color:#4ade80;">🎉 DUAL CLASS UNLOCKED!</div>' +
+      '<div style="font-size:34px;margin-top:6px;">' + d.class_emoji + '</div>' +
+      '<div class="pixel" style="font-size:11px;color:#e8e8e8;margin-top:6px;">' + d.class_name + '</div>' +
+      '<div class="rarity-' + d.class_rarity + '" style="font-size:9px;font-family:\'Press Start 2P\',monospace;margin-top:6px;">' + d.class_rarity.toUpperCase() + '</div>' +
+      statRow(d, 'max_health') +
+      '<div style="color:#888;font-family:\'VT323\',monospace;font-size:14px;margin-top:6px;">🪙 ' + d.coins + ' remaining</div>';
+    btn.disabled = false; btn.textContent = '🔀 DUAL CLASS ACTIVE';
+    btn.disabled = true;
+    setTimeout(function(){ location.reload(); }, 1500);
+  })
+  .catch(function(e){ alert('Error'); btn.disabled=false; btn.textContent='🔀 UNLOCK DUAL CLASS (500)'; });
+}
+</script>

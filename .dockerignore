@@ -1,0 +1,7 @@
+.git
+__pycache__
+*.pyc
+*.log
+.env
+data
+web/static/uploads

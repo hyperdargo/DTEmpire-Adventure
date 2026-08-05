@@ -1,6 +1,11 @@
 __pycache__/
 *.pyc
-data/
+!data/
+data/*
+!data/guild_shops.json
+!data/version.json
 logs/
 .env
 *.log
+.tokensave
+restore-verified/

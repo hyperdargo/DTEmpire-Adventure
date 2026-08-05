@@ -1,0 +1,100 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:1000px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;">💎 AUCTION HOUSE</h2>
+    <p style="color:#888;font-size:14px;font-family:'VT323',monospace;">Buy and sell items with other players. Sales notify sellers via mail.</p>
+  </div>
+
+  <!-- List an item -->
+  <div class="pxl" style="margin-bottom:20px;">
+    <h3 class="pixel" style="color:#aaa;font-size:9px;margin-bottom:12px;">📦 LIST AN ITEM</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap;">
+      <div>
+        <div style="color:#888;font-size:12px;font-family:'VT323',monospace;margin-bottom:4px;">ITEM ID (from inventory)</div>
+        <input id="listItemId" placeholder="e.g. excalibur or tower_conqueror_crown"
+          style="background:#0d0d0d;border:2px solid #333;color:#e8e8e8;padding:8px;font-family:'VT323',monospace;font-size:15px;width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="color:#888;font-size:12px;font-family:'VT323',monospace;margin-bottom:4px;">PRICE (coins)</div>
+        <input id="listPrice" type="number" min="1" placeholder="e.g. 5000"
+          style="background:#0d0d0d;border:2px solid #333;color:#e8e8e8;padding:8px;font-family:'VT323',monospace;font-size:15px;width:100%;box-sizing:border-box;">
+      </div>
+      <button class="pxl-btn" onclick="listItem()" style="padding:8px 16px;font-size:8px;white-space:nowrap;">📦 LIST</button>
+    </div>
+    <div style="color:#555;font-size:12px;font-family:'VT323',monospace;margin-top:6px;">Tip: Item ID is the item name in lowercase with spaces as underscores (e.g. "iron_sword")</div>
+  </div>
+
+  <!-- Active Listings -->
+  <div class="pxl">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 class="pixel" style="color:#aaa;font-size:9px;">🏪 ACTIVE LISTINGS</h3>
+      <button class="pxl-btn" onclick="loadListings()" style="padding:4px 10px;font-size:7px;">🔄 REFRESH</button>
+    </div>
+    <div id="auctionList">
+      <div style="color:#888;font-family:'VT323',monospace;font-size:16px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+function loadListings(){
+  fetch('/api/auction/listings').then(r=>r.json()).then(d=>{
+    var el=document.getElementById('auctionList');
+    if(!d.listings||d.listings.length===0){
+      el.innerHTML='<div style="color:#888;font-family:VT323,monospace;font-size:16px;padding:20px;text-align:center;">📭 No listings yet. Be the first to sell!</div>';
+      return;
+    }
+    var RARITY_COLORS={mythic:'#ff4757',legendary:'#ff6b00',epic:'#a855f7',rare:'#60a5fa',uncommon:'#4ade80',common:'#888'};
+    el.innerHTML=d.listings.map(l=>{
+      var item=l.item||{};
+      var rc=RARITY_COLORS[((item.rarity)||'common').toLowerCase()]||'#888';
+      var ago=Math.round((Date.now()/1000-l.listed_at)/3600);
+      return `<div style="border:2px solid #333;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0d0d0d;margin-bottom:6px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#ffd54a;">${item.name||'Unknown'}</div>
+          <div style="color:${rc};font-family:'VT323',monospace;font-size:13px;">${item.rarity||'Common'} ${item.type||''}</div>
+          <div style="color:#888;font-family:'VT323',monospace;font-size:12px;">by ${l.seller_name} · ${ago}h ago</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd54a;">🪙 ${l.price}</div>
+          <button class="pxl-btn" onclick="buyItem('${l.id}')" style="padding:5px 12px;font-size:8px;">BUY</button>
+          <button class="pxl-btn" onclick="cancelItem('${l.id}')" style="padding:5px 10px;font-size:7px;color:#ff4757;border-color:#ff4757;background:#1a0a0a;">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+function listItem(){
+  var item_id=document.getElementById('listItemId').value.trim().toLowerCase().replace(/ /g,'_');
+  var price=parseInt(document.getElementById('listPrice').value)||0;
+  if(!item_id||price<1){showToast('Item ID and price required','err');return;}
+  fetch('/api/auction/list_item',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id,price})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');document.getElementById('listItemId').value='';document.getElementById('listPrice').value='';setTimeout(loadListings,500);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function buyItem(id){
+  fetch('/api/auction/buy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listing_id:id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(loadListings,500);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function cancelItem(id){
+  if(!confirm('Cancel this listing?'))return;
+  fetch('/api/auction/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listing_id:id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(loadListings,500);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+loadListings();
+</script>

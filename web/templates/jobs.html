@@ -1,0 +1,161 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div style="max-width:960px;margin:0 auto;padding:16px;">
+
+  <div class="pxl" style="text-align:center;margin-bottom:24px;">
+    <h2 class="pixel" style="color:#ffd54a;margin-bottom:4px;">⚒️ JOBS BOARD</h2>
+    <p style="color:#888;font-size:15px;font-family:'VT323',monospace;">Choose your profession. Earn daily pay + Job XP. Job level increases income. Unlocks at Lv.10.</p>
+  </div>
+
+  {% if player.level|default(1) < 10 %}
+  <div class="pxl" style="text-align:center;padding:40px;border-color:#ff4757;">
+    <div style="font-size:3em;">🔒</div>
+    <div class="pixel" style="color:#ff4757;font-size:9px;margin:12px 0;">JOBS UNLOCK AT LEVEL 10</div>
+    <div style="color:#888;font-family:'VT323',monospace;font-size:17px;">You are Level {{ player.level|default(1) }}. Keep grinding!</div>
+    <a href="/adventure" class="pxl-btn" style="display:inline-block;margin-top:16px;padding:8px 20px;font-size:9px;text-decoration:none;">⚔️ Go Fight</a>
+  </div>
+  {% else %}
+
+  {% set cur_job = player.job|default(None) %}
+  {% set job_lvl = player.job_level|default(1) %}
+  {% set job_xp  = player.job_xp|default(0) %}
+  {% set job_xp_needed = job_lvl * 50 %}
+  {% set job_pct = [100, (job_xp * 100 // (job_xp_needed if job_xp_needed > 0 else 1))]|min %}
+
+  <!-- Current Job Panel -->
+  <div class="pxl" style="margin-bottom:24px;padding:20px;">
+    <h3 class="pixel" style="color:#aaa;font-size:8px;margin-bottom:14px;">💼 CURRENT JOB</h3>
+    {% if cur_job %}
+    <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:2.8em;">
+          {% if cur_job=='farmer' %}🌾
+          {% elif cur_job=='miner' %}⛏️
+          {% elif cur_job=='cook' %}🍳
+          {% elif cur_job=='fisher' %}🎣
+          {% elif cur_job=='guard' %}🗡️
+          {% elif cur_job=='blacksmith' %}🔨
+          {% elif cur_job=='merchant' %}💰
+          {% elif cur_job=='alchemist' %}⚗️
+          {% elif cur_job=='knight' %}⚔️
+          {% elif cur_job=='wizard' %}🧙
+          {% else %}🦸{% endif %}
+        </div>
+        <div class="pixel" style="font-size:9px;color:#ffd54a;margin-top:8px;">{{ cur_job|capitalize }}</div>
+        <div style="color:#888;font-family:'VT323',monospace;font-size:15px;margin-top:4px;">Job Level {{ job_lvl }} &nbsp;|&nbsp; {{ job_xp }}/{{ job_xp_needed }} XP</div>
+        <div style="background:#111;border:1px solid #333;height:7px;margin:8px 0;width:220px;">
+          <div style="background:#ffd54a;height:100%;width:{{ job_pct }}%;transition:width 0.5s;"></div>
+        </div>
+        <div style="color:#555;font-family:'VT323',monospace;font-size:13px;">Job XP progress to Level {{ job_lvl + 1 }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="pxl-btn" onclick="claimJob()" style="padding:8px 20px;font-size:9px;">💰 CLAIM DAILY PAY</button>
+        <div id="timerTxt" style="color:#555;font-family:'VT323',monospace;font-size:14px;"></div>
+        <button class="pxl-btn" onclick="doJobTask()" style="padding:6px 14px;font-size:8px;background:#111;border-color:#ffd54a;color:#ffd54a;">📋 DAILY TASK (+Job XP)</button>
+        <div id="taskTimer" style="color:#555;font-family:'VT323',monospace;font-size:13px;"></div>
+      </div>
+    </div>
+    {% else %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:17px;">No active job. Pick one below to start earning!</div>
+    {% endif %}
+  </div>
+
+  <!-- Jobs Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;">
+    {% set jobs = [
+      ('farmer','🌾','Farmer',10,80,10,'Harvest crops, sell produce. Daily: collect farmed goods.'),
+      ('miner','⛏️','Miner',12,150,20,'Mine ores and gems. Rare: find Raw Ore on daily task.'),
+      ('cook','🍳','Cook',14,180,22,'Craft food items. Daily task restores +50 HP.'),
+      ('fisher','🎣','Fisher',15,160,20,'Fish from rivers and seas. 15% chance for Pet Egg on task.'),
+      ('guard','🗡️','Guard',18,220,28,'Protect the city gates. +DEF bonus at Job Lv.5.'),
+      ('blacksmith','🔨','Blacksmith',22,320,38,'Forge weapons and armor. Craft gear from materials.'),
+      ('merchant','💰','Merchant',28,420,35,'Trade goods. Double sell price at Job Lv.10.'),
+      ('alchemist','⚗️','Alchemist',35,550,55,'Brew potions. 8% chance to learn a new skill on task.'),
+      ('knight','⚔️','Knight',40,700,65,'Elite warrior. +ATK bonus at Job Lv.5.'),
+      ('wizard','🧙','Wizard',50,900,85,'Master of magic. Skill cooldown reduction at Lv.5.'),
+    ] %}
+    {% for jid, jico, jname, jlvl, jpay, jxp, jdesc in jobs %}
+    {% set unlocked = player.level|default(1) >= jlvl %}
+    {% set active = cur_job == jid %}
+    <div class="pxl" style="border-color:{% if active %}#4ade80{% elif not unlocked %}#1a1a1a{% else %}#333{% endif %};opacity:{% if unlocked %}1{% else %}0.45{% endif %};">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="font-size:2em;">{{ jico }}</div>
+        <div>
+          <div class="pixel" style="font-size:8px;color:{% if active %}#4ade80{% else %}#ffd54a{% endif %};">{{ jname }}{% if active %} ✓{% endif %}</div>
+          <div style="color:#555;font-size:12px;font-family:'VT323',monospace;">Requires Lv.{{ jlvl }}</div>
+        </div>
+      </div>
+      <div style="color:#aaa;font-family:'VT323',monospace;font-size:13px;margin-bottom:10px;line-height:1.5;">{{ jdesc }}</div>
+      <div style="color:#ffd54a;font-family:'VT323',monospace;font-size:15px;margin-bottom:12px;">💰 {{ jpay }} coins/day &nbsp;·&nbsp; ⭐ {{ jxp }} Job XP</div>
+      {% if unlocked and not active %}
+      <button class="pxl-btn" onclick="setJob('{{ jid }}')" style="padding:6px 14px;font-size:8px;width:100%;">SELECT JOB</button>
+      {% elif active %}
+      <div style="color:#4ade80;font-size:13px;font-family:'VT323',monospace;">✅ ACTIVE — earning daily pay</div>
+      {% else %}
+      <div style="color:#444;font-size:13px;font-family:'VT323',monospace;">🔒 Need Level {{ jlvl }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+</div>
+
+<script>
+function showToast(m,t){
+  var x=document.createElement('div');x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+function setJob(id){
+  fetch('/api/job/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_id:id})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),900);}
+    else showToast(d.error||'Failed','err');
+  });
+}
+function claimJob(){
+  fetch('/api/job/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),900);}
+    else showToast(d.error||'Failed','err');
+  }).catch(()=>showToast('Error','err'));
+}
+function doJobTask(){
+  fetch('/api/job/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){showToast(d.message,'ok');setTimeout(()=>location.reload(),900);}
+    else showToast(d.error||'Failed','err');
+  }).catch(()=>showToast('Error','err'));
+}
+// Daily pay countdown
+(function(){
+  var last={{player.last_job_claim|default(0)}};
+  var next=last+86400;
+  function tick(){
+    var now=Date.now()/1000,rem=Math.max(0,next-now);
+    var el=document.getElementById('timerTxt');
+    if(!el)return;
+    if(rem<=0){el.textContent='✅ Ready to claim!';el.style.color='#4ade80';return;}
+    var h=Math.floor(rem/3600),m=Math.floor((rem%3600)/60),s=Math.floor(rem%60);
+    el.textContent='Pay in: '+h+'h '+m+'m '+s+'s';
+    setTimeout(tick,1000);
+  }
+  tick();
+})();
+// Task countdown (6h)
+(function(){
+  var last={{player.last_job_task|default(0)}};
+  var next=last+21600;
+  function tick(){
+    var now=Date.now()/1000,rem=Math.max(0,next-now);
+    var el=document.getElementById('taskTimer');
+    if(!el)return;
+    if(rem<=0){el.textContent='✅ Task ready!';el.style.color='#4ade80';return;}
+    var h=Math.floor(rem/3600),m=Math.floor((rem%3600)/60),s=Math.floor(rem%60);
+    el.textContent='Task in: '+h+'h '+m+'m '+s+'s';
+    setTimeout(tick,1000);
+  }
+  tick();
+})();
+</script>

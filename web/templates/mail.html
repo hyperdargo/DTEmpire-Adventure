@@ -1,0 +1,107 @@
+{% include '_nav.html' %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<div class="pxl" style="max-width:720px;margin:0 auto;padding:20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h2 class="pixel" style="color:#ffd54a;font-size:14px;text-shadow:2px 2px 0 #000;">📬 MAIL</h2>
+    <button onclick="claimAll()" id="claimAllBtn" class="pxl-btn" style="padding:6px 14px;font-size:9px;">CLAIM ALL</button>
+  </div>
+
+  <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #333;">
+    <div class="tab pixel active" style="padding:8px 18px;cursor:pointer;color:#ffd54a;font-size:8px;border:2px solid transparent;border-bottom:2px solid #ffd54a;" onclick="filterMail('all',this)">📫 ALL</div>
+    <div class="tab pixel" style="padding:8px 18px;cursor:pointer;color:#888;font-size:8px;border:2px solid transparent;" onclick="filterMail('unread',this)">📩 UNREAD</div>
+    <div class="tab pixel" style="padding:8px 18px;cursor:pointer;color:#888;font-size:8px;border:2px solid transparent;" onclick="filterMail('claimed',this)">📪 CLAIMED</div>
+  </div>
+
+  <div id="mailList">
+  {% if not mail or mail|length == 0 %}
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:3em;margin-bottom:12px;">📭</div>
+      <div style="color:#888;font-size:14px;font-family:'VT323',monospace;">Your mailbox is empty</div>
+    </div>
+  {% else %}
+    {% for m in mail %}
+    <div class="mail-item {{ 'unclaimed' if not m.claimed else 'claimed' }}" data-claimed="{{ '1' if m.claimed else '0' }}" data-idx="{{ loop.index0 }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:6px;border:2px solid {{ '#444' if m.claimed else '#ffd54a' }};background:{{ '#0d0d0d' if m.claimed else 'linear-gradient(180deg,#1a1a22,#0d0d13)' }};box-shadow:3px 3px 0 #000;opacity:{{ '0.5' if m.claimed else '1' }};">
+      <div style="font-size:1.8em;width:40px;text-align:center;">{{ m.reward.emoji if m.reward else '📜' }}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="color:#ffd54a;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;">{{ m.subject if m.subject else 'Mail' }}</div>
+        <div style="color:#888;font-size:13px;margin-top:2px;font-family:'VT323',monospace;">From: {{ m.get('from', 'Unknown') }}{{ ' — Floor ' ~ m.floor if m.floor else '' }}</div>
+        {% if m.body %}
+        <div style="color:#aaa;font-size:12px;margin-top:2px;font-family:'VT323',monospace;">{{ m.body }}</div>
+        {% endif %}
+        {% if m.reward and not m.claimed %}
+        <div style="color:#4ade80;font-size:12px;font-family:'VT323',monospace;margin-top:4px;">+ {{ m.reward.type }} x{{ m.reward.qty }}</div>
+        {% endif %}
+      </div>
+      <div>
+        {% if not m.claimed %}
+        <button class="claim-btn pxl-btn" onclick="claimMail('{{ loop.index0 }}',this)" style="padding:5px 12px;font-size:8px;">CLAIM</button>
+        {% else %}
+        <span style="color:#555;font-size:9px;font-family:'Press Start 2P',monospace;">✔ CLAIMED</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+  </div>
+</div>
+
+<style>
+.tab{transition:all 0.2s}
+.tab:hover{color:#ffd54a!important;border-bottom-color:#ffd54a!important}
+</style>
+
+<script>
+function filterMail(tab, btn){
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.style.color='#888';t.style.borderBottomColor='transparent';t.style.borderBottomWidth='2px';
+  });
+  if(btn){btn.style.color='#ffd54a';btn.style.borderBottomColor='#ffd54a';}
+  document.querySelectorAll('.mail-item').forEach(function(el){
+    var claimed = el.dataset.claimed === '1';
+    if(tab==='all') el.style.display='flex';
+    else if(tab==='unread') el.style.display=claimed?'none':'flex';
+    else el.style.display=claimed?'flex':'none';
+  });
+}
+function showToast(m,t){
+  var x=document.createElement('div');x.className='toast '+t;x.textContent=m;
+  x.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;z-index:9999;font-family:VT323;font-size:18px;border:2px solid '+(t==='err'?'#ff4757':'#4ade80')+';background:#0a0a0a;color:#e8e8e8;box-shadow:4px 4px 0 #000;';
+  document.body.appendChild(x);setTimeout(function(){x.remove()},2500);
+}
+function claimMail(idx,btn){
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  fetch('/api/mail/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:parseInt(idx),idx:parseInt(idx)})})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){
+      document.querySelectorAll('.mail-item').forEach(function(el){
+        if(el.dataset.idx==idx){
+          el.classList.remove('unclaimed');el.classList.add('claimed');el.dataset.claimed='1';
+          el.style.borderColor='#444';el.style.background='#0d0d0d';el.style.opacity='0.5';
+          var cb=el.querySelector('.claim-btn');
+          if(cb) cb.replaceWith(document.createTextNode('✔ CLAIMED'));
+          var rw=el.querySelector('[class*="reward"]');
+          if(rw) rw.remove();
+          var activeTab=document.querySelector('.tab.active');
+          if(activeTab&&activeTab.textContent.includes('UNREAD')) el.style.display='none';
+        }
+      });
+      showToast(d.message||'Claimed!','ok');
+    } else {
+      if(btn){btn.disabled=false;btn.textContent='CLAIM';}
+      showToast(d.error||'Failed','err');
+    }
+  })
+  .catch(function(e){if(btn){btn.disabled=false;btn.textContent='CLAIM';}showToast('Error','err');});
+}
+function claimAll(){
+  var btn=document.getElementById('claimAllBtn');btn.disabled=true;btn.textContent='...';
+  fetch('/api/mail/claim_all',{method:'POST'})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.success){showToast(d.message||'All claimed!','ok');setTimeout(function(){location.reload()},800);}
+    else{showToast(d.error||'Failed','err');btn.disabled=false;btn.textContent='CLAIM ALL';}
+  })
+  .catch(function(e){showToast('Error','err');btn.disabled=false;btn.textContent='CLAIM ALL';});
+}
+</script>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DTEmpire Adventure — Pets</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+.mail-badge{display:inline-block;min-width:16px;height:16px;background:#374151;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;margin-left:2px;vertical-align:middle;border:1px solid #000}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'VT323',monospace;background:#050505;color:#ccc;min-height:100vh;image-rendering:pixelated;overflow-x:hidden}
+.pixel{font-family:'Press Start 2P',monospace;color:#ffd54a}
+
+.nav{background:#0d0d13;border-bottom:2px solid #ffd54a;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd54a;text-transform:uppercase}
+.nav-links{display:flex;gap:4px;flex-wrap:wrap}
+.nav a{font-family:'Press Start 2P',monospace;color:#ccc;text-decoration:none;padding:8px 12px;border:2px solid #ffd54a;font-size:9px;text-transform:uppercase;background:linear-gradient(180deg,#3a3a4a,#1a1a22)}
+.nav a:hover,.nav a.active{background:#ffd54a;color:#000}
+.nav .logout{border-color:#ff6b00;color:#ff6b00}
+.nav .logout:hover{background:#ff6b00;color:#000}
+
+.container{max-width:800px;margin:0 auto;padding:24px}
+h2{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:12px;text-transform:uppercase;margin-bottom:20px}
+h3{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:9px;text-transform:uppercase;margin-bottom:12px}
+
+.equipped-area{border:2px solid #ffd54a;padding:20px;margin-bottom:24px;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.equipped-items{display:flex;gap:12px;flex-wrap:wrap}
+.equipped-item{border:2px solid #ffd54a;padding:10px 14px;font-family:'VT323',monospace;font-size:15px;color:#ffd54a;background:linear-gradient(180deg,#1a1a22,#0d0d13);text-transform:uppercase}
+
+.empty{color:#666;padding:20px;text-align:center;font-size:17px;border:2px dashed #333;font-family:'VT323',monospace}
+
+.item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.item{border:2px solid #ffd54a;padding:16px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.item .name{font-family:'Press Start 2P',monospace;font-size:9px;text-transform:uppercase;color:#ffd54a;letter-spacing:1px}
+.item .count{color:#888;font-family:'VT323',monospace;font-size:15px;margin-top:4px}
+.item .info-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.item .btn-row{display:flex;gap:8px;margin-top:12px}
+
+.btn{padding:10px 16px;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;image-rendering:pixelated}
+
+/* Gold buttons */
+.btn-equip{background:linear-gradient(180deg,#ffd54a,#c99a1a);color:#000;border:2px solid #000;box-shadow:3px 3px 0 #000}
+.btn-equip:hover{background:linear-gradient(180deg,#ffe57a,#daaa2a)}
+.btn-equip:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+.btn-equip.unequip{background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#ffd54a;border:2px solid #ffd54a;box-shadow:3px 3px 0 #000}
+.btn-equip.unequip:hover{background:linear-gradient(180deg,#4a4a5a,#2a2a32)}
+
+/* Dark buttons */
+.btn-sell{border:2px solid #ff6b00;color:#ff6b00;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
+.btn-sell:hover{background:#ff6b00;color:#000}
+.btn-sell:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.btn-heal{border:2px solid #4ade80;color:#4ade80;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000;margin-top:0}
+.btn-heal:hover{background:#4ade80;color:#000}
+.btn-heal:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.btn-claim{border:2px solid #8b5cf6;color:#8b5cf6;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
+.btn-claim:hover{background:#8b5cf6;color:#000}
+.btn-claim:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;border-bottom:2px solid #333;padding-bottom:16px}
+.tab{padding:8px 16px;border:2px solid #333;background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#888;font-family:'Press Start 2P',monospace;font-size:9px;text-transform:uppercase;cursor:pointer;letter-spacing:1px}
+.tab.active{border-color:#ffd54a;color:#ffd54a;background:linear-gradient(180deg,#1a1a22,#0d0d13);box-shadow:3px 3px 0 #000}
+.tab:hover:not(.active){border-color:#ffd54a;color:#ffd54a}
+
+/* Rarity colors */
+.rarity-common{color:#ccc}
+.rarity-unique{color:#ffd54a}
+.rarity-rare{color:#4ade80}
+.rarity-legendary{color:#ff6b00}
+.rarity-mythic{color:#dc143c}
+.rarity-divine{color:#8b5cf6}
+
+/* Pet specific */
+.pet-egg{border:2px solid #8b5cf6;background:linear-gradient(180deg,#2a1a3a,#1a0a22)}
+.pet-hatched{border:2px solid #4ade80;background:linear-gradient(180deg,#1a3a1a,#0a1a0a)}
+.pet-stats{font-family:'VT323',monospace;font-size:14px;color:#888;margin-top:8px}
+.pet-stat-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #222}
+.pet-stat-row:last-child{border-bottom:none}
+.pet-icon{font-size:32px;text-align:center;margin-bottom:8px}
+</style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="container">
+  <h2>🐾 Pets</h2>
+
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <button class="btn btn-claim" onclick="claimDaily()">🎁 Claim Daily</button>
+  </div>
+
+  <!-- 🤖 Auto Pets — one-time unlock -->
+  <div style="border:2px solid #ffd54a;padding:16px;margin-bottom:24px;background:#0d0d0d;">
+    <h3 style="margin:0 0 6px;color:#ffd54a;">🤖 AUTO PETS</h3>
+    {% if player.get('unlocks', {}).get('auto_pets', False) %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:16px;margin-bottom:12px;">
+      Hatch <b style="color:#e8e8e8;">ALL eggs</b> at once, or auto-combine every pet &amp; egg possible — one-time unlock, forever.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-heal" onclick="hatchAll()">🥚 HATCH ALL</button>
+      <button class="btn btn-equip" onclick="combineAll()">🔮 COMBINE ALL</button>
+    </div>
+    {% else %}
+    <div style="color:#888;font-family:'VT323',monospace;font-size:16px;margin-bottom:12px;">
+      Unlock <b style="color:#ffd54a;">Auto Pets</b>: <b style="color:#e8e8e8;">Hatch All</b> (hatch every egg at once) + <b style="color:#e8e8e8;">Combine All</b> (auto rank-up every pet &amp; egg). One-time payment — never expires.
+    </div>
+    <button class="btn btn-claim" onclick="unlockAuto('pets')">🔓 UNLOCK AUTO PETS — 50,000 🪙</button>
+    {% endif %}
+  </div>
+
+  <!-- Resolve equipped pet IDs against saved pet objects. -->
+  {% if equipped_pets and pets %}
+  <div class="equipped-area">
+    <h3>⚔️ Equipped Pets</h3>
+    <div class="equipped-items">
+      {% for pet_id in equipped_pets %}
+        {% set pet = pets|selectattr('id', 'equalto', pet_id)|first %}
+        {% if pet %}
+        <div class="equipped-item">{{ pet.icon }} {{ pet.name }} ({{ pet.rarity }}) +{{ pet.atk_bonus }} ATK +{{ pet.def_bonus }} DEF</div>
+        {% else %}
+        <div class="equipped-item">{{ pet_id }}</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Pet Eggs -->
+  <h3>🥚 Pet Eggs</h3>
+  <div class="tabs">
+    <div class="tab active" onclick="filterPets('eggs')">Eggs</div>
+    <div class="tab" onclick="filterPets('pets')">Hatched Pets</div>
+  </div>
+
+  <div id="eggs-section">
+    {% if eggs %}
+    <div class="item-list">
+      {% for egg in eggs %}
+      <div class="item pet-egg" data-category="egg">
+        <div>
+          <div class="pet-icon">{{ egg.icon if egg.icon else '🥚' }}</div>
+          <div class="name">
+            <span class="rarity-{{ (egg.rarity or 'common').lower() }}">{{ egg.name or 'Mysterious Egg' }}</span>
+          </div>
+          {% if egg.count and egg.count > 1 %}<div class="count">x{{ egg.count }}</div>{% endif %}
+          <div class="info-row">
+            <span style="font-family:'VT323',monospace;font-size:15px;color:#666;text-transform:uppercase;letter-spacing:1px">Egg • {{ (egg.rarity or 'common').title() }}</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-claim" onclick="hatchEgg('{{ egg.id }}')" style="flex:1">Hatch</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No eggs found. Get eggs from adventures, shop, or tower!</div>
+    {% endif %}
+  </div>
+
+  <div id="pets-section" style="display:none">
+    {% if pets %}
+    <div class="item-list">
+      {% for pet in pets %}
+      <div class="item pet-hatched" data-category="pet">
+        <div>
+          <div class="pet-icon">{{ pet.icon or '🐾' }}</div>
+          <div class="name">
+            <span class="rarity-{{ (pet.rarity or 'common').lower() }}">{{ pet.name }}</span>
+          </div>
+          <div class="info-row">
+            <span style="font-family:'VT323',monospace;font-size:15px;color:#666;text-transform:uppercase;letter-spacing:1px">Pet • {{ (pet.rarity or 'common').title() }}</span>
+          </div>
+          <div class="pet-stats">
+            <div class="pet-stat-row"><span>⚔️ ATK:</span><span>+{{ pet.atk_bonus or 0 }}</span></div>
+            <div class="pet-stat-row"><span>🛡️ DEF:</span><span>+{{ pet.def_bonus or 0 }}</span></div>
+            <div class="pet-stat-row"><span>📊 LVL:</span><span>{{ pet.level or 1 }}</span></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          {% if pet.id in equipped_pets %}
+          <button class="btn btn-equip unequip" onclick="togglePet('{{ pet.id }}')" style="flex:1">Unequip</button>
+          {% else %}
+          <button class="btn btn-equip" onclick="togglePet('{{ pet.id }}')" style="flex:1">Equip</button>
+          <button class="btn btn-sell" onclick="sellPet('{{ pet.id }}')" style="flex:1">Sell</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No hatched pets yet. Hatch some eggs!</div>
+    {% endif %}
+  </div>
+
+  <!-- 🥚 Combine Eggs: 3 same rank → next rank -->
+  <div style="border:2px solid #333;border-radius:8px;padding:16px;margin-top:24px;background:#0d0d0d;">
+    <h3 style="margin:0 0 6px;color:#ffd54a;">🥚 Combine Eggs — Rank Up</h3>
+    <div style="color:#888;font-family:'VT323',monospace;font-size:16px;margin-bottom:12px;">
+      Eggs hatch as the rank they are. Combine <b style="color:#e8e8e8;">3 eggs of the same rank</b> into <b style="color:#ffd54a;">1 egg one rank higher</b>.<br>
+      <b style="color:#888;">Lowest → highest:</b> <span style="color:#ccc;">COMMON</span> → <span style="color:#22c55e;">UNCOMMON</span> → <span style="color:#4ade80;">RARE</span> → <span style="color:#a855f7;">EPIC</span> → <span style="color:#ff6b00;">LEGENDARY</span> → <span style="color:#ff4757;">MYTHIC</span> → <span style="color:#ffd54a;">UNIQUE ⭐ (highest)</span>
+    </div>
+    <div id="combineEggList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+    <div id="combineEggHint" style="color:#666;font-family:'VT323',monospace;font-size:15px;margin-bottom:10px;">👆 Tap 3 eggs of the same rank to select them.</div>
+    <button id="combineEggBtn" class="btn btn-claim" onclick="doEggCombine()" disabled
+      style="opacity:0.4;cursor:not-allowed;">🥚 COMBINE EGGS (3 → 1)</button>
+  </div>
+
+  <!-- 🔮 Combine Pets: 2 same-kind → next rank -->
+  <div style="border:2px solid #333;border-radius:8px;padding:16px;margin-top:24px;background:#0d0d0d;">
+    <h3 style="margin:0 0 6px;color:#ffd54a;">🔮 Combine Pets — Rank Up</h3>
+    <div style="color:#888;font-family:'VT323',monospace;font-size:16px;margin-bottom:12px;">
+      Pick <b style="color:#e8e8e8;">2 pets of the same kind</b> (same name + same rank). They merge into <b style="color:#ffd54a;">ONE pet one rank higher</b> — same name, boosted stats. Equipped pets must be unequipped first.
+    </div>
+    <div id="combineList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+    <div id="combineHint" style="color:#666;font-family:'VT323',monospace;font-size:15px;margin-bottom:10px;">👆 Tap 2 same-kind pet cards to select them.</div>
+    <button id="combineBtn" class="btn btn-claim" onclick="doCombine()" disabled
+      style="opacity:0.4;cursor:not-allowed;">🔮 COMBINE</button>
+  </div>
+</div>
+
+<script>
+async function api(path, method='POST', body={}) {
+  const res = await fetch(path, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  return res.json();
+}
+
+function filterPets(type) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  if (type === 'eggs') {
+    document.getElementById('eggs-section').style.display = 'block';
+    document.getElementById('pets-section').style.display = 'none';
+  } else {
+    document.getElementById('eggs-section').style.display = 'none';
+    document.getElementById('pets-section').style.display = 'block';
+  }
+}
+
+async function hatchEgg(eggId) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Hatching...';
+  try {
+    const res = await api('/api/pet/hatch', 'POST', {egg_id: eggId});
+    if (res.success) {
+      alert('✨ ' + res.message);
+      location.reload();
+    } else {
+      alert('Error: ' + (res.error || 'Unknown'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Hatch';
+}
+
+async function togglePet(petId) {
+  const btn = event.target;
+  const isEquip = !btn.classList.contains('unequip');
+  btn.disabled = true;
+  btn.textContent = isEquip ? 'Equipping...' : 'Unequipping...';
+  try {
+    const res = await api('/api/pet/equip_toggle', 'POST', {pet_id: petId});
+    if (res.success) {
+      alert(res.message);
+      location.reload();
+    } else {
+      alert('Error: ' + (res.error || 'Unknown'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = isEquip ? 'Equip' : 'Unequip';
+}
+
+async function sellPet(petId) {
+  if (!confirm("Sell this pet for coins? You can't undo this.")) return;
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Selling...';
+  try {
+    const res = await api('/api/pet/sell', 'POST', {pet_id: petId});
+    if (res.success) {
+      alert('🪙 ' + res.message);
+      location.reload();
+    } else {
+      alert('Error: ' + (res.error || 'Unknown'));
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Sell';
+}
+
+async function claimDaily() {
+  const res = await api('/api/daily');
+  if (res.success) alert('🎁 ' + res.message);
+  else alert('Error: ' + (res.error || 'Unknown'));
+}
+
+// 🔮 Combine Pets
+var PETS = [
+{% for pet in pets %}
+  {id:"{{ pet.id }}",name:"{{ pet.name }}",icon:"{{ pet.icon or '🐾' }}",rarity:"{{ (pet.rarity or 'common')|lower }}"}{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+var RANK_COLOR={common:'#ccc',uncommon:'#22c55e',rare:'#4ade80',epic:'#a855f7',mythic:'#ff4757',legendary:'#ff6b00',unique:'#ffd54a'};
+var combineSel=[];
+function renderCombine(){
+  var el=document.getElementById('combineList');
+  if(!PETS.length){el.innerHTML='<div style="color:#555;font-family:VT323,monospace;font-size:15px;">No pets to combine — hatch some eggs first!</div>';return;}
+  el.innerHTML=PETS.map(function(p){
+    var rc=RANK_COLOR[p.rarity]||'#888';
+    var sel=combineSel.indexOf(p.id)!==-1;
+    return '<div onclick="toggleCombine(\''+p.id+'\')" style="cursor:pointer;border:2px solid '+(sel?'#ffd54a':'#333')+';background:'+(sel?'#1a1a0a':'#0d0d0d')+';padding:8px 10px;border-radius:6px;font-family:VT323,monospace;font-size:15px;color:#e8e8e8;text-align:center;">'+
+      '<div style="font-size:24px;">'+p.icon+'</div><div>'+p.name+'</div><div style="color:'+rc+';font-size:13px;">'+p.rarity.toUpperCase()+'</div></div>';
+  }).join('');
+}
+function toggleCombine(id){
+  var i=combineSel.indexOf(id);
+  if(i!==-1){combineSel.splice(i,1);}
+  else{
+    if(combineSel.length>=2){alert('Only 2 pets can be combined at once');return;}
+    combineSel.push(id);
+  }
+  var picked=PETS.filter(function(p){return combineSel.indexOf(p.id)!==-1;});
+  var hint=document.getElementById('combineHint');
+  var btn=document.getElementById('combineBtn');
+  if(combineSel.length===2){
+    if(picked[0].name!==picked[1].name || picked[0].rarity!==picked[1].rarity){
+      hint.textContent='❌ Both pets must be the SAME kind (same name + same rank).';
+      btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
+    } else {
+      hint.textContent='✅ Ready: 2× '+picked[0].icon+' '+picked[0].name+' ('+picked[0].rarity.toUpperCase()+') → next rank!';
+      btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+    }
+  } else {
+    hint.textContent=combineSel.length===1 ? 'Select 1 more pet of the same kind.' : '👆 Tap 2 same-kind pet cards to select them.';
+    btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
+  }
+  renderCombine();
+}
+async function doCombine(){
+  if(combineSel.length!==2)return;
+  const btn=document.getElementById('combineBtn');
+  btn.disabled=true;btn.textContent='Combining...';
+  try{
+    const res=await api('/api/pet/combine','POST',{pet_ids:combineSel});
+    if(res.success){alert('🔮 '+res.message);location.reload();}
+    else alert('Error: '+(res.error||'Unknown'));
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='🔮 COMBINE';
+}
+// 🥚 Combine Eggs: 3 same-rank eggs → 1 egg of the next rank
+var EGGS = [
+{% for egg in eggs %}
+  {id:"{{ egg.id }}",name:"{{ egg.name }}",icon:"{{ egg.icon or '🥚' }}",rarity:"{{ (egg.rarity or 'common')|lower }}"}{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+var eggSel=[];
+function renderEggs(){
+  var el=document.getElementById('combineEggList');
+  if(!el) return;
+  if(!EGGS.length){el.innerHTML='<div style="color:#555;font-family:VT323,monospace;font-size:15px;">No eggs to combine — buy one in the shop or find them while fishing!</div>';return;}
+  el.innerHTML=EGGS.map(function(p){
+    var rc=RANK_COLOR[p.rarity]||'#888';
+    var sel=eggSel.indexOf(p.id)!==-1;
+    return '<div onclick="toggleEgg(\''+p.id+'\')" style="cursor:pointer;border:2px solid '+(sel?'#ffd54a':'#333')+';background:'+(sel?'#1a1a0a':'#0d0d0d')+';padding:8px 10px;border-radius:6px;font-family:VT323,monospace;font-size:15px;color:#e8e8e8;text-align:center;">'+
+      '<div style="font-size:24px;">'+p.icon+'</div><div>'+p.name+'</div><div style="color:'+rc+';font-size:13px;">'+p.rarity.toUpperCase()+'</div></div>';
+  }).join('');
+}
+function toggleEgg(id){
+  var i=eggSel.indexOf(id);
+  if(i!==-1){eggSel.splice(i,1);}
+  else{
+    if(eggSel.length>=3){alert('Only 3 eggs can be combined at once');return;}
+    eggSel.push(id);
+  }
+  var picked=EGGS.filter(function(p){return eggSel.indexOf(p.id)!==-1;});
+  var hint=document.getElementById('combineEggHint');
+  var btn=document.getElementById('combineEggBtn');
+  if(eggSel.length===3){
+    if(!(picked[0].rarity===picked[1].rarity && picked[1].rarity===picked[2].rarity)){
+      hint.textContent='❌ All 3 eggs must be the SAME rank.';
+      btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
+    } else {
+      hint.textContent='✅ Ready: 3× '+picked[0].name+' ('+picked[0].rarity.toUpperCase()+') → next rank!';
+      btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+    }
+  } else {
+    hint.textContent=eggSel.length>0 ? 'Select '+(3-eggSel.length)+' more egg(s) of the same rank.' : '👆 Tap 3 eggs of the same rank to select them.';
+    btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';
+  }
+  renderEggs();
+}
+async function doEggCombine(){
+  if(eggSel.length!==3)return;
+  const btn=document.getElementById('combineEggBtn');
+  btn.disabled=true;btn.textContent='Combining...';
+  try{
+    const res=await api('/api/pet/combine_egg','POST',{egg_ids:eggSel});
+    if(res.success){alert('🥚 '+res.message);location.reload();}
+    else alert('Error: '+(res.error||'Unknown'));
+  }catch(e){alert('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='🥚 COMBINE EGGS (3 → 1)';
+}
+async function unlockAuto(feature){
+  if(!confirm('Pay 50,000 coins ONCE to unlock this feature forever?')) return;
+  const res = await api('/api/unlock/auto','POST',{feature});
+  if(res.success){alert('🔓 '+res.message);location.reload();}
+  else alert('Error: '+(res.error||'Unknown'));
+}
+async function hatchAll(){
+  const res = await api('/api/pet/hatch_all','POST',{});
+  if(res.success){alert('✨ '+res.message);location.reload();}
+  else alert('Error: '+(res.error||'Unknown'));
+}
+async function combineAll(){
+  if(!confirm('Auto-combine ALL possible pets & eggs? Equipped pets are skipped.')) return;
+  const res = await api('/api/pet/combine_all','POST',{});
+  if(res.success){alert('🔮 '+res.message);location.reload();}
+  else alert('Error: '+(res.error||'Unknown'));
+}
+renderCombine();
+renderEggs();
+</script>
+</body>
+</html>
