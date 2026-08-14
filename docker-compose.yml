@@ -1,14 +1,17 @@
+version: '3.8'
+
 services:
-  adventure:
+  web:
     build: .
-    container_name: dtempire-adventure
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      WEB_PORT: "8081"
-      WEB_RELOADER: "0"
+    container_name: adventure-web
+    ports:
+      - "8081:8081"
     env_file:
       - .env
-    volumes:
-      - ./data:/app/data
-      - ./web/static/uploads:/app/web/static/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

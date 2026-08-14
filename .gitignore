@@ -1,11 +1,50 @@
 __pycache__/
 *.pyc
-!data/
-data/*
-!data/guild_shops.json
-!data/version.json
-logs/
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Environment & secrets
 .env
+.env.local
+.env.*.local
+
+# Logs
+logs/
 *.log
-.tokensave
-restore-verified/
+
+# Data files (runtime generated)
+data/players.json
+data/players.json.lock
+data/player_backups/
+data/duels.json
+data/guild_shops.json
+data/economy_index.json
+data/roles.json
+data/founder_gift.json
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Type checking
+.mypy_cache/
