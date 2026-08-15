@@ -2004,8 +2004,9 @@ def get_default_shop(guild_id):
                 {"id": "aether_blade", "name": "🌌 Aether Blade", "attack": 1900, "price": 700000, "desc": "Forged from pure cosmic creation energy. Cuts through reality itself. +1900 ATK"},
                 {"id": "chrono_edge", "name": "⏳ Chrono Edge", "attack": 2100, "price": 850000, "desc": "A blade that cuts through time itself. +2100 ATK"},
                 {"id": "abyssal_trident", "name": "🔱 Abyssal Trident", "attack": 2300, "price": 950000, "desc": "Forged in the deepest ocean trench. Strikes with the pressure of the abyss. +2300 ATK"},
-                {"id": "celestial_scepter", "name": "🌌 Celestial Scepter", "attack": 2500, "price": 1100000, "desc": "Forged from collapsed star matter. Channels cosmic energy. +2500 ATK"},
-            ],
+                {"id": "celestial_scepter", "name": "���� Celestial Scepter", "attack": 2500, "price": 1100000, "desc": "Forged from collapsed star matter. Channels cosmic energy. +2500 ATK"},
+                                {"id": "void_render", "name": "���� Void Render", "attack": 2800, "price": 1300000, "desc": "A blade that tears through the fabric of reality. +2800 ATK"},
+                            ],
             "armor": [
                 {"id": "leather_armor", "name": "🥋 Leather Armor", "defense": 3, "price": 40, "desc": "Basic leather protection. +3 DEF"},
                 {"id": "chainmail", "name": "⛓️ Chainmail", "defense": 8, "price": 250, "desc": "Linked metal rings. +8 DEF"},
@@ -2446,6 +2447,19 @@ ADVENTURE_LOCATIONS = [
         ],
         "boss": {"name": "♾️ Chronos, The Time Lord", "hp": 15000, "atk": 450, "def": 360, "xp": 11000, "coins": (11000, 22000)},
         "boss_chance": 0.008,
+    },
+    {
+        "name": "������� Void Nexus",
+        "description": "A swirling vortex of nothingness where reality unravels. The fabric of existence frays at the edges, and entities from beyond the known universe stir in the darkness, waiting for the veil to tear completely.",
+        "min_level": 31,
+        "monsters": [
+            {"name": "������� Void Walker", "hp": 4500, "atk": 420, "def": 380, "xp": 1100, "coins": (1300, 1900)},
+            {"name": "���� Null Entity", "hp": 5000, "atk": 390, "def": 420, "xp": 1150, "coins": (1400, 2000)},
+            {"name": "���� Entropy Beast", "hp": 4200, "atk": 460, "def": 350, "xp": 1080, "coins": (1250, 1850)},
+            {"name": "���� Chaos Harbinger", "hp": 4800, "atk": 440, "def": 390, "xp": 1180, "coins": (1350, 1950)},
+        ],
+        "boss": {"name": "����� The Void Sovereign", "hp": 18000, "atk": 500, "def": 420, "xp": 14000, "coins": (14000, 28000)},
+        "boss_chance": 0.007,
     },
 ]
 
