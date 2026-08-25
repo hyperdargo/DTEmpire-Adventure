@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Post - DTEmpire Adventure{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>🤝 Trading Post</h1>
+    <p class="subtitle">Trade items and coins with other adventurers</p>
+  </div>
+
+  <!-- Trade Offers Sent -->
+  <section class="trade-section">
+    <h2>📤 Your Trade Offers</h2>
+    {% if outgoing_trades %}
+      <div class="trade-list">
+        {% for trade in outgoing_trades %}
+        <div class="trade-card {% if trade.status != 'pending' %}completed{% endif %}">
+          <div class="trade-header">
+            <span class="trade-status status-{{ trade.status }}">{{ trade.status|capitalize }}</span>
+            <span class="trade-time">{{ trade.created|datetime }}</span>
+          </div>
+          <div class="trade-parties">
+            <div class="trade-party">
+              <span class="label">You offer:</span>
+              <div class="trade-items">
+                {% for item in trade.from_items %}
+                  <span class="trade-item">{{ item.icon }} {{ item.name }} {% if item.qty > 1 }}×{{ item.qty }}{% endif %}</span>
+                {% else %}
+                  <span class="trade-item empty">(no items)</span>
+                {% endfor %}
+                {% if trade.from_coins > 0 %}
+                  <span class="trade-item coins">💰 {{ trade.from_coins|comma }} coins</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="trade-arrow">➡️</div>
+            <div class="trade-party">
+              <span class="label">{{ trade.to_name or 'Unknown' }} receives:</span>
+              <div class="trade-items">
+                {% for item in trade.to_items %}
+                  <span class="trade-item">{{ item.icon }} {{ item.name }} {% if item.qty > 1 }}×{{ item.qty }}{% endif %}</span>
+                {% else %}
+                  <span class="trade-item empty">(no items)</span>
+                {% endfor %}
+                {% if trade.to_coins > 0 %}
+                  <span class="trade-item coins">💰 {{ trade.to_coins|comma }} coins</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% if trade.status == 'pending' %}
+            <div class="trade-actions">
+              <form method="POST" action="/api/trade/cancel" class="inline-form">
+                <input type="hidden" name="trade_id" value="{{ trade.id }}">
+                <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No outgoing trade offers. Create one below!</p>
+    {% endif %}
+  </section>
+
+  <!-- Trade Requests Received -->
+  <section class="trade-section">
+    <h2>📥 Incoming Trade Requests</h2>
+    {% if incoming_trades %}
+      <div class="trade-list">
+        {% for trade in incoming_trades %}
+        <div class="trade-card {% if trade.status != 'pending' %}completed{% endif %}">
+          <div class="trade-header">
+            <span class="trade-status status-{{ trade.status }}">{{ trade.status|capitalize }}</span>
+            <span class="trade-time">{{ trade.created|datetime }}</span>
+          </div>
+          <div class="trade-parties">
+            <div class="trade-party">
+              <span class="label">{{ trade.from_name or 'Unknown' }} offers:</span>
+              <div class="trade-items">
+                {% for item in trade.from_items %}
+                  <span class="trade-item">{{ item.icon }} {{ item.name }} {% if item.qty > 1 }}×{{ item.qty }}{% endif %}</span>
+                {% else %}
+                  <span class="trade-item empty">(no items)</span>
+                {% endfor %}
+                {% if trade.from_coins > 0 %}
+                  <span class="trade-item coins">💰 {{ trade.from_coins|comma }} coins</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="trade-arrow">➡️</div>
+            <div class="trade-party">
+              <span class="label">You receive:</span>
+              <div class="trade-items">
+                {% for item in trade.to_items %}
+                  <span class="trade-item">{{ item.icon }} {{ item.name }} {% if item.qty > 1 }}×{{ item.qty }}{% endif %}</span>
+                {% else %}
+                  <span class="trade-item empty">(no items)</span>
+                {% endfor %}
+                {% if trade.to_coins > 0 %}
+                  <span class="trade-item coins">💰 {{ trade.to_coins|comma }} coins</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% if trade.status == 'pending' %}
+            <div class="trade-actions">
+              <form method="POST" action="/api/trade/accept" class="inline-form">
+                <input type="hidden" name="trade_id" value="{{ trade.id }}">
+                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+              </form>
+              <form method="POST" action="/api/trade/decline" class="inline-form">
+                <input type="hidden" name="trade_id" value="{{ trade.id }}">
+                <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No incoming trade requests.</p>
+    {% endif %}
+  </section>
+
+  <!-- Create Trade Offer -->
+  <section class="trade-section">
+    <h2>✨ Create New Trade Offer</h2>
+    <form id="create-trade-form" class="trade-form">
+      <div class="form-row">
+        <label for="target_user">Target Player (User ID or mention):</label>
+        <input type="text" id="target_user" name="target_user" placeholder="Enter Discord User ID" required>
+      </div>
+
+      <div class="form-row">
+        <label>Your Items:</label>
+        <div id="from-items-container">
+          <div class="trade-item-row">
+            <select name="from_item_id" class="item-select">
+              <option value="">-- Select Item --</option>
+              {% for item in player_inventory %}
+                <option value="{{ item.id }}">{{ item.icon }} {{ item.name }} ({{ item.rarity }}) - Qty: {{ item.qty }}</option>
+              {% endfor %}
+            </select>
+            <input type="number" name="from_item_qty" min="1" value="1" class="qty-input" placeholder="Qty">
+            <button type="button" class="btn btn-sm btn-secondary remove-item">Remove</button>
+          </div>
+        </div>
+        <button type="button" id="add-from-item" class="btn btn-sm btn-outline">+ Add Item</button>
+      </div>
+
+      <div class="form-row">
+        <label>Your Coins:</label>
+        <input type="number" name="from_coins" id="from_coins" min="0" value="0" placeholder="Coins to offer">
+      </div>
+
+      <div class="form-row">
+        <label>Requested Items (what you want):</label>
+        <div id="to-items-container">
+          <div class="trade-item-row">
+            <select name="to_item_id" class="item-select">
+              <option value="">-- Select Item --</option>
+              {% for item in all_items %}
+                <option value="{{ item.id }}">{{ item.icon }} {{ item.name }} ({{ item.rarity }})</option>
+              {% endfor %}
+            </select>
+            <input type="number" name="to_item_qty" min="1" value="1" class="qty-input" placeholder="Qty">
+            <button type="button" class="btn btn-sm btn-secondary remove-item">Remove</button>
+          </div>
+        </div>
+        <button type="button" id="add-to-item" class="btn btn-sm btn-outline">+ Add Item</button>
+      </div>
+
+      <div class="form-row">
+        <label>Requested Coins:</label>
+        <input type="number" name="to_coins" id="to_coins" min="0" value="0" placeholder="Coins requested">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create Trade Offer</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Trade History -->
+  <section class="trade-section">
+    <h2>📜 Trade History</h2>
+    {% if trade_history %}
+      <div class="trade-history">
+        {% for trade in trade_history %}
+        <div class="history-entry">
+          <span class="history-time">{{ trade.completed|datetime }}</span>
+          <span class="history-partner">{{ trade.partner_name }}</span>
+          <span class="history-status status-{{ trade.status }}">{{ trade.status|capitalize }}</span>
+          <span class="history-summary">{{ trade.summary }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No trade history yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add/remove item rows
+  document.getElementById('add-from-item').addEventListener('click', function() {
+    const container = document.getElementById('from-items-container');
+    const row = container.querySelector('.trade-item-row').cloneNode(true);
+    row.querySelectorAll('select, input').forEach(el => el.value = '');
+    container.appendChild(row);
+  });
+
+  document.getElementById('add-to-item').addEventListener('click', function() {
+    const container = document.getElementById('to-items-container');
+    const row = container.querySelector('.trade-item-row').cloneNode(true);
+    row.querySelectorAll('select, input').forEach(el => el.value = '');
+    container.appendChild(row);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-item')) {
+      const container = e.target.closest('.trade-item-row').parentElement;
+      if (container.querySelectorAll('.trade-item-row').length > 1) {
+        e.target.closest('.trade-item-row').remove();
+      }
+    }
+  });
+
+  // Form submission
+  document.getElementById('create-trade-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = {
+      target_user: formData.get('target_user'),
+      from_items: [],
+      from_coins: parseInt(formData.get('from_coins') || 0),
+      to_items: [],
+      to_coins: parseInt(formData.get('to_coins') || 0)
+    };
+
+    // Collect from items
+    document.querySelectorAll('#from-items-container .trade-item-row').forEach(row => {
+      const itemId = row.querySelector('select[name="from_item_id"]').value;
+      const qty = parseInt(row.querySelector('input[name="from_item_qty"]').value);
+      if (itemId && qty > 0) {
+        data.from_items.push({id: itemId, qty: qty});
+      }
+    });
+
+    // Collect to items
+    document.querySelectorAll('#to-items-container .trade-item-row').forEach(row => {
+      const itemId = row.querySelector('select[name="to_item_id"]').value;
+      const qty = parseInt(row.querySelector('input[name="to_item_qty"]').value);
+      if (itemId && qty > 0) {
+        data.to_items.push({id: itemId, qty: qty});
+      }
+    });
+
+    if (data.from_items.length === 0 && data.from_coins === 0 && data.to_items.length === 0 && data.to_coins === 0) {
+      alert('Please add at least one item or coins to the trade.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/trade/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (result.success) {
+        location.reload();
+      } else {
+        alert(result.error || 'Failed to create trade');
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  });
+});
+</script>
+
+<style>
+.trade-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.trade-section h2 {
+  margin-top: 0;
+  color: var(--accent-gold);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+.trade-card {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.trade-card.completed {
+  opacity: 0.7;
+  background: var(--bg-secondary);
+}
+.trade-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+.trade-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+.trade-status.status-pending { background: #fef3c7; color: #92400e; }
+.trade-status.status-accepted { background: #d1fae5; color: #065f46; }
+.trade-status.status-declined { background: #fee2e2; color: #991b1b; }
+.trade-status.status-cancelled { background: #f3f4f6; color: #374151; }
+.trade-parties {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.trade-party {
+  flex: 1;
+  min-width: 200px;
+}
+.trade-party .label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.trade-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.trade-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+.trade-item.coins { color: #fbbf24; }
+.trade-item.empty { color: var(--text-muted); font-style: italic; }
+.trade-arrow {
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+}
+.trade-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+.inline-form { display: inline; }
+.trade-form {
+  display: grid;
+  gap: 1rem;
+}
+.form-row {
+  display: grid;
+  gap: 0.5rem;
+}
+.form-row label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.form-row input, .form-row select {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.trade-item-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.item-select { flex: 1; }
+.qty-input { width: 80px; }
+.form-actions { margin-top: 1rem; }
+.empty-state {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+.trade-history {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.history-entry {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+.history-time { min-width: 140px; color: var(--text-muted); }
+.history-partner { min-width: 150px; font-weight: 500; }
+.history-status { min-width: 80px; }
+.history-summary { flex: 1; }
+</style>
+{% endblock %}

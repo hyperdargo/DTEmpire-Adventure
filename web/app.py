@@ -195,6 +195,8 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user_id" not in session:
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "Authentication required"}), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
@@ -859,26 +861,27 @@ def api_temple_offer():
     amount = int((request.json or {}).get("amount", 0))
     if amount not in (100, 500, 1000):
         return jsonify({"error": "Invalid offering"}), 400
-    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
-    if player.get("coins", 0) < amount:
-        return jsonify({"error": "Not enough coins"}), 400
-    player["coins"] -= amount
-    xp_gain = amount // 10
-    player["xp"] = player.get("xp", 0) + xp_gain
-    from game_logic import level_up as _level_up_temple
-    leveled_up = _level_up_temple(player) > 0
-    check_milestones(player)
-    check_titles(player)
-    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
-    return jsonify({"success": True, "coins": player["coins"], "xp_gain": xp_gain, "leveled_up": leveled_up, "level": player["level"]})
 
-@app.route("/tower")
+@app.route("/api/dungeon/preview", methods=["POST"])
 @login_required
-def tower_page():
+def api_dungeon_preview():
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
-    return render_template("tower.html", player=player)
+    calc_stats(player)
+    floor = player.get("dungeon_floor", 1)
+    from game_data import DUNGEON_MAX_FLOORS, DUNGEON_ENEMIES, DUNGEON_BOSS_FLOORS, DUNGEON_BOSS_MULT
+    if floor > DUNGEON_MAX_FLOORS:
+        return jsonify({"error": "Dungeon complete! You've conquered all 100 floors!"}), 400
 
-@app.route("/mail")
+    is_boss = floor in DUNGEON_BOSS_FLOORS
+    enemy_base = DUNGEON_ENEMIES.get(floor, DUNGEON_ENEMIES[1]).copy()
+    enemy_base["is_boss"] = is_boss
+    if is_boss:
+        for k, m in DUNGEON_BOSS_MULT.items():
+            if k in enemy_base:
+                enemy_base[k] = int(enemy_base[k] * m)
+    return jsonify({"enemy": enemy_base, "floor": floor, "is_boss": is_boss})
+
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
 @login_required
 def mail_page():
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
@@ -4714,6 +4717,469 @@ def enforce_level_gate():
                                page=path.lstrip("/"),
                                username=session.get("username","Player"),
                                avatar_url=get_avatar_url(session.get("user_id",""), ""))
+
+# ══════════════════════════════════════════════
+# 🤝 TRADING SYSTEM
+# ══════════════════════════════════════════════
+
+@app.route("/trade")
+@login_required
+def trade_page():
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    player.setdefault("trade_offers", [])
+    player.setdefault("trade_requests", [])
+    player.setdefault("trade_history", [])
+    player.setdefault("inventory", [])
+
+    # Get outgoing trades
+    outgoing = player.get("trade_offers", [])
+
+    # Get incoming trades
+    incoming = player.get("trade_requests", [])
+
+    # Get trade history
+    history = player.get("trade_history", [])
+
+    # Enrich with partner names
+    all_players = load_players()
+    for trade in outgoing + incoming + history:
+        if "to_user" in trade and trade["to_user"]:
+            partner = all_players.get(f"{trade.get('guild_id', HOME_GUILD_ID)}_{trade['to_user']}")
+            trade["to_name"] = partner.get("name", "Unknown") if partner else "Unknown"
+        if "from_user" in trade and trade["from_user"]:
+            partner = all_players.get(f"{trade.get('guild_id', HOME_GUILD_ID)}_{trade['from_user']}")
+            trade["from_name"] = partner.get("name", "Unknown") if partner else "Unknown"
+        if "partner_id" in trade and trade["partner_id"]:
+            partner = all_players.get(f"{trade.get('guild_id', HOME_GUILD_ID)}_{trade['partner_id']}")
+            trade["partner_name"] = partner.get("name", "Unknown") if partner else "Unknown"
+
+    # Group inventory by item id for display
+    inv_counts = {}
+    for item in player.get("inventory", []):
+        iid = item.get("id", "")
+        if iid not in inv_counts:
+            inv_counts[iid] = {"item": item, "qty": 0}
+        inv_counts[iid]["qty"] += 1
+    player_inventory = [{"id": k, **v["item"], "qty": v["qty"]} for k, v in inv_counts.items()]
+
+    # Get all known items for the "requested" dropdown
+    from game_data import SHOP_ITEMS
+    all_items = []
+    for cat, items in SHOP_ITEMS.items():
+        for item in items:
+            all_items.append({
+                "id": item.get("id", ""),
+                "name": item.get("name", ""),
+                "icon": item.get("icon", ""),
+                "rarity": item.get("rarity", "Common")
+            })
+
+    return render_template("trade.html",
+                           player=player,
+                           outgoing_trades=outgoing,
+                           incoming_trades=incoming,
+                           trade_history=history,
+                           player_inventory=player_inventory,
+                           all_items=all_items,
+                           username=session.get("username", "Player"),
+                           avatar_url=get_avatar_url(session.get("user_id", ""), ""))
+
+@app.route("/api/trade/create", methods=["POST"])
+@login_required
+def api_trade_create():
+    data = request.json or {}
+    target_user_raw = data.get("target_user", "").strip()
+    from_items = data.get("from_items", [])
+    from_coins = int(data.get("from_coins", 0))
+    to_items = data.get("to_items", [])
+    to_coins = int(data.get("to_coins", 0))
+
+    if not target_user_raw:
+        return jsonify({"error": "Target user required"}), 400
+    if not from_items and from_coins <= 0 and not to_items and to_coins <= 0:
+        return jsonify({"error": "Trade must have at least one item or coins"}), 400
+
+    # Parse target user ID (support @mention format)
+    target_user = target_user_raw
+    if target_user.startswith("<@") and target_user.endswith(">"):
+        target_user = target_user[2:-1]
+        if target_user.startswith("!"):
+            target_user = target_user[1:]
+
+    guild_id = session.get("guild_id", HOME_GUILD_ID)
+    from_user = session["user_id"]
+
+    if from_user == target_user:
+        return jsonify({"error": "Cannot trade with yourself"}), 400
+
+    # Load both players
+    from_player = get_player(guild_id, from_user)
+    to_player = get_player(guild_id, target_user)
+
+    if not to_player:
+        return jsonify({"error": "Target player not found"}), 404
+
+    from_player.setdefault("inventory", [])
+    from_player.setdefault("trade_offers", [])
+    from_player.setdefault("trade_requests", [])
+    from_player.setdefault("trade_history", [])
+    to_player.setdefault("inventory", [])
+    to_player.setdefault("trade_offers", [])
+    to_player.setdefault("trade_requests", [])
+    to_player.setdefault("trade_history", [])
+
+    # Verify from_player has the offered items
+    inv_counts = {}
+    for item in from_player.get("inventory", []):
+        iid = item.get("id", "")
+        inv_counts[iid] = inv_counts.get(iid, 0) + 1
+
+    for offer_item in from_items:
+        iid = offer_item.get("id")
+        qty = int(offer_item.get("qty", 1))
+        if inv_counts.get(iid, 0) < qty:
+            return jsonify({"error": f"You don't have enough of item {iid}"}), 400
+
+    # Verify from_player has enough coins
+    if from_coins > from_player.get("coins", 0):
+        return jsonify({"error": "Not enough coins"}), 400
+
+    # Create trade offer
+    trade_id = f"trade_{int(time.time())}_{random.randint(1000,9999)}"
+    trade = {
+        "id": trade_id,
+        "guild_id": guild_id,
+        "from_user": from_user,
+        "to_user": target_user,
+        "from_items": from_items,
+        "from_coins": from_coins,
+        "to_items": to_items,
+        "to_coins": to_coins,
+        "status": "pending",
+        "created": time.time()
+    }
+
+    # Add to both players
+    from_player["trade_offers"].append(trade)
+    to_player["trade_requests"].append(trade)
+
+    save_player(guild_id, from_user, from_player)
+    save_player(guild_id, target_user, to_player)
+
+    return jsonify({"success": True, "trade_id": trade_id, "message": "Trade offer sent!"})
+
+@app.route("/api/trade/accept", methods=["POST"])
+@login_required
+def api_trade_accept():
+    trade_id = (request.json or {}).get("trade_id", "")
+    if not trade_id:
+        return jsonify({"error": "Trade ID required"}), 400
+
+    guild_id = session.get("guild_id", HOME_GUILD_ID)
+    user_id = session["user_id"]
+
+    player = get_player(guild_id, user_id)
+    player.setdefault("trade_requests", [])
+    player.setdefault("trade_offers", [])
+    player.setdefault("trade_history", [])
+    player.setdefault("inventory", [])
+
+    # Find trade in requests
+    trade = None
+    for i, t in enumerate(player["trade_requests"]):
+        if t["id"] == trade_id:
+            trade = t
+            break
+    if not trade:
+        return jsonify({"error": "Trade not found or not for you"}), 404
+
+    if trade["status"] != "pending":
+        return jsonify({"error": "Trade no longer pending"}), 400
+
+    # Load from_player
+    from_player = get_player(guild_id, trade["from_user"])
+    if not from_player:
+        return jsonify({"error": "Other player not found"}), 404
+    from_player.setdefault("inventory", [])
+    from_player.setdefault("trade_offers", [])
+    from_player.setdefault("trade_requests", [])
+    from_player.setdefault("trade_history", [])
+
+    # Verify from_player still has items
+    inv_counts = {}
+    for item in from_player.get("inventory", []):
+        iid = item.get("id", "")
+        inv_counts[iid] = inv_counts.get(iid, 0) + 1
+    for offer_item in trade["from_items"]:
+        iid = offer_item.get("id")
+        qty = int(offer_item.get("qty", 1))
+        if inv_counts.get(iid, 0) < qty:
+            return jsonify({"error": "Other player no longer has the items"}), 400
+
+    # Verify from_player has coins
+    if trade["from_coins"] > from_player.get("coins", 0):
+        return jsonify({"error": "Other player no longer has enough coins"}), 400
+
+    # Verify to_player (current user) has requested items
+    inv_counts_to = {}
+    for item in player.get("inventory", []):
+        iid = item.get("id", "")
+        inv_counts_to[iid] = inv_counts_to.get(iid, 0) + 1
+    for req_item in trade["to_items"]:
+        iid = req_item.get("id")
+        qty = int(req_item.get("qty", 1))
+        if inv_counts_to.get(iid, 0) < qty:
+            return jsonify({"error": "You don't have the requested items"}), 400
+
+    # Verify to_player has coins
+    if trade["to_coins"] > player.get("coins", 0):
+        return jsonify({"error": "You don't have enough coins"}), 400
+
+    # Execute trade - remove from from_player
+    for offer_item in trade["from_items"]:
+        iid = offer_item.get("id")
+        qty = int(offer_item.get("qty", 1))
+        removed = 0
+        new_inv = []
+        for item in from_player["inventory"]:
+            if item.get("id") == iid and removed < qty:
+                removed += 1
+            else:
+                new_inv.append(item)
+        from_player["inventory"] = new_inv
+    from_player["coins"] = from_player.get("coins", 0) - trade["from_coins"]
+
+    # Execute trade - remove from to_player
+    for req_item in trade["to_items"]:
+        iid = req_item.get("id")
+        qty = int(req_item.get("qty", 1))
+        removed = 0
+        new_inv = []
+        for item in player["inventory"]:
+            if item.get("id") == iid and removed < qty:
+                removed += 1
+            else:
+                new_inv.append(item)
+        player["inventory"] = new_inv
+    player["coins"] = player.get("coins", 0) - trade["to_coins"]
+
+    # Add received items to from_player
+    for req_item in trade["to_items"]:
+        iid = req_item.get("id")
+        qty = int(req_item.get("qty", 1))
+        # Find item template
+        from game_data import SHOP_ITEMS
+        item_template = None
+        for cat, items in SHOP_ITEMS.items():
+            for it in items:
+                if it.get("id") == iid:
+                    item_template = it
+                    break
+            if item_template:
+                break
+        if item_template:
+            for _ in range(qty):
+                from_player["inventory"].append({
+                    "id": item_template["id"],
+                    "name": item_template["name"],
+                    "icon": item_template.get("icon", ""),
+                    "type": item_template.get("type", "item"),
+                    "rarity": item_template.get("rarity", "Common")
+                })
+    from_player["coins"] = from_player.get("coins", 0) + trade["to_coins"]
+
+    # Add received items to to_player
+    for offer_item in trade["from_items"]:
+        iid = offer_item.get("id")
+        qty = int(offer_item.get("qty", 1))
+        from game_data import SHOP_ITEMS
+        item_template = None
+        for cat, items in SHOP_ITEMS.items():
+            for it in items:
+                if it.get("id") == iid:
+                    item_template = it
+                    break
+            if item_template:
+                break
+        if item_template:
+            for _ in range(qty):
+                player["inventory"].append({
+                    "id": item_template["id"],
+                    "name": item_template["name"],
+                    "icon": item_template.get("icon", ""),
+                    "type": item_template.get("type", "item"),
+                    "rarity": item_template.get("rarity", "Common")
+                })
+    player["coins"] = player.get("coins", 0) + trade["from_coins"]
+
+    # Update trade status
+    trade["status"] = "accepted"
+    trade["completed"] = time.time()
+
+    # Move from pending to history for both players
+    # Remove from from_player's trade_offers
+    from_player["trade_offers"] = [t for t in from_player["trade_offers"] if t["id"] != trade_id]
+    from_player["trade_history"].append(trade)
+
+    # Remove from to_player's trade_requests
+    player["trade_requests"] = [t for t in player["trade_requests"] if t["id"] != trade_id]
+    player["trade_history"].append(trade)
+
+    # Add summary
+    trade["partner_id"] = user_id
+    trade["partner_name"] = player.get("name", "Unknown")
+    summary_parts = []
+    if trade["from_items"]:
+        from_items_str = ", ".join(f'{i["qty"]}×{i["id"]}' for i in trade["from_items"])
+        summary_parts.append(f"You gave: {from_items_str}")
+    if trade["from_coins"]:
+        summary_parts.append(f"{trade['from_coins']} coins")
+    if trade["to_items"]:
+        to_items_str = ", ".join(f'{i["qty"]}×{i["id"]}' for i in trade["to_items"])
+        summary_parts.append(f"Received: {to_items_str}")
+    if trade["to_coins"]:
+        summary_parts.append(f"{trade['to_coins']} coins")
+    trade["summary"] = " | ".join(summary_parts)
+
+    # For from_player's history entry
+    trade_copy = trade.copy()
+    trade_copy["partner_id"] = user_id
+    trade_copy["partner_name"] = player.get("name", "Unknown")
+    # Swap summary perspective
+    summary_parts_from = []
+    if trade["to_items"]:
+        to_items_str = ", ".join(f'{i["qty"]}×{i["id"]}' for i in trade["to_items"])
+        summary_parts_from.append(f"They gave: {to_items_str}")
+    if trade["to_coins"]:
+        summary_parts_from.append(f"{trade['to_coins']} coins")
+    if trade["from_items"]:
+        from_items_str = ", ".join(f'{i["qty"]}×{i["id"]}' for i in trade["from_items"])
+        summary_parts_from.append(f"You received: {from_items_str}")
+    if trade["from_coins"]:
+        summary_parts_from.append(f"{trade['from_coins']} coins")
+    trade_copy["summary"] = " | ".join(summary_parts_from)
+
+    # Update from_player's history with correct perspective
+    from_player["trade_history"][-1] = trade_copy
+
+    save_player(guild_id, user_id, player)
+    save_player(guild_id, trade["from_user"], from_player)
+
+    return jsonify({"success": True, "message": "Trade completed!"})
+
+@app.route("/api/trade/decline", methods=["POST"])
+@login_required
+def api_trade_decline():
+    trade_id = (request.json or {}).get("trade_id", "")
+    if not trade_id:
+        return jsonify({"error": "Trade ID required"}), 400
+
+    guild_id = session.get("guild_id", HOME_GUILD_ID)
+    user_id = session["user_id"]
+
+    player = get_player(guild_id, user_id)
+    player.setdefault("trade_requests", [])
+    player.setdefault("trade_history", [])
+
+    # Find trade in requests
+    trade = None
+    for i, t in enumerate(player["trade_requests"]):
+        if t["id"] == trade_id:
+            trade = t
+            break
+    if not trade:
+        return jsonify({"error": "Trade not found or not for you"}), 404
+
+    if trade["status"] != "pending":
+        return jsonify({"error": "Trade no longer pending"}), 400
+
+    # Load from_player
+    from_player = get_player(guild_id, trade["from_user"])
+    if from_player:
+        from_player.setdefault("trade_offers", [])
+        from_player.setdefault("trade_history", [])
+        # Remove from from_player's offers
+        from_player["trade_offers"] = [t for t in from_player["trade_offers"] if t["id"] != trade_id]
+        # Add to history
+        trade["status"] = "declined"
+        trade["completed"] = time.time()
+        trade["partner_id"] = user_id
+        from_player["trade_history"].append(trade)
+        save_player(guild_id, trade["from_user"], from_player)
+
+    # Remove from player's requests and add to history
+    player["trade_requests"] = [t for t in player["trade_requests"] if t["id"] != trade_id]
+    trade["status"] = "declined"
+    trade["completed"] = time.time()
+    trade["partner_id"] = trade["from_user"]
+    player["trade_history"].append(trade)
+    save_player(guild_id, user_id, player)
+
+    return jsonify({"success": True, "message": "Trade declined"})
+
+@app.route("/api/trade/cancel", methods=["POST"])
+@login_required
+def api_trade_cancel():
+    trade_id = (request.json or {}).get("trade_id", "")
+    if not trade_id:
+        return jsonify({"error": "Trade ID required"}), 400
+
+    guild_id = session.get("guild_id", HOME_GUILD_ID)
+    user_id = session["user_id"]
+
+    player = get_player(guild_id, user_id)
+    player.setdefault("trade_offers", [])
+    player.setdefault("trade_history", [])
+
+    # Find trade in offers
+    trade = None
+    for i, t in enumerate(player["trade_offers"]):
+        if t["id"] == trade_id:
+            trade = t
+            break
+    if not trade:
+        return jsonify({"error": "Trade not found or not yours"}), 404
+
+    if trade["status"] != "pending":
+        return jsonify({"error": "Trade no longer pending"}), 400
+
+    # Load to_player
+    to_player = get_player(guild_id, trade["to_user"])
+    if to_player:
+        to_player.setdefault("trade_requests", [])
+        to_player.setdefault("trade_history", [])
+        # Remove from to_player's requests
+        to_player["trade_requests"] = [t for t in to_player["trade_requests"] if t["id"] != trade_id]
+        # Add to history
+        trade["status"] = "cancelled"
+        trade["completed"] = time.time()
+        trade["partner_id"] = trade["to_user"]
+        to_player["trade_history"].append(trade)
+        save_player(guild_id, trade["to_user"], to_player)
+
+    # Remove from player's offers and add to history
+    player["trade_offers"] = [t for t in player["trade_offers"] if t["id"] != trade_id]
+    trade["status"] = "cancelled"
+    trade["completed"] = time.time()
+    trade["partner_id"] = trade["to_user"]
+    player["trade_history"].append(trade)
+    save_player(guild_id, user_id, player)
+
+    return jsonify({"success": True, "message": "Trade cancelled"})
+
+@app.route("/api/trade/list")
+@login_required
+def api_trade_list():
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    player.setdefault("trade_offers", [])
+    player.setdefault("trade_requests", [])
+    player.setdefault("trade_history", [])
+    return jsonify({
+        "outgoing": player["trade_offers"],
+        "incoming": player["trade_requests"],
+        "history": player["trade_history"][-20:]  # Last 20
+    })
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("WEB_PORT", 8081))

@@ -1,13 +1,24 @@
 {
+  "version": "4.2.0",
   "name": "DTEmpire Adventure",
-  "version": "5.3.0",
-  "updated": "2026-08-04",
-  "changelog": [
-    "Added 18 non-unique starter classes across five rarity tiers",
-    "Starter assignment now rolls rarity first with 40/30/18/9/3 tier weights",
-    "UNIQUE classes remain globally scarce progression rewards and cannot be rolled at signup",
-    "Verified sell, pet, equipment, guild, and jobs routes",
-    "Added encrypted Cloudflare R2 disaster-recovery backups for Adventure JSON state"
+  "build_date": "2026-08-25",
+  "features": [
+    "Trading System - Player-to-player item and coin trading",
+    "Trade offers with items and coins",
+    "Accept/decline/cancel trades",
+    "Trade history tracking"
   ],
-  "author": "Hermes"
+  "changelog": [
+    {
+      "version": "4.2.0",
+      "date": "2026-08-25",
+      "changes": [
+        "Added Trading System (/trade page and API)",
+        "Player-to-player item and coin trading",
+        "Trade offers with accept/decline/cancel",
+        "Trade history with summaries",
+        "Inventory integration for traded items"
+      ]
+    }
+  ]
 }
