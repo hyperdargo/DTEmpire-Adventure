@@ -861,6 +861,19 @@ def api_temple_offer():
     amount = int((request.json or {}).get("amount", 0))
     if amount not in (100, 500, 1000):
         return jsonify({"error": "Invalid offering"}), 400
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    if player.get("coins", 0) < amount:
+        return jsonify({"error": "Not enough coins"}), 400
+    player["coins"] -= amount
+    xp_gain = amount // 2
+    player["xp"] = player.get("xp", 0) + xp_gain
+    from game_logic import level_up as _level_up_temple
+    levels_gained = _level_up_temple(player)
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+    return jsonify({
+        "success": True, "coins": player["coins"], "xp_gain": xp_gain,
+        "leveled_up": levels_gained > 0, "level": player.get("level", 1),
+    })
 
 @app.route("/api/dungeon/preview", methods=["POST"])
 @login_required
