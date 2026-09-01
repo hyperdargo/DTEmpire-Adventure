@@ -67,6 +67,10 @@
         <div style="width:100%;height:8px;background:#111;border:2px solid #333;margin-bottom:6px;">
           <div id="cpHpBar" style="height:100%;background:linear-gradient(90deg,#166534,#4ade80);transition:width .3s;border-radius:1px;"></div>
         </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-family:'VT323',monospace;font-size:13px;">
+          <span id="enemyName" style="color:#ffd54a;">—</span>
+          <span id="enemyHP" style="color:#ff4757;">—</span>
+        </div>
         <div id="combatLog"><span style="color:#555;">Click a region on the map.</span></div>
       </div>
 
@@ -467,6 +471,16 @@ function selectZone(zone) {
     btn.textContent = `⚔️ Progress to ${zone.name}`;
   } else if(current) {
     btn.textContent = `⚔️ ENTER FLOOR ${PLAYER_FLOOR}`;
+    // Fetch enemy preview for current floor
+    fetch('/api/dungeon/preview', {method:'POST', headers:{'Content-Type':'application/json'}})
+      .then(r => r.json().catch(()=>({})))
+      .then(data => {
+        if(data.enemy) {
+          document.getElementById('enemyName').textContent = data.enemy.name + (data.is_boss ? ' 👑' : '');
+          document.getElementById('enemyHP').textContent = `❤️ ${data.enemy.hp}/${data.enemy.hp}`;
+        }
+      })
+      .catch(() => {});
   }
 
   // Reset combat panel

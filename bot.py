@@ -2449,18 +2449,31 @@ ADVENTURE_LOCATIONS = [
         "boss_chance": 0.008,
     },
     {
-        "name": "������� Void Nexus",
+        "name": "🌑 Void Nexus",
         "description": "A swirling vortex of nothingness where reality unravels. The fabric of existence frays at the edges, and entities from beyond the known universe stir in the darkness, waiting for the veil to tear completely.",
         "min_level": 31,
         "monsters": [
-            {"name": "������� Void Walker", "hp": 4500, "atk": 420, "def": 380, "xp": 1100, "coins": (1300, 1900)},
-            {"name": "���� Null Entity", "hp": 5000, "atk": 390, "def": 420, "xp": 1150, "coins": (1400, 2000)},
-            {"name": "���� Entropy Beast", "hp": 4200, "atk": 460, "def": 350, "xp": 1080, "coins": (1250, 1850)},
-            {"name": "���� Chaos Harbinger", "hp": 4800, "atk": 440, "def": 390, "xp": 1180, "coins": (1350, 1950)},
+            {"name": "🌑 Void Walker", "hp": 4500, "atk": 420, "def": 380, "xp": 1100, "coins": (1300, 1900)},
+            {"name": "⚫ Null Entity", "hp": 5000, "atk": 390, "def": 420, "xp": 1150, "coins": (1400, 2000)},
+            {"name": "🌀 Entropy Beast", "hp": 4200, "atk": 460, "def": 350, "xp": 1080, "coins": (1250, 1850)},
+            {"name": "🌪️ Chaos Harbinger", "hp": 4800, "atk": 440, "def": 390, "xp": 1180, "coins": (1350, 1950)},
         ],
-        "boss": {"name": "����� The Void Sovereign", "hp": 18000, "atk": 500, "def": 420, "xp": 14000, "coins": (14000, 28000)},
+        "boss": {"name": "👑 The Void Sovereign", "hp": 18000, "atk": 500, "def": 420, "xp": 14000, "coins": (14000, 28000)},
         "boss_chance": 0.007,
     },
+    {
+        "name": "⚡ Primordial Peak",
+        "description": "The highest summit of creation, where the raw energy of the universe's birth still crackles through ancient stone. Primordial elementals and the architects of reality's foundation guard secrets older than time itself.",
+        "min_level": 32,
+        "monsters": [
+            {"name": "⚡ Primordial Spark", "hp": 5500, "atk": 520, "def": 450, "xp": 1300, "coins": (1600, 2400)},
+            {"name": "🌋 Magma Titan", "hp": 6000, "atk": 480, "def": 520, "xp": 1350, "coins": (1700, 2500)},
+            {"name": "🌪️ Storm Avatar", "hp": 5200, "atk": 560, "def": 420, "xp": 1280, "coins": (1550, 2350)},
+            {"name": "✨ Cosmic Warden", "hp": 5800, "atk": 540, "def": 480, "xp": 1400, "coins": (1650, 2450)},
+        ],
+        "boss": {"name": "⚡ Primordius, The First Born", "hp": 22000, "atk": 600, "def": 500, "xp": 18000, "coins": (18000, 36000)},
+        "boss_chance": 0.006,
+    }
 ]
 
 # ═══════════════════════════════════════════════════════════════
