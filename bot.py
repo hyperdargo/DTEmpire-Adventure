@@ -67,6 +67,14 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.3.2",
+        "date": "2026-09-03",
+        "changes": [
+            "⚡ New shop item: Primordius' Core (1,600,000 coins) — +4600 ATK, +4600 DEF, +26000 max HP permanently",
+            "- By Hermes",
+        ],
+    },
+    {
         "version": "v4.4",
         "date": "2026-07-28",
         "changes": [
@@ -2095,6 +2103,7 @@ def get_default_shop(guild_id):
                 {"id": "chrono_core", "name": "⏳ Chrono Core", "price": 900000, "desc": "+3500 ATK & +3500 DEF & +18000 max HP permanently"},
                 {"id": "trench_treasure", "name": "💠 Trench Treasure", "price": 200000, "desc": "+1600 ATK & +1600 DEF & +6500 max HP permanently"},
                 {"id": "astral_convergence", "name": "🌌 Astral Convergence", "price": 1200000, "desc": "+4000 ATK & +4000 DEF & +22000 max HP permanently"},
+                {"id": "primordius_core", "name": "⚡ Primordius' Core", "price": 1600000, "desc": "+4600 ATK & +4600 DEF & +26000 max HP permanently"},
             ]
         }
         save_guild_shops(shops)

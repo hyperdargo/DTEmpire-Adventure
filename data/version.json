@@ -1,7 +1,7 @@
 {
-  "version": "4.3.1",
+  "version": "4.3.2",
   "name": "DTEmpire Adventure",
-  "build_date": "2026-09-02",
+  "build_date": "2026-09-03",
   "features": [
     "Trading System - Player-to-player item and coin trading",
     "Trade offers with items and coins",
@@ -10,10 +10,18 @@
   ],
   "changelog": [
     {
+      "version": "4.3.2",
+      "date": "2026-09-03",
+      "notes": [
+        "New shop item: ⚡ Primordius' Core (1,600,000 coins) — +4600 ATK & +4600 DEF & +26000 max HP permanently, top-tier upgrade beyond Astral Convergence for endgame players past Primordial Peak.",
+        "- By Hermes"
+      ]
+    },
+    {
       "version": "4.3.1",
       "date": "2026-09-02",
       "notes": [
-        "Fixed Temple of Elders offering (/api/temple/offer) \u2014 endpoint validated amount but never processed the donation, causing coin offerings to silently fail with no response. Now correctly deducts coins, grants XP (amount/2), and applies level-ups.",
+        "Fixed Temple of Elders offering (/api/temple/offer) — endpoint validated amount but never processed the donation, causing coin offerings to silently fail with no response. Now correctly deducts coins, grants XP (amount/2), and applies level-ups.",
         "- By Hermes"
       ]
     },
@@ -21,8 +29,8 @@
       "version": "4.3.0",
       "date": "2026-09-01",
       "changes": [
-        "New location: Primordial Peak (Lv.32+) \u2014 highest summit with Primordial Spark, Magma Titan, Storm Avatar, Cosmic Warden + Primordius, The First Born boss",
-        "Regenerated adventure_locations.json and guild_shops.json caches (fixed a stale corrupted guild_shops.json \u2014 items were flattened to strings, restored to full weapons/armor/potions/special dicts)",
+        "New location: Primordial Peak (Lv.32+) — highest summit with Primordial Spark, Magma Titan, Storm Avatar, Cosmic Warden + Primordius, The First Born boss",
+        "Regenerated adventure_locations.json and guild_shops.json caches (fixed a stale corrupted guild_shops.json — items were flattened to strings, restored to full weapons/armor/potions/special dicts)",
         "Dungeon UI zone selector updated with new Primordial Peak entry",
         "- By Hermes"
       ]
