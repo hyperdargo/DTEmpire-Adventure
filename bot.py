@@ -67,6 +67,14 @@ logger = logging.getLogger("HermesBot")
 
 CHANGELOG = [
     {
+        "version": "v4.3.3",
+        "date": "2026-09-04",
+        "changes": [
+            "💎 2 new monsters in Crystal Caverns: Diamond Wraith (+58 ATK) and Obsidian Guardian (+60 DEF)",
+            "- By Hermes",
+        ],
+    },
+    {
         "version": "v4.3.2",
         "date": "2026-09-03",
         "changes": [
@@ -2289,6 +2297,8 @@ ADVENTURE_LOCATIONS = [
             {"name": "🔮 Prismatic Golem", "hp": 250, "atk": 42, "def": 48, "xp": 110, "coins": (90, 140)},
             {"name": "✨ Shimmer Wisp", "hp": 130, "atk": 62, "def": 22, "xp": 88, "coins": (70, 115)},
             {"name": "🪨 Gemstone Colossus", "hp": 320, "atk": 38, "def": 55, "xp": 120, "coins": (100, 160)},
+            {"name": "💎 Diamond Wraith", "hp": 290, "atk": 58, "def": 40, "xp": 130, "coins": (105, 165)},
+            {"name": "🗿 Obsidian Guardian", "hp": 380, "atk": 45, "def": 60, "xp": 140, "coins": (115, 175)},
         ],
         "boss": {"name": "👑 Crystal Emperor", "hp": 1200, "atk": 85, "def": 65, "xp": 600, "coins": (600, 1200)},
         "boss_chance": 0.06,
