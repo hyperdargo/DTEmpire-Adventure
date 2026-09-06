@@ -2395,6 +2395,18 @@ def api_heal():
     save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
     return jsonify({"success": True, "message": f"Healed {healed} HP!", "player": player})
 
+# ── DAILY LOGIN STREAK ────────────────────────────────
+# Claims are once per 24h; a streak survives a 48h gap so one late day is forgiven.
+STREAK_GRACE = 172800  # 48h
+STREAK_TIERS = ((30, 2.0), (14, 1.75), (7, 1.5), (3, 1.25))
+
+def streak_multiplier(streak):
+    """Reward multiplier for a given streak length (capped at 2.0x)."""
+    for days, mult in STREAK_TIERS:
+        if streak >= days:
+            return mult
+    return 1.0
+
 @app.route("/api/daily", methods=["POST"])
 @login_required
 def api_daily():
@@ -2403,8 +2415,15 @@ def api_daily():
     if now - player.get("last_daily", 0) < 86400:
         remaining = int(86400 - (now - player.get("last_daily", 0)))
         return jsonify({"error": f"Cooldown! {remaining}s remaining"}), 429
-    base_coins = 50 + player["level"] * 10
-    bonus_xp = 20 + player["level"] * 5
+    # ── Login streak: continues if claimed within 48h of last claim, else resets ──
+    last = player.get("last_daily", 0)
+    streak = player.get("daily_streak", 0) + 1 if (last and now - last < STREAK_GRACE) else 1
+    player["daily_streak"] = streak
+    player["best_daily_streak"] = max(player.get("best_daily_streak", 0), streak)
+    mult = streak_multiplier(streak)
+
+    base_coins = int((50 + player["level"] * 10) * mult)
+    bonus_xp = int((20 + player["level"] * 5) * mult)
     bonus_text = ""
     roll = random.random()
     if roll < 0.05:
@@ -2416,6 +2435,15 @@ def api_daily():
     player["coins"] += base_coins
     bump_mission(player, "daily")
     bonus_coins = 500 if roll < 0.05 else (100 if roll < 0.2 else 0)
+
+    # Milestone chest on every 7th consecutive day
+    milestone = ""
+    if streak % 7 == 0:
+        chest = 1000 * (streak // 7)
+        player["coins"] += chest
+        bonus_coins += chest
+        milestone = f"🏆 {streak}-day streak chest: +{chest} coins!"
+
     bump_mission(player, "coins", base_coins + bonus_coins)
     player["xp"] += bonus_xp
     player["last_daily"] = now
@@ -2426,11 +2454,33 @@ def api_daily():
     notify_discord(
         f"🎁 Daily Reward — {uname}",
         f"Claimed daily reward: 🪙 +{base_coins} coins | ⭐ +{bonus_xp} XP"
-        + (f"\n{bonus_text}" if bonus_text else ""),
+        f"\n🔥 Streak: {streak} day(s) (x{mult:g} rewards)"
+        + (f"\n{bonus_text}" if bonus_text else "")
+        + (f"\n{milestone}" if milestone else ""),
         color=0x57f287,
     )
 
-    return jsonify({"success": True, "coins": base_coins, "xp": bonus_xp, "bonus": bonus_text, "player": player})
+    return jsonify({"success": True, "coins": base_coins, "xp": bonus_xp, "bonus": bonus_text,
+                    "streak": streak, "multiplier": mult, "milestone": milestone, "player": player})
+
+@app.route("/api/daily/status")
+@login_required
+def api_daily_status():
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    now = time.time()
+    last = player.get("last_daily", 0)
+    streak = player.get("daily_streak", 0)
+    # Streak already expired but not yet reset by a claim — show it as broken.
+    if last and now - last >= STREAK_GRACE:
+        streak = 0
+    return jsonify({
+        "streak": streak,
+        "best_streak": player.get("best_daily_streak", 0),
+        "multiplier": streak_multiplier(streak + 1),
+        "ready": now - last >= 86400,
+        "seconds_remaining": max(0, int(86400 - (now - last))),
+        "next_milestone": 7 - (streak % 7),
+    })
 
 @app.route("/inventory")
 @login_required
