@@ -816,6 +816,19 @@ def dungeon_page():
         avatar_url=session_avatar(session),
     )
 
+# ── BESTIARY ──
+@app.route("/bestiary")
+@login_required
+def bestiary_page():
+    """Read-only monster compendium across all locations."""
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    locations = sorted(ADVENTURE_LOCATIONS, key=lambda l: l.get("min_level", 0))
+    return render_template(
+        "bestiary.html", player=player, locations=locations,
+        username=session.get("username", "Player"),
+        avatar_url=session_avatar(session),
+    )
+
 @app.route("/api/dungeon/combat", methods=["POST"])
 @login_required
 def api_dungeon_combat():
@@ -2104,11 +2117,13 @@ def api_shop_buy():
              "defense": max(1, int(base[1] * mult)) if base[1] else 0,
              "hp": max(1, int(base[2] * mult)) if base[2] else 0}
     if category == "potion" and (item.get("heal") or item.get("xp_boost")):
-        # 🧪 Potions heal or grant XP — rarity gacha scales the effect
+        # 🧪 Potions heal and/or grant XP — rarity gacha scales the effect.
+        # Hybrids carry BOTH keys; keep both or the second effect is lost.
+        stats = {}
+        if item.get("heal"):
+            stats["heal"] = max(1, int(item["heal"] * mult))
         if item.get("xp_boost"):
-            stats = {"xp": max(1, int(item.get("xp_boost", 0) * mult))}
-        else:
-            stats = {"heal": max(1, int(item["heal"] * mult))}
+            stats["xp"] = max(1, int(item["xp_boost"] * mult))
     inv_item = {
         "name": item.get("name"), "type": _SHOP_TYPE_MAP.get(category, category),
         "icon": _SHOP_ICON.get(category, "📦"), "rarity": rolled,
@@ -2253,6 +2268,29 @@ def api_equip():
         item_type = str(item.get("type", "weapon")).lower()
         heal_amt = potion_heal_amount(item)
         xp_amt = int(item.get("stats", {}).get("xp", 0) or 0)
+        # Potions may carry heal, xp, or BOTH. potion_heal_amount() falls back to a
+        # default heal for any potion, so an xp-only potion would otherwise be caught
+        # by the heal branch and silently lose its XP. Handle combined effects first.
+        if "potion" in item_type and xp_amt > 0:
+            has_heal = int((item.get("stats") or {}).get("heal", 0) or 0) > 0
+            calc_stats(player)
+            healed = 0
+            if has_heal:
+                healed = min(player["max_health"], player["health"] + heal_amt) - player["health"]
+                player["health"] = min(player["max_health"], player["health"] + heal_amt)
+            player["xp"] = player.get("xp", 0) + xp_amt
+            inventory.remove(item)
+            player["inventory"] = inventory
+            from game_logic import level_up as _level_up_hybrid
+            levels = _level_up_hybrid(player)
+            save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+            msg = f"🧪 Drank {item.get('name', 'Potion')}!"
+            if healed:
+                msg += f" Restored {healed} HP."
+            msg += f" Gained {xp_amt:,} XP."
+            if levels:
+                msg += f" Leveled up to {player.get('level')}!"
+            return jsonify({"success": True, "message": msg})
         if "potion" in item_type and heal_amt > 0:
             calc_stats(player)
             if player["health"] >= player["max_health"]:
