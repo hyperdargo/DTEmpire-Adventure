@@ -770,6 +770,7 @@ def api_tower_combat():
     _eggs_after = len([i for i in player.get("inventory", []) if isinstance(i, dict) and i.get("type") == "egg"])
     check_milestones(player)
     check_titles(player)
+    grant_achievements(player)
 
     mail_reward = roll_floor_reward(floor, enemy["is_boss"])
     player.setdefault("mail", []).append({
@@ -815,6 +816,23 @@ def dungeon_page():
         "dungeon.html", player=player, username=session.get("username", "Player"),
         avatar_url=session_avatar(session),
     )
+
+def grant_achievements(player):
+    """Evaluate achievements and mail the player each new unlock.
+
+    check_achievements() already appends the name to player["achievements"]
+    and pays the +20 coin bonus, so this only handles notification.
+    """
+    new_achs = check_achievements(player)
+    for a in new_achs:
+        player.setdefault("mail", []).append({
+            "subject": f"{a['emoji']} ACHIEVEMENT UNLOCKED",
+            "from": "System",
+            "body": f"{a['name']} — {a['desc']}\n+20 coins awarded.",
+            "reward": None, "claimed": False, "floor": 0,
+        })
+    return new_achs
+
 
 # ── BESTIARY ──
 def _bestiary_record(player, name):
@@ -1704,6 +1722,7 @@ def api_adventure():
         player["monsters_killed"] = player.get("monsters_killed", 0) + 1
         player["total_wins"] = player.get("total_wins", 0) + 1
         _bestiary_record(player, enemy["name"])
+        grant_achievements(player)
         if is_boss:
             player["bosses_killed"] = player.get("bosses_killed", 0) + 1
         player["adventures_completed"] = player.get("adventures_completed", 0) + 1
@@ -2804,13 +2823,10 @@ def achievements_page():
     """Achievements page showing all available and unlocked achievements."""
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
     from game_data import ACHIEVEMENTS
-    from game_logic import check_achievements
-    
-    # Check for new achievements
-    new_achs = check_achievements(player)
+
+    # Check for new achievements (grant_achievements records, rewards + mails)
+    new_achs = grant_achievements(player)
     if new_achs:
-        for a in new_achs:
-            player.setdefault("achievements", []).append(a["name"])
         save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
     
     unlocked = player.get("achievements", [])

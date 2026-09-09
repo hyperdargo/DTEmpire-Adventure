@@ -1,5 +1,5 @@
 {
-  "version": "4.5.0",
+  "version": "4.6.0",
   "name": "DTEmpire Adventure",
   "build_date": "2026-09-08",
   "features": [
@@ -13,6 +13,17 @@
     "Bestiary discovery tracking with per-monster kill counts"
   ],
   "changelog": [
+    {
+      "version": "4.6.0",
+      "date": "2026-09-10",
+      "notes": [
+        "Achievements now unlock the moment you earn them — no need to open the Achievements page first.",
+        "Every unlock arrives as mail with its name, description and the +20 coin bonus.",
+        "Tower floor clears now check achievements too, so floor milestones unlock correctly.",
+        "Fixed: achievement names were being recorded twice, cluttering your unlocked list.",
+        "- By Hermes"
+      ]
+    },
     {
       "version": "4.5.0",
       "date": "2026-09-08",
