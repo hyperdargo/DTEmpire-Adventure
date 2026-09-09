@@ -1,14 +1,42 @@
 {
-  "version": "4.3.4",
+  "version": "4.5.0",
   "name": "DTEmpire Adventure",
-  "build_date": "2026-09-06",
+  "build_date": "2026-09-08",
   "features": [
+    "Daily login streak with escalating reward multipliers (up to 2x)",
+    "Streak chest every 7 consecutive days",
+    "Live streak badge on the inventory page",
     "Trading System - Player-to-player item and coin trading",
     "Trade offers with items and coins",
     "Accept/decline/cancel trades",
-    "Trade history tracking"
+    "Trade history tracking",
+    "Bestiary discovery tracking with per-monster kill counts"
   ],
   "changelog": [
+    {
+      "version": "4.5.0",
+      "date": "2026-09-08",
+      "notes": [
+        "Bestiary is now a living record — every monster you defeat is permanently logged.",
+        "Undefeated creatures show dimmed and marked 'undiscovered' until you slay one.",
+        "Each defeated monster and boss shows a personal kill counter (⚔ N slain).",
+        "New discovery progress line at the top: Discovered X / Y creatures.",
+        "Fixed: adventure victories were not counting toward 'total_wins', so win-based achievements never unlocked.",
+        "- By Hermes"
+      ]
+    },
+    {
+      "version": "4.4.0",
+      "date": "2026-09-07",
+      "notes": [
+        "Daily Login Streak — claim the daily reward on consecutive days to build a streak.",
+        "Streak rewards scale: 3 days = x1.25, 7 = x1.5, 14 = x1.75, 30+ = x2 coins and XP.",
+        "Every 7th day in a row grants a bonus streak chest (1,000 coins x weeks completed).",
+        "A streak survives a 48h gap, so one late day is forgiven before it resets.",
+        "New /api/daily/status endpoint and a live streak badge on the Inventory page.",
+        "- By Hermes"
+      ]
+    },
     {
       "version": "4.3.4",
       "date": "2026-09-06",

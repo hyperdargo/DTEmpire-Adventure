@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 Bestiary — DTEmpire Adventure</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e2e8f0;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:24px}
+h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.subtitle{color:#888;margin-bottom:24px;font-size:.95em}
+.loc-block{margin-bottom:28px}
+.loc-header{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid #222;padding-bottom:8px;margin-bottom:12px}
+.loc-header .loc-name{font-weight:700;font-size:1.1em}
+.loc-header .loc-lvl{font-size:.78em;color:#888}
+.mon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.mon-card{background:rgba(255,255,255,0.02);border:1px solid #222;border-radius:10px;padding:12px}
+.mon-card.boss{border-color:#555;background:rgba(255,255,255,0.04)}
+.mon-name{font-weight:700;font-size:.92em;margin-bottom:6px}
+.mon-stats{display:flex;flex-wrap:wrap;gap:8px;font-size:.76em;color:#aaa}
+.mon-stats span{background:#151515;border:1px solid #262626;border-radius:6px;padding:2px 6px}
+.mon-card.undiscovered{opacity:.42}
+.mon-card.undiscovered .mon-name{color:#777}
+.kills{background:#1d1d1d !important;border-color:#3a3a3a !important;color:#ddd}
+.undisc-tag{font-size:.68em;color:#777;margin-left:6px;font-weight:400}
+.progress{color:#aaa;font-size:.9em;margin-bottom:20px}
+.boss-tag{display:inline-block;font-size:.68em;color:#e2e8f0;background:#333;border-radius:6px;padding:1px 6px;margin-left:6px}
+</style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="container">
+  <h2>📖 Bestiary</h2>
+  <div class="subtitle">Every monster encountered across {{ locations|length }} locations.</div>
+  {% set total = namespace(n=0, d=0) %}
+  {% for loc in locations %}{% for m in loc.monsters %}{% set total.n = total.n + 1 %}{% if seen.get(m.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endfor %}{% if loc.boss %}{% set total.n = total.n + 1 %}{% if seen.get(loc.boss.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endif %}{% endfor %}
+  <div class="progress">Discovered <b>{{ total.d }}</b> / {{ total.n }} creatures</div>
+
+  {% for loc in locations %}
+  <div class="loc-block">
+    <div class="loc-header">
+      <span class="loc-name">{{ loc.name }}</span>
+      <span class="loc-lvl">Lv.{{ loc.min_level }}+</span>
+    </div>
+    <div class="mon-grid">
+      {% for m in loc.monsters %}
+      <div class="mon-card{% if not seen.get(m.name) %} undiscovered{% endif %}">
+        <div class="mon-name">{{ m.name }}{% if not seen.get(m.name) %}<span class="undisc-tag">undiscovered</span>{% endif %}</div>
+        <div class="mon-stats">
+          <span>❤️ {{ m.hp }}</span>
+          <span>⚔️ {{ m.atk }}</span>
+          <span>🛡️ {{ m.def }}</span>
+          <span>✨ {{ m.xp }} XP</span>
+          <span>💰 {{ m.coins[0] }}-{{ m.coins[1] }}</span>
+          {% if seen.get(m.name) %}<span class="kills">⚔ {{ seen[m.name] }} slain</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if loc.boss %}
+      <div class="mon-card boss{% if not seen.get(loc.boss.name) %} undiscovered{% endif %}">
+        <div class="mon-name">{{ loc.boss.name }}<span class="boss-tag">BOSS</span></div>
+        <div class="mon-stats">
+          <span>❤️ {{ loc.boss.hp }}</span>
+          <span>⚔️ {{ loc.boss.atk }}</span>
+          <span>🛡️ {{ loc.boss.def }}</span>
+          <span>✨ {{ loc.boss.xp }} XP</span>
+          <span>💰 {{ loc.boss.coins[0] }}-{{ loc.boss.coins[1] }}</span>
+          {% if seen.get(loc.boss.name) %}<span class="kills">⚔ {{ seen[loc.boss.name] }} slain</span>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</body>
+</html>

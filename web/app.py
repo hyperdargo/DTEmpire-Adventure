@@ -817,14 +817,23 @@ def dungeon_page():
     )
 
 # ── BESTIARY ──
+def _bestiary_record(player, name):
+    """Track per-monster kill counts for bestiary discovery."""
+    b = player.get("bestiary")
+    if not isinstance(b, dict):
+        b = {}
+    b[name] = b.get(name, 0) + 1
+    player["bestiary"] = b
+
 @app.route("/bestiary")
 @login_required
 def bestiary_page():
     """Read-only monster compendium across all locations."""
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    seen = player.get("bestiary", {})
     locations = sorted(ADVENTURE_LOCATIONS, key=lambda l: l.get("min_level", 0))
     return render_template(
-        "bestiary.html", player=player, locations=locations,
+        "bestiary.html", player=player, locations=locations, seen=seen,
         username=session.get("username", "Player"),
         avatar_url=session_avatar(session),
     )
@@ -1693,6 +1702,8 @@ def api_adventure():
         player["coins"] = player.get("coins", 0) + coin_reward
         player["xp"] = player.get("xp", 0) + xp_reward
         player["monsters_killed"] = player.get("monsters_killed", 0) + 1
+        player["total_wins"] = player.get("total_wins", 0) + 1
+        _bestiary_record(player, enemy["name"])
         if is_boss:
             player["bosses_killed"] = player.get("bosses_killed", 0) + 1
         player["adventures_completed"] = player.get("adventures_completed", 0) + 1
