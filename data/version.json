@@ -1,5 +1,5 @@
 {
-  "version": "4.6.0",
+  "version": "4.7.0",
   "name": "DTEmpire Adventure",
   "build_date": "2026-09-08",
   "features": [
@@ -13,6 +13,17 @@
     "Bestiary discovery tracking with per-monster kill counts"
   ],
   "changelog": [
+    {
+      "version": "4.7.0",
+      "date": "2026-09-12",
+      "notes": [
+        "🏅 Bestiary Mastery: every monster now has 4 mastery ranks (Novice 10 kills, Hunter 50, Slayer 200, Nemesis 500).",
+        "Reaching a rank pays coins instantly (250 / 1,500 / 8,000 / 30,000) and sends a mail notice — each rank awards only once.",
+        "Existing kill counts carry over, so veteran hunters claim back-ranks on their next kill.",
+        "Bestiary page shows your rank badge next to each monster and boss.",
+        "- By Hermes"
+      ]
+    },
     {
       "version": "4.6.0",
       "date": "2026-09-10",

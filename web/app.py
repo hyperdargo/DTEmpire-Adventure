@@ -842,6 +842,38 @@ def _bestiary_record(player, name):
         b = {}
     b[name] = b.get(name, 0) + 1
     player["bestiary"] = b
+    _bestiary_mastery(player, name, b[name])
+
+
+# Bestiary Mastery: (kills_required, rank_name, coin_reward)
+MASTERY_TIERS = [
+    (10, "Novice", 250),
+    (50, "Hunter", 1500),
+    (200, "Slayer", 8000),
+    (500, "Nemesis", 30000),
+]
+
+
+def _bestiary_mastery(player, name, kills):
+    """Award a one-time coin bonus + mail when a monster kill milestone is hit."""
+    ranks = player.get("bestiary_mastery")
+    if not isinstance(ranks, dict):
+        ranks = {}
+    current = ranks.get(name, 0)
+    for idx, (need, rank, coins) in enumerate(MASTERY_TIERS, start=1):
+        if idx <= current or kills < need:
+            continue
+        ranks[name] = idx
+        current = idx
+        player["coins"] = player.get("coins", 0) + coins
+        player.setdefault("mail", []).append({
+            "subject": "\U0001F3C5 MASTERY: %s" % rank,
+            "from": "Bestiary",
+            "body": "%s rank reached against %s (%d defeated).\n+%d coins awarded."
+                    % (rank, name, kills, coins),
+            "reward": None, "claimed": False, "floor": 0,
+        })
+    player["bestiary_mastery"] = ranks
 
 @app.route("/bestiary")
 @login_required
@@ -849,9 +881,14 @@ def bestiary_page():
     """Read-only monster compendium across all locations."""
     player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
     seen = player.get("bestiary", {})
+    mastery = player.get("bestiary_mastery", {})
+    if not isinstance(mastery, dict):
+        mastery = {}
+    rank_names = {i: t[1] for i, t in enumerate(MASTERY_TIERS, start=1)}
+    ranks = {k: rank_names.get(v, "") for k, v in mastery.items()}
     locations = sorted(ADVENTURE_LOCATIONS, key=lambda l: l.get("min_level", 0))
     return render_template(
-        "bestiary.html", player=player, locations=locations, seen=seen,
+        "bestiary.html", ranks=ranks, player=player, locations=locations, seen=seen,
         username=session.get("username", "Player"),
         avatar_url=session_avatar(session),
     )

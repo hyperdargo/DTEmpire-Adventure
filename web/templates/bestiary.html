@@ -24,7 +24,8 @@ h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
 .mon-stats span{background:#151515;border:1px solid #262626;border-radius:6px;padding:2px 6px}
 .mon-card.undiscovered{opacity:.42}
 .mon-card.undiscovered .mon-name{color:#777}
-.kills{background:#1d1d1d !important;border-color:#3a3a3a !important;color:#ddd}
+.mastery{background:#111;border:1px solid #555;color:#eee;padding:1px 6px;border-radius:3px;font-size:11px;margin-right:4px}
+    .kills{background:#1d1d1d !important;border-color:#3a3a3a !important;color:#ddd}
 .undisc-tag{font-size:.68em;color:#777;margin-left:6px;font-weight:400}
 .progress{color:#aaa;font-size:.9em;margin-bottom:20px}
 .boss-tag{display:inline-block;font-size:.68em;color:#e2e8f0;background:#333;border-radius:6px;padding:1px 6px;margin-left:6px}
@@ -37,7 +38,8 @@ h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
   <h2>📖 Bestiary</h2>
   <div class="subtitle">Every monster encountered across {{ locations|length }} locations.</div>
   {% set total = namespace(n=0, d=0) %}
-  {% for loc in locations %}{% for m in loc.monsters %}{% set total.n = total.n + 1 %}{% if seen.get(m.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endfor %}{% if loc.boss %}{% set total.n = total.n + 1 %}{% if seen.get(loc.boss.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endif %}{% endfor %}
+  {% for loc in locations %}{% for m in loc.monsters %}{% set total.n = total.n + 1 %}{% if seen.get(m.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endfor %}{% if loc.boss %}{% set total.n = total.n + 1 %}{% if ranks.get(loc.boss.name) %}<span class="mastery">🏅 {{ ranks[loc.boss.name] }}</span>{% endif %}
+          {% if seen.get(loc.boss.name) %}{% set total.d = total.d + 1 %}{% endif %}{% endif %}{% endfor %}
   <div class="progress">Discovered <b>{{ total.d }}</b> / {{ total.n }} creatures</div>
 
   {% for loc in locations %}
@@ -56,6 +58,7 @@ h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
           <span>🛡️ {{ m.def }}</span>
           <span>✨ {{ m.xp }} XP</span>
           <span>💰 {{ m.coins[0] }}-{{ m.coins[1] }}</span>
+          {% if ranks.get(m.name) %}<span class="mastery">🏅 {{ ranks[m.name] }}</span>{% endif %}
           {% if seen.get(m.name) %}<span class="kills">⚔ {{ seen[m.name] }} slain</span>{% endif %}
         </div>
       </div>
