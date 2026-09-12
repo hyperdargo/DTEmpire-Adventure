@@ -25,6 +25,7 @@ h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
 .mon-card.undiscovered{opacity:.42}
 .mon-card.undiscovered .mon-name{color:#777}
 .mastery{background:#111;border:1px solid #555;color:#eee;padding:1px 6px;border-radius:3px;font-size:11px;margin-right:4px}
+.mbonus{color:#9a9a9a;font-size:10px;letter-spacing:.3px}
     .kills{background:#1d1d1d !important;border-color:#3a3a3a !important;color:#ddd}
 .undisc-tag{font-size:.68em;color:#777;margin-left:6px;font-weight:400}
 .progress{color:#aaa;font-size:.9em;margin-bottom:20px}
@@ -58,7 +59,7 @@ h2{margin-bottom:4px;display:flex;align-items:center;gap:8px}
           <span>🛡️ {{ m.def }}</span>
           <span>✨ {{ m.xp }} XP</span>
           <span>💰 {{ m.coins[0] }}-{{ m.coins[1] }}</span>
-          {% if ranks.get(m.name) %}<span class="mastery">🏅 {{ ranks[m.name] }}</span>{% endif %}
+          {% if ranks.get(m.name) %}<span class="mastery">🏅 {{ ranks[m.name] }}{% if bonuses.get(m.name) %} <span class="mbonus">+{{ bonuses[m.name][0] }} ATK / +{{ bonuses[m.name][1] }} DEF</span>{% endif %}</span>{% endif %}
           {% if seen.get(m.name) %}<span class="kills">⚔ {{ seen[m.name] }} slain</span>{% endif %}
         </div>
       </div>

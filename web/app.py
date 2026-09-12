@@ -854,6 +854,18 @@ MASTERY_TIERS = [
 ]
 
 
+def bestiary_bonus(player, monster_name):
+    """ATK/DEF bonus vs a monster earned from its mastery rank (0-4)."""
+    ranks = player.get("bestiary_mastery")
+    if not isinstance(ranks, dict):
+        return 0, 0
+    rank = int(ranks.get(monster_name, 0) or 0)
+    if rank <= 0:
+        return 0, 0
+    rank = min(rank, len(MASTERY_TIERS))
+    return rank * 3, rank * 2
+
+
 def _bestiary_mastery(player, name, kills):
     """Award a one-time coin bonus + mail when a monster kill milestone is hit."""
     ranks = player.get("bestiary_mastery")
@@ -886,9 +898,10 @@ def bestiary_page():
         mastery = {}
     rank_names = {i: t[1] for i, t in enumerate(MASTERY_TIERS, start=1)}
     ranks = {k: rank_names.get(v, "") for k, v in mastery.items()}
+    bonuses = {k: bestiary_bonus(player, k) for k in mastery}
     locations = sorted(ADVENTURE_LOCATIONS, key=lambda l: l.get("min_level", 0))
     return render_template(
-        "bestiary.html", ranks=ranks, player=player, locations=locations, seen=seen,
+        "bestiary.html", ranks=ranks, bonuses=bonuses, player=player, locations=locations, seen=seen,
         username=session.get("username", "Player"),
         avatar_url=session_avatar(session),
     )
@@ -1726,12 +1739,18 @@ def api_adventure():
             player_atk += eq.get("stats", {}).get("attack", 0)
             player_def += eq.get("stats", {}).get("defense", 0)
 
+    m_atk, m_def = bestiary_bonus(player, enemy["name"])
+    player_atk += m_atk
+    player_def += m_def
+
     e_hp = enemy["hp"]
     e_atk = enemy.get("atk", 5)
     e_def = enemy.get("def", 0)
     p_hp = player["health"]
 
     combat_log = [f"⚔️ You encounter **{enemy['name']}**!"]
+    if m_atk or m_def:
+        combat_log.append(f"🏅 Bestiary Mastery: +{m_atk} ATK / +{m_def} DEF vs this foe.")
     won = False
     for _ in range(50):
         dmg = max(1, player_atk - e_def // 2 + random.randint(-3, 5))
