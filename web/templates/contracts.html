@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📜 Hunt Contracts — DTEmpire Adventure</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e2e8f0;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:24px}
+h2{font-size:1.6rem;margin-bottom:6px}
+.subtitle{color:#9a9a9a;font-size:.9rem;margin-bottom:20px}
+.card{background:#111;border:1px solid #333;border-radius:10px;padding:16px;margin-bottom:14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.mname{font-weight:600;font-size:1.05rem}
+.meta{color:#9a9a9a;font-size:.85rem;margin-top:4px}
+.bar{height:8px;background:#1e1e1e;border:1px solid #333;border-radius:6px;margin-top:10px;overflow:hidden}
+.fill{height:100%;background:#e2e8f0}
+.btn{background:#fff;color:#000;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer}
+.btn:disabled{background:transparent;color:#666;border:1px solid #333;cursor:not-allowed}
+.done{color:#9a9a9a;font-size:.85rem}
+.empty{color:#9a9a9a;padding:20px 0}
+.sig{color:#666;font-size:.78rem;margin-top:28px}
+</style>
+</head>
+<body>
+{% include '_nav.html' %}
+
+<div class="container">
+  <h2>📜 Hunt Contracts</h2>
+  <div class="subtitle">Three contracts refresh every day at 00:00 UTC. Kill the named monster in Adventure to fill the bar, then claim.</div>
+
+  {% if not contracts %}
+    <div class="empty">No contracts available right now — the hunt board is empty.</div>
+  {% endif %}
+
+  {% for c in contracts %}
+  <div class="card">
+    <div class="row">
+      <div>
+        <div class="mname">{{ c.monster }}</div>
+        <div class="meta">Slay {{ c.need }} · Reward {{ c.coins }} coins + {{ c.xp }} XP</div>
+      </div>
+      <div>
+        {% if c.claimed %}
+          <span class="done">✔ Claimed</span>
+        {% elif c.complete %}
+          <button class="btn" onclick="claim({{ c.index }}, this)">Claim</button>
+        {% else %}
+          <button class="btn" disabled>{{ c.done }}/{{ c.need }}</button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="bar"><div class="fill" style="width: {{ (c.done / c.need * 100) | round(0, 'floor') }}%"></div></div>
+  </div>
+  {% endfor %}
+
+  <div class="sig">Daily Hunt Contracts — By Hermes</div>
+</div>
+
+<script>
+async function claim(index, btn) {
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/contracts/claim', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({index: index})
+    });
+    const d = await r.json();
+    if (d.success) {
+      btn.outerHTML = '<span class="done">✔ Claimed +' + d.reward_coins + ' coins</span>';
+    } else {
+      alert(d.error || 'Claim failed');
+      btn.disabled = false;
+    }
+  } catch (e) {
+    alert('Network error');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

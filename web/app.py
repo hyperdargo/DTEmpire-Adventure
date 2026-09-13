@@ -906,6 +906,157 @@ def bestiary_page():
         avatar_url=session_avatar(session),
     )
 
+# ---------------------------------------------------------------------------
+# Daily Hunt Contracts (v4.9.0)
+# 3 contracts per UTC day, seeded from the date so every player shares the same
+# hunt board. Progress is counted from kills recorded after the contract was
+# issued, using a snapshot of the bestiary taken on first view of the day.
+# ---------------------------------------------------------------------------
+
+CONTRACT_TIERS = [
+    # (kills_required, coin_reward, xp_reward)
+    (3, 600, 250),
+    (5, 1400, 600),
+    (8, 3200, 1400),
+]
+
+
+def _contract_day():
+    return datetime.datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def _all_monster_names():
+    names = []
+    for loc in ADVENTURE_LOCATIONS:
+        if not isinstance(loc, dict):
+            continue
+        for m in loc.get("monsters", []):
+            if isinstance(m, dict) and m.get("name"):
+                names.append(m["name"])
+    return sorted(set(names))
+
+
+def get_contracts(player):
+    """Return today's 3 contracts for this player, creating them if needed.
+
+    Contracts are deterministic per day (same board for everyone) but progress
+    and claim state are stored per player under player["contracts"].
+    """
+    day = _contract_day()
+    state = player.get("contracts")
+    if not isinstance(state, dict) or state.get("day") != day:
+        pool = _all_monster_names()
+        if not pool:
+            state = {"day": day, "tasks": [], "claimed": []}
+            player["contracts"] = state
+            return state
+        rng = random.Random(f"contracts-{day}")
+        level = max(1, int(player.get("level", 1) or 1))
+        picks = rng.sample(pool, min(3, len(pool)))
+        bestiary = player.get("bestiary") or {}
+        if not isinstance(bestiary, dict):
+            bestiary = {}
+        tasks = []
+        for i, name in enumerate(picks):
+            need, coins, xp = CONTRACT_TIERS[i % len(CONTRACT_TIERS)]
+            tasks.append({
+                "monster": name,
+                "need": need,
+                "coins": coins + level * 20,
+                "xp": xp + level * 10,
+                "base": int(bestiary.get(name, 0) or 0),
+            })
+        state = {"day": day, "tasks": tasks, "claimed": []}
+        player["contracts"] = state
+    return state
+
+
+def contract_progress(player, task):
+    bestiary = player.get("bestiary") or {}
+    if not isinstance(bestiary, dict):
+        bestiary = {}
+    killed = int(bestiary.get(task["monster"], 0) or 0) - int(task.get("base", 0) or 0)
+    return max(0, min(killed, int(task["need"])))
+
+
+@app.route("/contracts")
+@login_required
+def contracts_page():
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    state = get_contracts(player)
+    claimed = state.get("claimed") or []
+    rows = []
+    for idx, t in enumerate(state.get("tasks", [])):
+        done = contract_progress(player, t)
+        rows.append({
+            "index": idx,
+            "monster": t["monster"],
+            "need": t["need"],
+            "done": done,
+            "coins": t["coins"],
+            "xp": t["xp"],
+            "complete": done >= t["need"],
+            "claimed": idx in claimed,
+        })
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+    return render_template(
+        "contracts.html", contracts=rows, player=player,
+        username=session.get("username", "Player"),
+        avatar_url=session_avatar(session),
+    )
+
+
+@app.route("/api/contracts")
+@login_required
+def api_contracts():
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    state = get_contracts(player)
+    claimed = state.get("claimed") or []
+    tasks = []
+    for idx, t in enumerate(state.get("tasks", [])):
+        done = contract_progress(player, t)
+        tasks.append({
+            "index": idx, "monster": t["monster"], "need": t["need"],
+            "done": done, "coins": t["coins"], "xp": t["xp"],
+            "complete": done >= t["need"], "claimed": idx in claimed,
+        })
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+    return jsonify({"day": state.get("day"), "contracts": tasks})
+
+
+@app.route("/api/contracts/claim", methods=["POST"])
+@login_required
+def api_contracts_claim():
+    try:
+        idx = int((request.json or {}).get("index", -1))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid contract"}), 400
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    state = get_contracts(player)
+    tasks = state.get("tasks", [])
+    if idx < 0 or idx >= len(tasks):
+        return jsonify({"error": "Invalid contract"}), 400
+    claimed = state.setdefault("claimed", [])
+    if idx in claimed:
+        return jsonify({"error": "Already claimed"}), 400
+    task = tasks[idx]
+    if contract_progress(player, task) < int(task["need"]):
+        return jsonify({"error": "Contract not complete"}), 400
+    claimed.append(idx)
+    player["coins"] = player.get("coins", 0) + int(task["coins"])
+    player["xp"] = player.get("xp", 0) + int(task["xp"])
+    try:
+        from game_logic import level_up as _lvl
+        _lvl(player)
+    except Exception:
+        pass
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+    return jsonify({
+        "success": True, "coins": player.get("coins", 0),
+        "reward_coins": int(task["coins"]), "reward_xp": int(task["xp"]),
+    })
+
+
 @app.route("/api/dungeon/combat", methods=["POST"])
 @login_required
 def api_dungeon_combat():
