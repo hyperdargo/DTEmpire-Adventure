@@ -1417,6 +1417,7 @@ Disallow: /roles
 Disallow: /otp
 Disallow: /setup
 Disallow: /logout
+Disallow: /seasonal
 
 Sitemap: https://adventure.ankitgupta.com.np/sitemap.xml
 """
@@ -5513,6 +5514,350 @@ def api_trade_list():
         "outgoing": player["trade_offers"],
         "incoming": player["trade_requests"],
         "history": player["trade_history"][-20:]  # Last 20
+    })
+
+
+# ── SEASONAL EVENT SYSTEM ─────────────────────────────
+# Time-limited events with unique monsters, event currency, event shop, and leaderboard.
+# Events are defined as dicts. When no event is active, the page says so gracefully.
+
+SEASONAL_EVENTS = [
+    {
+        "id": "harvest_moon_2026",
+        "name": "Harvest Moon Festival",
+        "emoji": "🌙",
+        "description": "The Harvest Moon rises over DTEmpire! Ancient lunar beasts roam the fields. Slay them to earn Moon Tokens and exchange them for exclusive festival gear.",
+        "start": "2026-09-16",
+        "end": "2026-10-16",
+        "currency": "moon_tokens",
+        "currency_name": "Moon Tokens",
+        "currency_emoji": "🌕",
+        "min_level": 5,
+        "cooldown": 5,  # seconds between event fights
+        "monsters": [
+            {"name": "Lunar Hare", "hp": 120, "atk": 18, "def": 6, "xp": 45, "coins": (30, 60), "tokens": (2, 4)},
+            {"name": "Moonlit Stalker", "hp": 280, "atk": 35, "def": 14, "xp": 90, "coins": (60, 120), "tokens": (3, 6)},
+            {"name": "Harvest Wraith", "hp": 500, "atk": 55, "def": 22, "xp": 160, "coins": (100, 200), "tokens": (5, 9)},
+            {"name": "Crescent Golem", "hp": 850, "atk": 80, "def": 35, "xp": 280, "coins": (180, 350), "tokens": (7, 12)},
+        ],
+        "boss": {"name": "Selene's Shadow", "hp": 2000, "atk": 140, "def": 55, "xp": 800, "coins": (500, 900), "tokens": (15, 25)},
+        "boss_chance": 0.12,
+        "shop": [
+            {"id": "moonlight_blade", "name": "Moonlight Blade", "type": "weapon", "attack": 700, "price": 80, "rarity": "legendary",
+             "desc": "+700 ATK — forged from condensed moonbeams"},
+            {"id": "lunar_ward", "name": "Lunar Ward", "type": "armor", "defense": 600, "price": 80, "rarity": "legendary",
+             "desc": "+600 DEF — woven from lunar silk"},
+            {"id": "harvest_crown", "name": "Harvest Crown", "type": "special", "attack": 400, "defense": 400, "max_health": 2000, "price": 120, "rarity": "legendary",
+             "desc": "+400 ATK/DEF, +2000 HP — reward of the festival champion"},
+            {"id": "moonbeam_elixir", "name": "Moonbeam Elixir", "type": "potion", "heal": 8000, "xp_boost": 8000, "price": 30, "rarity": "epic",
+             "desc": "+8000 HP, +8000 XP — bottled moonlight"},
+            {"id": "lunar_pet_egg", "name": "Lunar Pet Egg", "type": "egg", "price": 50, "rarity": "epic",
+             "desc": "A shimmering egg that hatches under moonlight"},
+            {"id": "festival_title_scroll", "name": "Festival Title Scroll", "type": "title", "title": "🌙 Moon Champion", "price": 100, "rarity": "legendary",
+             "desc": "Unlock the exclusive 🌙 Moon Champion title"},
+        ],
+    },
+]
+
+
+def _get_active_event():
+    """Return the currently active seasonal event dict, or None."""
+    today = datetime.date.today().isoformat()
+    for ev in SEASONAL_EVENTS:
+        if ev["start"] <= today <= ev["end"]:
+            return ev
+    return None
+
+
+def _event_player_key(event_id):
+    return f"seasonal_{event_id}"
+
+
+@app.route("/seasonal")
+@login_required
+def seasonal_page():
+    event = _get_active_event()
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+
+    # Build leaderboard from all players
+    leaderboard = []
+    if event:
+        key = _event_player_key(event["id"])
+        all_players = load_players()
+        for pid, p in all_players.items():
+            ev_data = p.get(key)
+            if isinstance(ev_data, dict) and ev_data.get("tokens_earned", 0) > 0:
+                leaderboard.append({
+                    "name": p.get("username") or p.get("name", "Unknown"),
+                    "avatar": get_player_avatar(p),
+                    "tokens": ev_data.get("tokens_earned", 0),
+                    "kills": ev_data.get("kills", 0),
+                    "boss_kills": ev_data.get("boss_kills", 0),
+                })
+        leaderboard.sort(key=lambda x: x["tokens"], reverse=True)
+        leaderboard = leaderboard[:50]
+
+        # Player's own event state
+        ev_state = player.get(key) or {}
+        player_tokens = ev_state.get("tokens", 0)
+        player_kills = ev_state.get("kills", 0)
+        player_boss_kills = ev_state.get("boss_kills", 0)
+        player_tokens_earned = ev_state.get("tokens_earned", 0)
+        purchased = ev_state.get("purchased", [])
+    else:
+        player_tokens = 0
+        player_kills = 0
+        player_boss_kills = 0
+        player_tokens_earned = 0
+        purchased = []
+
+    return render_template("seasonal.html",
+                           event=event,
+                           player=player,
+                           leaderboard=leaderboard,
+                           player_tokens=player_tokens,
+                           player_kills=player_kills,
+                           player_boss_kills=player_boss_kills,
+                           player_tokens_earned=player_tokens_earned,
+                           purchased=purchased)
+
+
+@app.route("/api/seasonal/fight", methods=["POST"])
+@login_required
+def api_seasonal_fight():
+    event = _get_active_event()
+    if not event:
+        return jsonify({"error": "No seasonal event is active right now."}), 400
+
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    calc_stats(player)
+
+    if player.get("level", 1) < event["min_level"]:
+        return jsonify({"error": f"You need Level {event['min_level']}+ to enter this event."}), 400
+
+    now = time.time()
+    key = _event_player_key(event["id"])
+    ev_state = player.setdefault(key, {"tokens": 0, "tokens_earned": 0, "kills": 0, "boss_kills": 0, "purchased": [], "last_fight": 0})
+    if not isinstance(ev_state, dict):
+        ev_state = {"tokens": 0, "tokens_earned": 0, "kills": 0, "boss_kills": 0, "purchased": [], "last_fight": 0}
+        player[key] = ev_state
+
+    cd = event.get("cooldown", 5)
+    if now - ev_state.get("last_fight", 0) < cd:
+        remaining = int(cd - (now - ev_state.get("last_fight", 0)))
+        return jsonify({"error": f"Cooldown! Wait {remaining}s"}), 429
+
+    is_boss = random.random() < event.get("boss_chance", 0.1)
+    enemy = dict(event["boss"]) if is_boss else dict(random.choice(event["monsters"]))
+    enemy["is_boss"] = is_boss
+
+    player_atk = player["attack"]
+    player_def = player["defense"]
+    for eq in [player.get("equipped_weapon"), player.get("equipped_armor"),
+               player.get("equipped_helmet"), player.get("equipped_shield")]:
+        if isinstance(eq, dict):
+            player_atk += eq.get("stats", {}).get("attack", 0)
+            player_def += eq.get("stats", {}).get("defense", 0)
+
+    m_atk, m_def = bestiary_bonus(player, enemy["name"])
+    player_atk += m_atk
+    player_def += m_def
+
+    e_hp = enemy["hp"]
+    e_atk = enemy.get("atk", 5)
+    e_def = enemy.get("def", 0)
+    p_hp = player["health"]
+
+    combat_log = [f"{event['emoji']} **[{event['name']}]** You encounter **{enemy['name']}**!"]
+    if m_atk or m_def:
+        combat_log.append(f"🏅 Bestiary Mastery: +{m_atk} ATK / +{m_def} DEF vs this foe.")
+
+    won = False
+    for _ in range(50):
+        dmg = max(1, player_atk - e_def // 2 + random.randint(-3, 5))
+        e_hp -= dmg
+        combat_log.append(f"⚔️ You hit for **{dmg}**! ({enemy['name']} ❤️{max(0, e_hp)})")
+        if e_hp <= 0:
+            won = True
+            break
+        dmg2 = max(1, e_atk - player_def // 2 + random.randint(-3, 5))
+        p_hp -= dmg2
+        combat_log.append(f"💥 {enemy['name']} hits for **{dmg2}**! (You ❤️{max(0, p_hp)})")
+        if p_hp <= 0:
+            break
+
+    coin_range = enemy.get("coins", (10, 20))
+    coin_reward = random.randint(coin_range[0], coin_range[1]) if isinstance(coin_range, (list, tuple)) else coin_range
+    xp_reward = enemy.get("xp", 10)
+    token_range = enemy.get("tokens", (1, 3))
+    token_reward = random.randint(token_range[0], token_range[1]) if isinstance(token_range, (list, tuple)) else token_range
+
+    leveled_up = False
+    if won:
+        player["health"] = max(1, p_hp)
+        player["coins"] = player.get("coins", 0) + coin_reward
+        player["xp"] = player.get("xp", 0) + xp_reward
+        player["monsters_killed"] = player.get("monsters_killed", 0) + 1
+        player["total_wins"] = player.get("total_wins", 0) + 1
+        _bestiary_record(player, enemy["name"])
+        grant_achievements(player)
+        ev_state["tokens"] = ev_state.get("tokens", 0) + token_reward
+        ev_state["tokens_earned"] = ev_state.get("tokens_earned", 0) + token_reward
+        ev_state["kills"] = ev_state.get("kills", 0) + 1
+        if is_boss:
+            player["bosses_killed"] = player.get("bosses_killed", 0) + 1
+            ev_state["boss_kills"] = ev_state.get("boss_kills", 0) + 1
+        bump_mission(player, "adventure")
+        bump_mission(player, "kill")
+        if is_boss:
+            bump_mission(player, "boss")
+        bump_mission(player, "coins", coin_reward)
+        combat_log.append(f"✅ **Victory!** 🪙+{coin_reward} ⭐+{xp_reward} XP")
+        combat_log.append(f"{event['currency_emoji']} +{token_reward} {event['currency_name']}!")
+
+        from game_logic import level_up as _level_up_ev
+        if _level_up_ev(player) > 0:
+            leveled_up = True
+            combat_log.append(f"⬆️ **LEVEL UP!** You are now Level {player['level']}!")
+        check_milestones(player)
+        check_titles(player)
+    else:
+        player["health"] = max(0, p_hp)
+        player["deaths"] = player.get("deaths", 0) + 1
+        _drank, _dmsg = maybe_auto_drink(player)
+        combat_log.append("❌ **Defeated!** Retreat and heal up.")
+        if _drank:
+            combat_log.append(_dmsg)
+
+    ev_state["last_fight"] = now
+    player[key] = ev_state
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+
+    return jsonify({
+        "won": won,
+        "enemy": {"name": enemy["name"], "hp": enemy["hp"], "is_boss": is_boss},
+        "combat_log": combat_log,
+        "coins": coin_reward if won else 0,
+        "xp": xp_reward if won else 0,
+        "tokens": token_reward if won else 0,
+        "token_balance": ev_state.get("tokens", 0),
+        "leveled_up": leveled_up,
+        "player": player,
+    })
+
+
+@app.route("/api/seasonal/buy", methods=["POST"])
+@login_required
+def api_seasonal_buy():
+    event = _get_active_event()
+    if not event:
+        return jsonify({"error": "No seasonal event is active right now."}), 400
+
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    key = _event_player_key(event["id"])
+    ev_state = player.get(key)
+    if not isinstance(ev_state, dict):
+        return jsonify({"error": "You haven't participated in this event yet."}), 400
+
+    item_id = (request.get_json(silent=True) or {}).get("item_id", "").strip()
+    shop_item = None
+    for si in event.get("shop", []):
+        if si["id"] == item_id:
+            shop_item = si
+            break
+    if not shop_item:
+        return jsonify({"error": "Item not found in event shop."}), 400
+
+    tokens = ev_state.get("tokens", 0)
+    price = shop_item["price"]
+    if tokens < price:
+        return jsonify({"error": f"Not enough {event['currency_name']}! Need {price}, have {tokens}."}), 400
+
+    purchased = ev_state.get("purchased", [])
+    # Title and special items are one-time purchase
+    if shop_item["type"] in ("title", "special") and item_id in purchased:
+        return jsonify({"error": "You already own this item."}), 400
+
+    ev_state["tokens"] = tokens - price
+
+    msg = ""
+    if shop_item["type"] == "title":
+        title = shop_item["title"]
+        owned_titles = player.setdefault("titles_unlocked", ["Adventurer"])
+        if title not in owned_titles:
+            owned_titles.append(title)
+        msg = f"Unlocked title: {title}"
+    elif shop_item["type"] == "weapon":
+        player.setdefault("inventory", []).append({
+            "id": item_id, "name": shop_item["name"], "type": "weapon",
+            "rarity": shop_item.get("rarity", "legendary"),
+            "stats": {"attack": shop_item["attack"]},
+        })
+        msg = f"Added {shop_item['name']} to inventory (+{shop_item['attack']} ATK)"
+    elif shop_item["type"] == "armor":
+        player.setdefault("inventory", []).append({
+            "id": item_id, "name": shop_item["name"], "type": "armor",
+            "rarity": shop_item.get("rarity", "legendary"),
+            "stats": {"defense": shop_item["defense"]},
+        })
+        msg = f"Added {shop_item['name']} to inventory (+{shop_item['defense']} DEF)"
+    elif shop_item["type"] == "special":
+        player["attack"] = player.get("attack", 10) + shop_item.get("attack", 0)
+        player["defense"] = player.get("defense", 5) + shop_item.get("defense", 0)
+        player["max_health"] = player.get("max_health", 100) + shop_item.get("max_health", 0)
+        player["health"] = min(player["max_health"], player["health"] + shop_item.get("max_health", 0))
+        msg = f"Used {shop_item['name']}! +{shop_item.get('attack',0)} ATK, +{shop_item.get('defense',0)} DEF, +{shop_item.get('max_health',0)} HP"
+    elif shop_item["type"] == "potion":
+        if "heal" in shop_item and "xp_boost" in shop_item:
+            player["health"] = min(player.get("max_health", 100), player.get("health", 0) + shop_item["heal"])
+            player["xp"] = player.get("xp", 0) + shop_item["xp_boost"]
+            from game_logic import level_up as _lv_ev
+            _lv_ev(player)
+            msg = f"Used {shop_item['name']}! +{shop_item['heal']} HP, +{shop_item['xp_boost']} XP"
+        elif "heal" in shop_item:
+            player["health"] = min(player.get("max_health", 100), player.get("health", 0) + shop_item["heal"])
+            msg = f"Used {shop_item['name']}! +{shop_item['heal']} HP"
+        elif "xp_boost" in shop_item:
+            player["xp"] = player.get("xp", 0) + shop_item["xp_boost"]
+            from game_logic import level_up as _lv_ev2
+            _lv_ev2(player)
+            msg = f"Used {shop_item['name']}! +{shop_item['xp_boost']} XP"
+    elif shop_item["type"] == "egg":
+        player.setdefault("inventory", []).append({
+            "id": item_id, "name": shop_item["name"], "type": "egg",
+            "rarity": shop_item.get("rarity", "epic"),
+        })
+        msg = f"Added {shop_item['name']} to inventory"
+    else:
+        msg = f"Purchased {shop_item['name']}"
+
+    if item_id not in purchased:
+        purchased.append(item_id)
+    ev_state["purchased"] = purchased
+    player[key] = ev_state
+    save_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"], player)
+
+    return jsonify({"success": True, "message": msg, "token_balance": ev_state.get("tokens", 0)})
+
+
+@app.route("/api/seasonal/status")
+@login_required
+def api_seasonal_status():
+    event = _get_active_event()
+    if not event:
+        return jsonify({"active": False})
+    player = get_player(session.get("guild_id", HOME_GUILD_ID), session["user_id"])
+    key = _event_player_key(event["id"])
+    ev_state = player.get(key) or {}
+    return jsonify({
+        "active": True,
+        "event_name": event["name"],
+        "event_emoji": event["emoji"],
+        "ends": event["end"],
+        "tokens": ev_state.get("tokens", 0),
+        "tokens_earned": ev_state.get("tokens_earned", 0),
+        "kills": ev_state.get("kills", 0),
+        "boss_kills": ev_state.get("boss_kills", 0),
     })
 
 

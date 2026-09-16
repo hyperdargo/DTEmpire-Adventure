@@ -1,18 +1,42 @@
 {
-  "version": "4.8.0",
+  "version": "5.0.0",
   "name": "DTEmpire Adventure",
-  "build_date": "2026-09-08",
+  "build_date": "2026-09-16",
   "features": [
+    "Seasonal Event System — time-limited festivals with unique monsters, event currency, exclusive shop, and leaderboard",
+    "Harvest Moon Festival: Lunar Hare, Moonlit Stalker, Harvest Wraith, Crescent Golem + Selene's Shadow boss",
+    "Moon Tokens event currency with dedicated event shop (Moonlight Blade, Lunar Ward, Harvest Crown, Moonbeam Elixir, Lunar Pet Egg, Moon Champion title)",
+    "Daily Hunt Contracts - 3 seeded monster contracts per day with coin/XP rewards",
     "Daily login streak with escalating reward multipliers (up to 2x)",
     "Streak chest every 7 consecutive days",
     "Live streak badge on the inventory page",
     "Trading System - Player-to-player item and coin trading",
-    "Trade offers with items and coins",
-    "Accept/decline/cancel trades",
-    "Trade history tracking",
     "Bestiary discovery tracking with per-monster kill counts"
   ],
   "changelog": [
+    {
+      "version": "5.0.0",
+      "date": "2026-09-16",
+      "notes": [
+        "🌙 NEW: Seasonal Event System — time-limited festivals with exclusive monsters, event currency, event shop, and a global event leaderboard.",
+        "First event: Harvest Moon Festival (Sep 16 – Oct 16). Fight Lunar Hares, Moonlit Stalkers, Harvest Wraiths, Crescent Golems, and the boss Selene's Shadow.",
+        "Earn Moon Tokens from every event kill. Spend them in the Event Shop for legendary weapons (Moonlight Blade +700 ATK), armor (Lunar Ward +600 DEF), the Harvest Crown (+400 ATK/DEF, +2000 HP), Moonbeam Elixirs, Lunar Pet Eggs, and the exclusive 🌙 Moon Champion title.",
+        "Event leaderboard tracks top Moon Token earners across all players.",
+        "Seasonal link added to the Game Hub nav menu.",
+        "- By Hermes"
+      ]
+    },
+    {
+      "version": "4.9.0",
+      "date": "2026-09-14",
+      "notes": [
+        "New Hunt Contracts page (/contracts): 3 daily monster contracts, same board for everyone, refreshed 00:00 UTC.",
+        "Slay 3 / 5 / 8 of the named monster to unlock tiered rewards; payouts scale with your level.",
+        "Progress is tracked from the moment the contract is issued, so old bestiary kills do not auto-complete it.",
+        "Contracts link added to the nav bar.",
+        "- By Hermes"
+      ]
+    },
     {
       "version": "4.8.0",
       "date": "2026-09-13",
@@ -43,83 +67,6 @@
         "Tower floor clears now check achievements too, so floor milestones unlock correctly.",
         "Fixed: achievement names were being recorded twice, cluttering your unlocked list.",
         "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.5.0",
-      "date": "2026-09-08",
-      "notes": [
-        "Bestiary is now a living record — every monster you defeat is permanently logged.",
-        "Undefeated creatures show dimmed and marked 'undiscovered' until you slay one.",
-        "Each defeated monster and boss shows a personal kill counter (⚔ N slain).",
-        "New discovery progress line at the top: Discovered X / Y creatures.",
-        "Fixed: adventure victories were not counting toward 'total_wins', so win-based achievements never unlocked.",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.4.0",
-      "date": "2026-09-07",
-      "notes": [
-        "Daily Login Streak — claim the daily reward on consecutive days to build a streak.",
-        "Streak rewards scale: 3 days = x1.25, 7 = x1.5, 14 = x1.75, 30+ = x2 coins and XP.",
-        "Every 7th day in a row grants a bonus streak chest (1,000 coins x weeks completed).",
-        "A streak survives a 48h gap, so one late day is forgiven before it resets.",
-        "New /api/daily/status endpoint and a live streak badge on the Inventory page.",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.3.4",
-      "date": "2026-09-06",
-      "notes": [
-        "Fixed hybrid potions (Mirage Flask, Frostfire Mixture, Cosmic Convergence, Abyssal Convergence, Elixir of Forever, Deep Tide Potion) — these carry BOTH a heal and an XP bonus, but the shop only ever saved one of the two, so every hybrid potion bought was permanently missing half its value.",
-        "Fixed drinking potions — the XP effect was swallowed by the heal check, so XP-granting potions healed you and silently gave 0 XP. Heal and XP now both apply, and level-ups from potion XP are granted correctly.",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.3.3",
-      "date": "2026-09-04",
-      "changes": [
-        "2 new monsters in Crystal Caverns: Diamond Wraith (+58 ATK) and Obsidian Guardian (+60 DEF)"
-      ]
-    },
-    {
-      "version": "4.3.2",
-      "date": "2026-09-03",
-      "notes": [
-        "New shop item: ⚡ Primordius' Core (1,600,000 coins) — +4600 ATK & +4600 DEF & +26000 max HP permanently, top-tier upgrade beyond Astral Convergence for endgame players past Primordial Peak.",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.3.1",
-      "date": "2026-09-02",
-      "notes": [
-        "Fixed Temple of Elders offering (/api/temple/offer) — endpoint validated amount but never processed the donation, causing coin offerings to silently fail with no response. Now correctly deducts coins, grants XP (amount/2), and applies level-ups.",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.3.0",
-      "date": "2026-09-01",
-      "changes": [
-        "New location: Primordial Peak (Lv.32+) — highest summit with Primordial Spark, Magma Titan, Storm Avatar, Cosmic Warden + Primordius, The First Born boss",
-        "Regenerated adventure_locations.json and guild_shops.json caches (fixed a stale corrupted guild_shops.json — items were flattened to strings, restored to full weapons/armor/potions/special dicts)",
-        "Dungeon UI zone selector updated with new Primordial Peak entry",
-        "- By Hermes"
-      ]
-    },
-    {
-      "version": "4.2.0",
-      "date": "2026-08-25",
-      "changes": [
-        "Added Trading System (/trade page and API)",
-        "Player-to-player item and coin trading",
-        "Trade offers with accept/decline/cancel",
-        "Trade history with summaries",
-        "Inventory integration for traded items"
       ]
     }
   ]
