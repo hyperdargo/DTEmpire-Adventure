@@ -17,3 +17,13 @@ data/adventure.db-shm
 data/adventure.db-wal
 web/static/uploads/
 *.pyc
+
+# Internal / dev-only files
+test_*.py
+tests/
+scripts/
+cogs/
+discord_bot.py
+.dockerignore
+adventure.md
+requirements-backup.txt
