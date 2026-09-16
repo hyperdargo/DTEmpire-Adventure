@@ -1,50 +1,19 @@
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-
-# Environment & secrets
 .env
-.env.local
-.env.*.local
-
-# Logs
+.venv/
+__pycache__/
 logs/
-*.log
-
-# Data files (runtime generated)
+.claude/
+.pytest_cache/
+.tokensave/
 data/players.json
+data/players.json.bak
 data/players.json.lock
 data/player_backups/
-data/duels.json
-data/guild_shops.json
 data/economy_index.json
-data/roles.json
+data/milestone_claims.json
 data/founder_gift.json
-
-# Build artifacts
-build/
-dist/
-*.egg-info/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Test/coverage
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-
-# Type checking
-.mypy_cache/
+data/adventure.db
+data/adventure.db-shm
+data/adventure.db-wal
+web/static/uploads/
+*.pyc

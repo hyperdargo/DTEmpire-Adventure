@@ -56,9 +56,13 @@ h3{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:9px;text-trans
 .btn-heal:hover{background:#4ade80;color:#000}
 .btn-heal:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
 
-.btn-claim{border:2px solid #8b5cf6;color:#8b5cf6;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
-.btn-claim:hover{background:#8b5cf6;color:#000}
+.btn-claim{border:2px solid #fff;color:#fff;background:linear-gradient(180deg,#3a3a4a,#1a1a22);box-shadow:3px 3px 0 #000}
+.btn-claim:hover{background:#fff;color:#000}
 .btn-claim:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+
+.streak-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:2px solid #333;background:#141418;color:#ccc;font-family:'VT323',monospace;font-size:16px;box-shadow:3px 3px 0 #000}
+.streak-badge b{color:#fff}
+.streak-badge .mult{color:#ffd54a}
 
 .tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;border-bottom:2px solid #333;padding-bottom:16px}
 .tab{padding:8px 16px;border:2px solid #333;background:linear-gradient(180deg,#3a3a4a,#1a1a22);color:#888;font-family:'Press Start 2P',monospace;font-size:9px;text-transform:uppercase;cursor:pointer;letter-spacing:1px}
@@ -107,6 +111,7 @@ h3{font-family:'Press Start 2P',monospace;color:#ffd54a;font-size:9px;text-trans
   <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
     <button class="btn btn-heal" onclick="heal()">💚 Heal (10 coins)</button>
     <button class="btn btn-claim" onclick="claimDaily()">🎁 Claim Daily</button>
+  <span class="streak-badge" id="streakBadge">🔥 Streak: <b id="streakDays">–</b> · <span class="mult" id="streakMult"></span></span>
   </div>
 
   {% if equipped %}
@@ -271,13 +276,26 @@ function heal() {
   });
 }
 
+function loadStreak() {
+  fetch('/api/daily/status').then(r => r.json()).then(d => {
+    document.getElementById('streakDays').textContent = d.streak + ' day' + (d.streak === 1 ? '' : 's');
+    const m = document.getElementById('streakMult');
+    m.textContent = 'x' + d.multiplier + ' next claim';
+    document.getElementById('streakBadge').title =
+      'Best: ' + d.best_streak + ' days · ' + d.next_milestone + ' more day(s) to the next streak chest';
+  }).catch(() => {});
+}
+loadStreak();
+
 function claimDaily() {
   fetch('/api/daily', {method:'POST', headers:{'Content-Type':'application/json'}})
   .then(r => r.json())
   .then(data => {
     if (data.success) {
       let msg = `🎁 Daily Reward!\n🪙 +${data.coins} coins\n⭐ +${data.xp} XP`;
+      msg += `\n🔥 Streak: ${data.streak} day(s) — x${data.multiplier} rewards`;
       if (data.bonus) msg += '\n' + data.bonus;
+      if (data.milestone) msg += '\n' + data.milestone;
       alert(msg);
       location.reload();
     } else {

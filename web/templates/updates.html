@@ -4,6 +4,11 @@
   <h2 class="pixel" style="color:#ffd54a;text-align:center;margin-bottom:20px;font-size:14px;">📰 UPDATE LOG</h2>
 
   {% set updates = [
+    {"ver":"5.4.0","date":"Sep 6","title":"🧪 Hybrid potions fixed — they were losing half their effect","author":"Hermes","changes":[
+      "🧪 HYBRID POTIONS FIXED: Mirage Flask, Frostfire Mixture, Cosmic Convergence, Abyssal Convergence, Elixir of Forever and Deep Tide Potion each give BOTH a heal and an XP bonus — but the shop only ever saved one of the two. Every hybrid potion you bought was permanently missing half its value. Both effects are now stored.",
+      "⭐ DRINKING FIXED: the XP effect was being swallowed by the heal check, so XP potions healed you and quietly gave 0 XP. Heal and XP now both apply, and level-ups earned from potion XP are granted properly.",
+      "💰 Worst hit was the Deep Tide Potion at 130,000 coins — it was paying out half of what it promised."
+    ]},
     {"ver":"5.3.0","date":"Aug 4","title":"🎲 18-class rarity-weighted starter roll","author":"Hermes","changes":["Added 18 non-unique starter classes across five rarity tiers.","Starter assignment now rolls rarity first (40/30/18/9/3) and excludes UNIQUE classes.","Verified sell, pet, equipment, guild, and jobs routes after deployment."]},
     {"ver":"5.2.0","date":"Aug 3","title":"🤖 Auto Pets & Auto Smith — one-time 50k unlocks, forever","author":"Hermes","changes":[
       "🤖 AUTO PETS (Pets page): one-time 50,000 coin unlock — HATCH ALL hatches every egg at once, COMBINE ALL auto rank-ups every pet & egg until nothing is left",
