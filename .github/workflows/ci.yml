@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Unit, API, security and legacy-import suites. The server runs TypeScript
+      # directly on Node 24, so there is nothing to compile first.
+      - name: Test
+        run: npm test
+
+      - name: Build client
+        run: npm run build
+
+      - name: Smoke-test the production server
+        env:
+          PORT: 8099
+          DATABASE_PATH: ${{ runner.temp }}/ci.db
+          UPLOAD_DIR: ${{ runner.temp }}/uploads
+        run: |
+          npm start &
+          for i in $(seq 1 30); do
+            curl -fsS "http://127.0.0.1:8099/health" && break
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:8099/health"
+          curl -fsS -o /dev/null "http://127.0.0.1:8099/"

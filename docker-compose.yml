@@ -1,14 +1,19 @@
 services:
   adventure:
     build: .
+    image: dtempire-adventure
     container_name: dtempire-adventure
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8081:8081"
     environment:
-      WEB_PORT: "8081"
-      WEB_RELOADER: "0"
+      PORT: "8081"
+      # Set PUBLIC_URL to your real origin so cookies get the Secure flag behind HTTPS.
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8081}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
+      # The SQLite database and uploaded portraits live here. Back this folder up.
       - ./data:/app/data
-      - ./web/static/uploads:/app/web/static/uploads
