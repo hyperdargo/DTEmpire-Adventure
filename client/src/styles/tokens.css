@@ -1,0 +1,95 @@
+/* DTEmpire Adventure — the card table.
+   A navy felt table under a single lamp; cards framed in metals that encode rarity. */
+
+:root {
+  /* Felt: the table itself, from the dark edges to the lit center. */
+  --felt-0: #070a15;
+  --felt-1: #0b1020;
+  --felt-2: #111830;
+  --felt-3: #18213d;
+  --felt-4: #212c4f;
+
+  /* Ink: ivory card stock text. */
+  --ink: #efe6d2;
+  --ink-2: #bdb4a0;
+  --ink-3: #8f8877;
+  --ink-inverse: #1a1206;
+
+  /* Crest metals and fire. */
+  --gold: #d9a441;
+  --gold-bright: #f3c96d;
+  --gold-deep: #8f6419;
+  --ember: #ff7a3d;
+  --blood: #e5484d;
+  --blood-deep: #9b1c26;
+  --ward: #5aa9ff;
+  --verdant: #4cc38a;
+
+  --line: rgb(217 164 65 / 0.16);
+  --line-strong: rgb(217 164 65 / 0.42);
+  --line-soft: rgb(239 230 210 / 0.08);
+
+  /* Rarity metals (frame colors). */
+  --r-common: #a3acb9;
+  --r-uncommon: #46b98a;
+  --r-rare: #4d8ef0;
+  --r-epic: #a66cf0;
+  --r-legendary: #f0b43c;
+  --r-mythic: #ff6b3d;
+  --r-unique: #f4e3b5;
+
+  /* Type */
+  --font-display: "Marcellus SC", "Palatino Linotype", "Book Antiqua", serif;
+  --font-ui: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  /* Card art uses the platform's own emoji font. Every target OS ships one, and web-font subsets of
+     Noto failed to paint some glyphs (⚔️, ✉️) in Chrome, so none is bundled. */
+  --font-art: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.4rem;
+  --text-2xl: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  --text-3xl: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+
+  /* Space (4px base) */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+
+  --radius-card: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+
+  /* Depth: lamp from above, so shadows fall down and soft. */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5), 0 2px 8px rgb(0 0 0 / 0.25);
+  --shadow-2: 0 6px 14px rgb(0 0 0 / 0.45), 0 14px 32px rgb(0 0 0 / 0.35);
+  --shadow-3: 0 12px 24px rgb(0 0 0 / 0.5), 0 28px 60px rgb(0 0 0 / 0.45);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 480ms;
+
+  --rail-w: 236px;
+  --topbar-h: 64px;
+  --tabbar-h: 64px;
+  --content-max: 1320px;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur: 1ms;
+    --dur-slow: 1ms;
+  }
+}
