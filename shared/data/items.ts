@@ -90,9 +90,34 @@ const accessories: GearTemplate[] = RELIC_SOURCE.filter((r) => r.id !== "enchant
 
 // Festival gear, bought with event currency. Ordinary items in every other respect.
 const eventGear: GearTemplate[] = [
+  // Harvest Moon (Sep 16 - Oct 16)
   { id: "moonlight_blade", name: "Moonlight Blade", icon: "🌙", slot: "weapon", weaponType: "sword", levelReq: 5, desc: "Condensed moonbeams, edged.", eventOnly: true },
   { id: "lunar_ward", name: "Lunar Ward", icon: "🛡️", slot: "armor", levelReq: 5, desc: "Woven from lunar silk.", eventOnly: true },
   { id: "harvest_crown", name: "Harvest Crown", icon: "👑", slot: "helmet", levelReq: 5, desc: "Worn by the champion of the festival.", eventOnly: true },
+  // Shadow Fall (Oct 17 - Nov 15)
+  { id: "shadow_scythe", name: "Shadow Scythe", icon: "🗡️", slot: "weapon", weaponType: "sword", levelReq: 5, desc: "Reaps the essence of the fallen.", eventOnly: true },
+  { id: "phantom_cloak", name: "Phantom Cloak", icon: "🥋", slot: "armor", levelReq: 5, desc: "Woven from twilight mist.", eventOnly: true },
+  { id: "crown_of_undying", name: "Crown of the Undying", icon: "👑", slot: "helmet", levelReq: 5, desc: "Emits a faint ghostly glow.", eventOnly: true },
+  // Frostfall Solstice (Nov 16 - Jan 15)
+  { id: "frostmourne", name: "Frostmourne", icon: "❄️", slot: "weapon", weaponType: "sword", levelReq: 5, desc: "Bitter winter frozen into steel.", eventOnly: true },
+  { id: "glacial_aegis", name: "Glacial Aegis", icon: "🛡️", slot: "armor", levelReq: 5, desc: "Hewn from ancient glacial blue ice.", eventOnly: true },
+  { id: "winter_crown", name: "Winter Crown", icon: "👑", slot: "helmet", levelReq: 5, desc: "Rimed with perpetual frost.", eventOnly: true },
+  // Vernal Awakening (Jan 16 - Mar 31)
+  { id: "jade_lotus_staff", name: "Jade Lotus Staff", icon: "🪷", slot: "weapon", weaponType: "staff", levelReq: 5, desc: "Blooms with restorative life magic.", eventOnly: true },
+  { id: "verdant_mail", name: "Verdant Mail", icon: "🍃", slot: "armor", levelReq: 5, desc: "Reinforced with ironwood vines.", eventOnly: true },
+  { id: "blossom_diadem", name: "Blossom Diadem", icon: "👑", slot: "helmet", levelReq: 5, desc: "Woven from eternal cherry blossoms.", eventOnly: true },
+  // Sunfire Solstice (Apr 01 - Jun 30)
+  { id: "solar_flare_greatsword", name: "Solar Greatsword", icon: "☀️", slot: "weapon", weaponType: "sword", levelReq: 5, desc: "Radiates the scorching fury of noon.", eventOnly: true },
+  { id: "phoenix_plume_mail", name: "Phoenix Plume Mail", icon: "🪶", slot: "armor", levelReq: 5, desc: "Feathers that rise renewed from ash.", eventOnly: true },
+  { id: "sunfire_crest", name: "Sunfire Crest", icon: "👑", slot: "helmet", levelReq: 5, desc: "Forged in solar prominence.", eventOnly: true },
+  // Abyssal Tide (Jul 01 - Sep 15)
+  { id: "trident_of_abyss", name: "Trident of the Abyss", icon: "🔱", slot: "weapon", weaponType: "staff", levelReq: 5, desc: "Commands the crushing ocean depths.", eventOnly: true },
+  { id: "carapace_of_deep", name: "Carapace of the Deep", icon: "🦞", slot: "armor", levelReq: 5, desc: "Withstands trench pressures.", eventOnly: true },
+  { id: "crown_of_coral", name: "Crown of Coral", icon: "👑", slot: "helmet", levelReq: 5, desc: "Encrusted with glowing deep-sea pearls.", eventOnly: true },
+  // Endless Abyss permanent rewards
+  { id: "void_blade", name: "Void Edge", icon: "🌌", slot: "weapon", weaponType: "sword", levelReq: 15, desc: "Carved from solidified void aether." },
+  { id: "null_aegis", name: "Null Aegis", icon: "🛡️", slot: "armor", levelReq: 15, desc: "Absorbs incoming force into non-existence." },
+  { id: "abyssal_cowl", name: "Abyssal Cowl", icon: "👁️", slot: "helmet", levelReq: 15, desc: "Allows mortal eyes to gaze into oblivion." },
 ];
 
 export const GEAR: GearTemplate[] = [...starters, ...weapons, ...bows, ...armors, ...helmets, ...boots, ...accessories, ...eventGear];
@@ -150,10 +175,43 @@ const books: ConsumableTemplate[] = [
 ];
 
 const eventConsumables: ConsumableTemplate[] = [
+  // Harvest Moon
   { id: "moonbeam_elixir", name: "Moonbeam Elixir", icon: "🌗", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
     desc: "Restores all HP and grants 35% of a level's XP." },
   { id: "lunar_egg", name: "Lunar Pet Egg", icon: "🌕", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
     desc: "A shimmering egg that hatches an epic companion." },
+  // Shadow Fall
+  { id: "phantom_draught", name: "Phantom Draught", icon: "🧪", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
+    desc: "Infuses the drinker with spectral vigor. Restores all HP and grants 35% XP." },
+  { id: "soul_egg", name: "Soulbound Pet Egg", icon: "👻", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
+    desc: "Whispers in the dark. Hatches an epic phantom companion." },
+  // Frostfall Solstice
+  { id: "glacial_elixir", name: "Glacial Elixir", icon: "❄️", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
+    desc: "Chills the blood and numbs all wounds. Restores all HP and grants 35% XP." },
+  { id: "frost_egg", name: "Glacial Pet Egg", icon: "🧊", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
+    desc: "Frosted to the touch. Hatches an epic winter companion." },
+  // Vernal Awakening
+  { id: "spring_nectar", name: "Spring Nectar", icon: "🍯", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
+    desc: "Sweet nectar of renewal. Restores all HP and grants 35% XP." },
+  { id: "blossom_egg", name: "Blossom Pet Egg", icon: "🌸", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
+    desc: "Decorated with living flower petals. Hatches an epic spring companion." },
+  // Sunfire Solstice
+  { id: "solar_draught", name: "Solar Draught", icon: "🔥", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
+    desc: "A draft of liquid sunlight. Restores all HP and grants 35% XP." },
+  { id: "sunfire_egg", name: "Sunfire Pet Egg", icon: "☀️", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
+    desc: "Warm as an open flame. Hatches an epic solar companion." },
+  // Abyssal Tide
+  { id: "siren_tear", name: "Siren's Tear", icon: "💧", kind: "potion", levelReq: 5, healPct: 1, xpPct: 0.35, basePrice: 0, sellPrice: 400, eventOnly: true,
+    desc: "Enchanted pearl drop. Restores all HP and grants 35% XP." },
+  { id: "trench_egg", name: "Abyssal Pearl Egg", icon: "🦪", kind: "egg", eggRarity: "epic", levelReq: 5, basePrice: 0, sellPrice: 2_000, eventOnly: true,
+    desc: "Harvested from the deep abyss trench. Hatches an epic pelagic companion." },
+  // Endless Abyss Rewards
+  { id: "abyss_shard", name: "Abyssal Shard", icon: "🔮", kind: "material", levelReq: 15, basePrice: 500, sellPrice: 150,
+    desc: "Crystallized dark matter salvaged from the depths of the Endless Abyss." },
+  { id: "abyss_egg", name: "Voidbound Pet Egg", icon: "🌌", kind: "egg", eggRarity: "epic", levelReq: 15, basePrice: 0, sellPrice: 3_000,
+    desc: "A pulsing orb of pure void energy. Hatches an epic abyss companion." },
+  { id: "void_reforger", name: "Void Reforger", icon: "🧿", kind: "book", levelReq: 15, basePrice: 5_000, sellPrice: 1_000,
+    desc: "Harnesses void gravity to re-forge the magical affixes on an equipped item." },
 ];
 
 export const CONSUMABLES: ConsumableTemplate[] = [...potions, ...materials, ...eggs, ...books, ...eventConsumables];

@@ -13,7 +13,7 @@ import { throttle } from "../lib/throttle.ts";
 import type { GameCtx, Notice } from "./context.ts";
 import { type Player, activePet, heroStats, loadPlayer, refreshPower, savePlayer, settleHp } from "./player.ts";
 
-export type BattleKind = "adventure" | "tower" | "dungeon" | "duel_ai" | "arena" | "worldboss" | "event";
+export type BattleKind = "adventure" | "tower" | "dungeon" | "duel_ai" | "arena" | "worldboss" | "event" | "abyss";
 
 export interface BattleRow {
   id: string;
@@ -173,6 +173,17 @@ export function autoResolve(g: GameCtx, userId: number, battleId: string, opts: 
     const p = loadPlayer(g, userId);
     const battle = getActiveBattle(g, userId);
     if (!battle || battle.id !== battleId) throw notFound("Active battle");
+    // Mark this battle as auto-resolve for all remaining rounds
+    battle.context.autoResolve = true;
+    battle.context.usePotions = opts.usePotions;
+    
+    // Also persist the preference for future adventure battles
+    p.state.autoResolveAdventure = true;
+    p.state.settings = { ...p.state.settings, autoResolveAdventure: true, autoResolvePotions: opts.usePotions };
+    p.state.autoResolvePotions = opts.usePotions;
+    savePlayer(g, p);
+    
+    // Run all remaining rounds automatically
     const rounds: BattleState["events"][] = [];
     let guard = 0;
     while (battle.state.status === "active" && guard++ < 200) {

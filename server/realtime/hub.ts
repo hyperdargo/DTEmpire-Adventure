@@ -4,6 +4,15 @@ import type { Hub, ServerEvent } from "../game/context.ts";
 /** In-process pub/sub over WebSockets. One server process owns all connections. */
 export class WsHub implements Hub {
   #sockets = new Map<number, Set<WebSocket>>();
+  #virtualOnline = new Set<number>();
+
+  addVirtualOnline(userId: number) {
+    this.#virtualOnline.add(userId);
+  }
+
+  removeVirtualOnline(userId: number) {
+    this.#virtualOnline.delete(userId);
+  }
 
   add(userId: number, socket: WebSocket) {
     let set = this.#sockets.get(userId);
@@ -39,15 +48,15 @@ export class WsHub implements Hub {
   }
 
   isOnline(userId: number) {
-    return this.#sockets.has(userId);
+    return this.#sockets.has(userId) || this.#virtualOnline.has(userId);
   }
 
   onlineCount() {
-    return this.#sockets.size;
+    return this.#sockets.size + this.#virtualOnline.size;
   }
 
   onlineUserIds() {
-    return [...this.#sockets.keys()];
+    return [...new Set([...this.#sockets.keys(), ...this.#virtualOnline])];
   }
 
   closeAll() {

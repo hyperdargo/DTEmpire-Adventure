@@ -9,6 +9,8 @@ export interface Hub {
   toChannel(channel: string, event: ServerEvent): void;
   isOnline(userId: number): boolean;
   onlineCount(): number;
+  addVirtualOnline?(userId: number): void;
+  removeVirtualOnline?(userId: number): void;
 }
 
 export const nullHub: Hub = { toUser() {}, toChannel() {}, isOnline: () => false, onlineCount: () => 0 };

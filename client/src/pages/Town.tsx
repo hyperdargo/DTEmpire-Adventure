@@ -1,5 +1,6 @@
-import { BedDouble, Compass, Hammer, Sparkles } from "lucide-react";
+import { BedDouble, Compass, Hammer, Home, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import { innCost } from "../../../shared/rules/progression.ts";
 import { Button, Coins, Countdown, Loading, PageHead, Panel, useNow } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
@@ -111,6 +112,20 @@ export default function TownPage() {
                 {["Candle", "Incense", "Golden idol"][t - 1]} · <Coins value={[20, 60, 150][t - 1]! * hero.level + 50} compact />
               </Button>
             ))}
+          </div>
+        </Panel>
+
+        <Panel title={<h2><Home size={22} aria-hidden /> Royal Estate District</h2>}>
+          <p className="muted">Invest your wealth in property, luxury furnishings, and pet sanctuaries for permanent hero stat bonuses and daily coin dividends.</p>
+          <div style={{ marginTop: "12px" }}>
+            <Link to="/estate" className="btn btn--primary">Visit Estate District</Link>
+          </div>
+        </Panel>
+
+        <Panel title={<h2><Compass size={22} aria-hidden /> Adventurer's Codex & Guide</h2>}>
+          <p className="muted">Encyclopedic guide on monster levels, habitats, regional loot, Blacksmith recipes, gear fusion, and pet breeding.</p>
+          <div style={{ marginTop: "12px" }}>
+            <Link to="/guide" className="btn btn--default">Open Guide Book</Link>
           </div>
         </Panel>
 

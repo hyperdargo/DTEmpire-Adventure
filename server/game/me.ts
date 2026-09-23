@@ -1,5 +1,6 @@
 import { CLASS_BY_ID, dualXpToNext, rankTitle } from "../../shared/data/classes.ts";
 import { activeEvent, eventEndsAt } from "../../shared/data/events.ts";
+import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/realm.ts";
 import { BLESSINGS, WORLD_BOSS_ATTEMPTS_PER_DAY } from "../../shared/data/meta.ts";
 import { eventState } from "./events.ts";
 import { HP_FULL_REGEN_SECONDS, xpToNext } from "../../shared/rules/progression.ts";
@@ -30,10 +31,15 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
   const day = dayKey(now);
   const wbUsed = p.state.worldBoss?.day === day ? p.state.worldBoss.attempts : 0;
   const event = activeEvent(now);
+  const realmMod = currentRealmModifier(now);
 
   return {
     user,
     onlineCount: g.hub.onlineCount(),
+    realm: {
+      modifier: realmMod,
+      endsAt: realmModifierEndsAt(now),
+    },
     hero: {
       name: p.name,
       title: playerTitle(p),
@@ -52,10 +58,15 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       dual: p.state.dual ? { ...p.state.dual, xpToNext: dualXpToNext(p.state.dual.level), name: CLASS_BY_ID[p.state.dual.classId]?.name, icon: CLASS_BY_ID[p.state.dual.classId]?.icon } : null,
       towerFloor: p.towerFloor,
       dungeonBest: p.dungeonBest,
+      abyssBest: p.abyssBest,
       arenaRating: p.arenaRating,
       guild,
       buffs: activeBuffs(p, now).map((b) => ({ ...b, name: BLESSINGS.find((x) => x.id === b.id)?.name ?? b.id, icon: BLESSINGS.find((x) => x.id === b.id)?.icon ?? "✨" })),
-      settings: p.state.settings ?? {},
+      settings: {
+        ...(p.state.settings ?? {}),
+        autoResolveAdventure: p.state.autoResolveAdventure ?? p.state.settings?.autoResolveAdventure ?? false,
+        autoResolvePotions: p.state.autoResolvePotions ?? p.state.settings?.autoResolvePotions ?? true,
+      },
       bag: { used: bagUsed(g, p.userId), capacity: bagCapacity(p) },
       inDungeon: !!(p.state as { dungeon?: unknown }).dungeon,
       createdAt: p.createdAt,

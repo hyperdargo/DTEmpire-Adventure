@@ -17,12 +17,15 @@ import type { GameCtx } from "../game/context.ts";
 import * as daily from "../game/daily.ts";
 import * as eco from "../game/economy.ts";
 import * as events from "../game/events.ts";
+import * as abyss from "../game/abyss.ts";
 import * as hero from "../game/hero.ts";
 import * as inv from "../game/inventory.ts";
 import { meSnapshot } from "../game/me.ts";
 import * as modes from "../game/modes.ts";
+import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/realm.ts";
 import { type Player, bumpMission, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
 import * as pve from "../game/pve.ts";
+import * as estate from "../game/estate.ts";
 
 const id = z.coerce.number().int().positive();
 const actionSchema: z.ZodType<BattleAction> = z.discriminatedUnion("type", [
@@ -72,7 +75,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/settings", async (req) => {
-    const body = parse(z.object({ autoSalvageCommon: z.boolean().optional(), quickBattleDefault: z.boolean().optional() }), req);
+    const body = parse(z.object({ autoSalvageCommon: z.boolean().optional(), quickBattleDefault: z.boolean().optional(), autoResolveAdventure: z.boolean().optional(), autoResolvePotions: z.boolean().optional() }), req);
     return mutate(g, u(req), (p) => {
       p.state.settings = { ...p.state.settings, ...body };
     });
@@ -219,6 +222,28 @@ export async function registerGameRoutes(app: FastifyInstance) {
     return mutate(g, u(req), (p) => eco.buyOffer(g, p, offerId, qty));
   });
 
+  // ── Estate / Housing ──
+  app.get("/api/estate", async (req) => estate.getEstateView(g, loadPlayer(g, u(req).id)));
+  app.post("/api/estate/house/buy", async (req) => {
+    const { houseId } = parse(z.object({ houseId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => estate.buyHouse(g, p, houseId));
+  });
+  app.post("/api/estate/house/sell", async (req) => mutate(g, u(req), (p) => estate.sellHouse(g, p)));
+  app.post("/api/estate/pethouse/buy", async (req) => {
+    const { petHouseId } = parse(z.object({ petHouseId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => estate.buyPetHouse(g, p, petHouseId));
+  });
+  app.post("/api/estate/pethouse/sell", async (req) => mutate(g, u(req), (p) => estate.sellPetHouse(g, p)));
+  app.post("/api/estate/object/buy", async (req) => {
+    const { objectId } = parse(z.object({ objectId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => estate.buyObject(g, p, objectId));
+  });
+  app.post("/api/estate/object/sell", async (req) => {
+    const { objectId } = parse(z.object({ objectId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => estate.sellObject(g, p, objectId));
+  });
+  app.post("/api/estate/collect", async (req) => mutate(g, u(req), (p) => estate.collectDailyEstate(g, p)));
+
   // ── Mail ──
   app.get("/api/mail", async (req) => ({ mail: eco.listMail(g, u(req).id) }));
   app.post("/api/mail/claim", async (req) => {
@@ -242,6 +267,21 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/adventure/start", async (req) => {
     const { regionId, boss } = parse(z.object({ regionId: z.string().max(60), boss: z.boolean().default(false) }), req);
     return mutate(g, u(req), (p) => battleView(pve.startAdventure(g, p, regionId, boss)));
+  });
+
+  app.post("/api/adventure/auto-resolve", async (req) => {
+    const { enabled, usePotions } = parse(z.object({ enabled: z.boolean().optional(), usePotions: z.boolean().optional() }), req);
+    return mutate(g, u(req), (p) => {
+      const current = p.state.autoResolveAdventure ?? p.state.settings?.autoResolveAdventure ?? false;
+      const nextVal = enabled !== undefined ? enabled : !current;
+      p.state.autoResolveAdventure = nextVal;
+      p.state.settings = { ...p.state.settings, autoResolveAdventure: nextVal };
+      if (usePotions !== undefined) {
+        p.state.autoResolvePotions = usePotions;
+        p.state.settings.autoResolvePotions = usePotions;
+      }
+      return { autoResolveAdventure: nextVal, autoResolvePotions: p.state.autoResolvePotions ?? true };
+    });
   });
 
   app.get("/api/tower", async (req) => {
@@ -347,6 +387,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
       const now = g.clock.now();
       const day = new Date(now).toISOString().slice(0, 10);
       const view = {
+        realm: { modifier: currentRealmModifier(now), endsAt: realmModifierEndsAt(now) },
         daily: daily.dailyStatus(g, p),
         contracts: daily.contractView(g, p),
         missions: daily.ensureMissions(g, p),
@@ -358,6 +399,23 @@ export async function registerGameRoutes(app: FastifyInstance) {
       savePlayer(g, p);
       return view;
     });
+  });
+
+  // ── Endless Abyss ──
+  app.get("/api/abyss", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => abyss.abyssView(g, loadPlayer(g, user.id)));
+  });
+  app.post("/api/abyss/start", async (req) => mutate(g, u(req), (p) => abyss.startAbyssRun(g, p)));
+  app.post("/api/abyss/fight", async (req) => mutate(g, u(req), (p) => battleView(abyss.fightAbyssWave(g, p))));
+  app.post("/api/abyss/boon", async (req) => {
+    const { boonId } = parse(z.object({ boonId: z.string().min(1).max(50) }), req);
+    return mutate(g, u(req), (p) => abyss.chooseAbyssBoon(g, p, boonId));
+  });
+  app.post("/api/abyss/leave", async (req) => mutate(g, u(req), (p) => abyss.leaveAbyss(g, p)));
+  app.post("/api/abyss/buy", async (req) => {
+    const { shopId } = parse(z.object({ shopId: z.string().min(1).max(50) }), req);
+    return mutate(g, u(req), (p) => abyss.buyAbyssShop(g, p, shopId));
   });
   app.post("/api/daily/claim", async (req) => mutate(g, u(req), (p) => daily.claimDaily(g, p)));
   app.post("/api/contracts/claim", async (req) => {

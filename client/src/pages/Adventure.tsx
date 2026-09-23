@@ -1,8 +1,8 @@
-import { Crown, Lock, Swords } from "lucide-react";
+import { Crown, Lock, Swords, Zap } from "lucide-react";
 import { useState } from "react";
 import { GameCard } from "../components/GameCard.tsx";
 import { Bar, Button, Loading, PageHead, Panel } from "../components/ui.tsx";
-import { useData, useHero } from "../state/game.ts";
+import { useAction, useData, useHero } from "../state/game.ts";
 import { rememberedRegion, rememberRegion, useStartBattle, type RegionInfo } from "./Table.tsx";
 
 const TIER = ["common", "uncommon", "rare", "epic", "legendary", "mythic"];
@@ -13,6 +13,9 @@ export default function AdventurePage() {
   const { data, isPending } = useData<{ regions: RegionInfo[] }>(["adventure"], "/api/adventure");
   const [selected, setSelected] = useState<string | null>(rememberedRegion());
   const start = useStartBattle("/api/adventure/start");
+  const toggleAuto = useAction<{ enabled: boolean; usePotions?: boolean }, { autoResolveAdventure: boolean }>("/api/adventure/auto-resolve", {
+    success: (r) => `Auto-resolve ${r.autoResolveAdventure ? "enabled" : "disabled"} for adventure`,
+  });
 
   if (isPending || !data) return <Loading rows={4} />;
   const regions = data.regions;
@@ -42,6 +45,14 @@ export default function AdventurePage() {
             <Button variant="primary" size="lg" icon={<Swords size={20} />} loading={start.isPending} disabled={blocked} onClick={() => start.mutate({ regionId: current.id })}>Draw encounter</Button>
             <Button size="lg" icon={<Crown size={18} />} disabled={!bossReady || blocked} onClick={() => start.mutate({ regionId: current.id, boss: true })}>
               {bossReady ? `Challenge ${current.boss.name}` : `${current.bossUnlockKills - current.kills} more to lure the boss`}
+            </Button>
+            <Button
+              variant={hero.settings?.autoResolveAdventure ? "primary" : "ghost"}
+              size="lg"
+              icon={<Zap size={18} />}
+              onClick={() => toggleAuto.mutate({ enabled: !hero.settings?.autoResolveAdventure, usePotions: true })}
+            >
+              {hero.settings?.autoResolveAdventure ? "⚡ Auto-resolve: ON" : "⚡ Auto-resolve: OFF"}
             </Button>
           </div>
         </div>

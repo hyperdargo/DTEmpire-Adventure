@@ -112,19 +112,56 @@ export function startAdventure(g: GameCtx, p: Player, regionId: string, wantBoss
   const m = monsterStats(level, tier, monster.shape);
   const key = bestiaryKey(region.id, monster.id);
   const { combatant, pet } = heroCombatant(g, p, { masteryRank: p.state.mastery?.[key] ?? 0 });
+
+  // Check if auto-resolve is enabled from previous battle
+  const autoResolvePref = p.state.autoResolveAdventure === true;
+  const autoResolvePotions = p.state.autoResolvePotions === true;
+
   const enemy = combatantFromMonster({ name: elite ? `Elite ${monster.name}` : monster.name, icon: monster.icon, level, ...m, isBoss: wantBoss });
   return insertBattle(g, p.userId, "adventure", {
     regionId: region.id, monsterId: monster.id, key, name: monster.name, boss: wantBoss, elite, level, xp: m.xp, coins: m.coins,
+    autoResolve: autoResolvePref, usePotions: autoResolvePotions
   }, { player: combatant, enemy, pet, canFlee: !wantBoss });
 }
 
 registerFinalizer("adventure", (g, p, b) => {
-  const c = b.context as { regionId: string; key: string; name: string; boss: boolean; elite: boolean; level: number; xp: number; coins: number };
-  if (b.state.status !== "won") return defeat(g, p, b);
+  const c = b.context as { regionId: string; key: string; name: string; boss: boolean; elite: boolean; level: number; xp: number; coins: number; autoResolve?: boolean; usePotions?: boolean };
+  const won = b.state.status === "won";
+
+  // Check if auto-resolve is enabled
+  const autoResolve = c.autoResolve === true;
+
+  if (!won) {
+    bump(g, p, "deaths");
+    const maxHp = heroStats(g, p).maxHp;
+    p.hp = Math.max(1, Math.round(maxHp * 0.1));
+    p.hpAt = g.clock.now();
+    return { result: b.state.status };
+  }
+
+  // --- win ---
   const pay = payVictory(g, p, { level: c.level, coins: c.coins, xp: c.xp, boss: c.boss, elite: c.elite, source: "adventure" });
   recordBestiary(g, p, c.key, c.name);
   const rk = (p.state.regionKills ??= {});
   rk[c.regionId] = (rk[c.regionId] ?? 0) + 1;
+
+  // Auto-resolve: if enabled, start next adventure battle automatically
+  if (autoResolve) {
+    // Small delay and health recovery
+    const maxHp = heroStats(g, p).maxHp;
+    p.hp = Math.min(maxHp, Math.round(p.hp + maxHp * 0.15));
+    p.hpAt = g.clock.now();
+
+    // Start next adventure battle in the same region
+    try {
+      const nextBattle = startAdventure(g, p, c.regionId, false);
+      // Replace the finished battle with the new one
+      return { result: "won", autoStarted: true, nextBattle: nextBattle.id, ...pay };
+    } catch {
+      // If can't start next battle (no more monsters, etc.), just return normal result
+    }
+  }
+
   return { result: "won", ...pay };
 });
 

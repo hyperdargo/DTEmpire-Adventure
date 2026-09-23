@@ -29,6 +29,8 @@ const TownPage = lazy(() => import("./pages/Town.tsx"));
 const MarketPage = lazy(() => import("./pages/Market.tsx"));
 const AuctionPage = lazy(() => import("./pages/Auction.tsx"));
 const LuckyPage = lazy(() => import("./pages/Lucky.tsx"));
+const EstatePage = lazy(() => import("./pages/Estate.tsx"));
+const GuidePage = lazy(() => import("./pages/Guide.tsx"));
 const ChatPage = lazy(() => import("./pages/Chat.tsx"));
 const GuildPage = lazy(() => import("./pages/Guild.tsx"));
 const FriendsPage = lazy(() => import("./pages/Friends.tsx"));
@@ -42,7 +44,7 @@ const ProfilePage = lazy(() => import("./pages/Profile.tsx"));
 const TITLES: Record<string, string> = {
   "/": "The Table", "/adventure": "Adventure", "/tower": "Tower of Ascension", "/dungeon": "Dungeon", "/arena": "Arena",
   "/raid": "World Boss", "/festival": "Festival", "/hero": "Hero", "/bag": "Bag", "/pets": "Pets", "/smithy": "Blacksmith", "/quests": "Quests",
-  "/town": "Town", "/market": "Market", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
+  "/town": "Town", "/estate": "Estate & Housing", "/guide": "Guide Book", "/market": "Market", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
   "/friends": "Friends", "/trade": "Trades", "/ranks": "Leaderboards", "/records": "Records", "/mail": "Mail",
   "/settings": "Settings", "/battle": "Battle", "/login": "Sign in", "/register": "Create account",
 };
@@ -116,6 +118,8 @@ export function App() {
           <Route path="/smithy" element={<Page><SmithyPage /></Page>} />
           <Route path="/quests" element={<Page><QuestsPage /></Page>} />
           <Route path="/town" element={<Page><TownPage /></Page>} />
+          <Route path="/estate" element={<Page><EstatePage /></Page>} />
+          <Route path="/guide" element={<Page><GuidePage /></Page>} />
           <Route path="/market" element={<Page><MarketPage /></Page>} />
           <Route path="/auction" element={<Page><AuctionPage /></Page>} />
           <Route path="/lucky" element={<Page><LuckyPage /></Page>} />

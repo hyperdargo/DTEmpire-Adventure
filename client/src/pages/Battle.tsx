@@ -50,6 +50,7 @@ export default function BattlePage() {
   const navigate = useNavigate();
   const notify = useNotify();
   const me = useHero();
+  const autoResolveAdventure = Boolean(me.hero.settings?.autoResolveAdventure);
   const { data, isPending } = useQuery({ queryKey: ["battle"], queryFn: () => api.get<{ battle: ClientBattle | null }>("/api/battle"), staleTime: Infinity });
   const battle = data?.battle ?? null;
 
@@ -186,6 +187,26 @@ export default function BattlePage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const toggleAutoResolve = async () => {
+    const next = !autoResolveAdventure;
+    try {
+      const res = await api.post<Mutation<{ autoResolveAdventure: boolean; autoResolvePotions: boolean }>>("/api/adventure/auto-resolve", {
+        enabled: next,
+        usePotions: true,
+      });
+      if (res?.me) qc.setQueryData(meKey, res.me);
+      notify.toast({
+        tone: "good",
+        title: `Auto-resolve ${next ? "enabled" : "disabled"} for adventure`,
+      });
+      if (next && battle?.state?.status === "active" && !busy && !outcome) {
+        void send(`/api/battle/${battle.id}/auto`, { usePotions: true });
+      }
+    } catch (err) {
+      notify.toast({ tone: "bad", title: (err as Error).message });
+    }
+  };
+
   const again = async () => {
     const kind = battle?.kind;
     const ctx = battle?.context ?? {};
@@ -210,6 +231,28 @@ export default function BattlePage() {
       qc.setQueryData(["battle"], { battle: null });
     }
   };
+
+  // Auto-resolve active battle when enabled for adventure
+  useEffect(() => {
+    if (!battle || battle.kind !== "adventure" || !autoResolveAdventure) return;
+    if (battle.state.status !== "active" || busy || outcome) return;
+    const timer = setTimeout(() => {
+      void send(`/api/battle/${battle.id}/auto`, { usePotions: true });
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [battle?.id, battle?.state?.status, autoResolveAdventure, busy, outcome]);
+
+  // When battle won and autoResolve is ON, automatically queue next encounter
+  useEffect(() => {
+    if (!outcome || battle?.kind !== "adventure" || !autoResolveAdventure) return;
+    if (outcome.result !== "won") return;
+    const timer = setTimeout(() => {
+      void again();
+    }, 1200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outcome, battle?.kind, autoResolveAdventure]);
 
   if (isPending) return <Loading rows={3} />;
   if (!battle || (battle.state.status !== "active" && !outcome)) {
@@ -259,7 +302,20 @@ export default function BattlePage() {
           <ActionCard art="🧪" name="Potion" hint="P" text={potions.length ? `${potions.reduce((n, p) => n + p.qty, 0)} in your bag` : "No usable potions"} onClick={() => setPotionsOpen(true)} disabled={busy || !potions.length} rarity="uncommon" icon={<FlaskConical size={16} />} />
           <div className="battle__side-actions">
             {s.canFlee && <Button onClick={() => act({ type: "flee" })} disabled={busy} icon={<Flag size={16} />}>Flee <kbd>F</kbd></Button>}
-            <Button variant="ghost" disabled={busy} onClick={() => void send(`/api/battle/${battle.id}/auto`, { usePotions: true })}>Auto-resolve</Button>
+            {battle.kind === "adventure" ? (
+              <Button
+                variant={autoResolveAdventure ? "primary" : "ghost"}
+                disabled={busy}
+                onClick={toggleAutoResolve}
+                icon={<Zap size={16} />}
+              >
+                {autoResolveAdventure ? "⚡ Auto-resolve: ON" : "⚡ Auto-resolve: OFF"}
+              </Button>
+            ) : (
+              <Button variant="ghost" disabled={busy} onClick={() => void send(`/api/battle/${battle.id}/auto`, { usePotions: true })}>
+                Auto-resolve
+              </Button>
+            )}
           </div>
         </section>
       )}
@@ -280,7 +336,19 @@ export default function BattlePage() {
         </div>
       </Sheet>
 
-      {outcome && <Outcome battle={battle} outcome={outcome} onAgain={() => void again()} onLeave={() => { qc.setQueryData(["battle"], { battle: null }); navigate(battle.kind === "dungeon" ? "/dungeon" : battle.kind === "tower" ? "/tower" : battle.kind === "worldboss" ? "/raid" : battle.kind === "event" ? "/festival" : battle.kind === "adventure" ? "/" : "/arena"); }} />}
+      {outcome && (
+        <Outcome
+          battle={battle}
+          outcome={outcome}
+          onAgain={() => void again()}
+          onLeave={() => {
+            qc.setQueryData(["battle"], { battle: null });
+            navigate(battle.kind === "dungeon" ? "/dungeon" : battle.kind === "tower" ? "/tower" : battle.kind === "worldboss" ? "/raid" : battle.kind === "event" ? "/festival" : battle.kind === "adventure" ? "/" : "/arena");
+          }}
+          autoResolveAdventure={autoResolveAdventure}
+          onToggleAuto={toggleAutoResolve}
+        />
+      )}
     </div>
   );
 }
@@ -334,7 +402,21 @@ function ActionCard({ art, name, text, hint, cooldown, rank, onClick, disabled, 
   );
 }
 
-function Outcome({ battle, outcome, onAgain, onLeave }: { battle: ClientBattle; outcome: NonNullable<ActResponse["outcome"]>; onAgain: () => void; onLeave: () => void }) {
+function Outcome({
+  battle,
+  outcome,
+  onAgain,
+  onLeave,
+  autoResolveAdventure,
+  onToggleAuto,
+}: {
+  battle: ClientBattle;
+  outcome: NonNullable<ActResponse["outcome"]>;
+  onAgain: () => void;
+  onLeave: () => void;
+  autoResolveAdventure?: boolean;
+  onToggleAuto?: () => void;
+}) {
   const won = outcome.result === "won";
   const [revealed, setRevealed] = useState(false);
   useEffect(() => {
@@ -386,6 +468,16 @@ function Outcome({ battle, outcome, onAgain, onLeave }: { battle: ClientBattle; 
         <div className="row row--wrap outcome__actions">
           <Button variant="primary" size="lg" onClick={onAgain}>{kindAgain}</Button>
           <Button size="lg" onClick={onLeave}>{battle.kind === "adventure" ? "Back to the table" : "Leave"}</Button>
+          {battle.kind === "adventure" && onToggleAuto && (
+            <Button
+              variant={autoResolveAdventure ? "primary" : "ghost"}
+              size="lg"
+              onClick={onToggleAuto}
+              icon={<Zap size={18} />}
+            >
+              {autoResolveAdventure ? "⚡ Auto-resolve: ON (drawing next...)" : "⚡ Auto-resolve: OFF"}
+            </Button>
+          )}
         </div>
       </div>
     </div>

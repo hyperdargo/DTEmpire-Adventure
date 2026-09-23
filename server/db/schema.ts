@@ -263,4 +263,12 @@ CREATE TABLE audit_log (
 CREATE INDEX audit_user ON audit_log(user_id, created_at DESC);
 `,
   },
+  {
+    id: 2,
+    name: "abyss_mode",
+    sql: `
+ALTER TABLE players ADD COLUMN abyss_best INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS players_abyss ON players(abyss_best DESC);
+`,
+  },
 ];

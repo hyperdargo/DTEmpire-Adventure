@@ -1,21 +1,23 @@
 import { buildApp } from "./app.ts";
 import { loadConfig } from "./config.ts";
 import { expireAuctions, expireTrades } from "./game/social.ts";
+import { tickCompanions } from "./game/companions.ts";
 
 const config = loadConfig();
 const app = await buildApp({ config });
 
-// Background sweeps: expired trades and auctions are returned to their owners by mail.
+// Background sweeps: expired trades, auctions, and 24/7 AI companion simulation.
 const sweep = setInterval(() => {
   try {
     app.game.db.tx(() => {
       expireTrades(app.game);
       expireAuctions(app.game);
     });
+    tickCompanions(app.game);
   } catch (err) {
     app.log.error({ err }, "sweep failed");
   }
-}, 60_000);
+}, 30_000);
 sweep.unref();
 
 const shutdown = async (signal: string) => {

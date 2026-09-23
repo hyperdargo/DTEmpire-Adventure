@@ -175,7 +175,7 @@ export async function resetPassword(g: GameCtx, email: string, code: string, pas
 export function discordAuthorizeUrl(g: GameCtx, state: string) {
   const d = g.config.discord;
   if (!d) throw new GameError("Discord login isn't set up on this server.", { status: 501 });
-  const params = new URLSearchParams({ client_id: d.clientId, redirect_uri: d.redirectUri, response_type: "code", scope: "identify", state, prompt: "none" });
+  const params = new URLSearchParams({ client_id: d.clientId, redirect_uri: d.redirectUri, response_type: "code", scope: "identify", state, prompt: "consent" });
   return `https://discord.com/oauth2/authorize?${params}`;
 }
 

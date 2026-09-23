@@ -4,7 +4,8 @@ import type { Rarity } from "../../shared/data/types.ts";
 import type { ItemRecord } from "../../shared/rules/items.ts";
 import type { LootDrop } from "../../shared/rules/loot.ts";
 import { MAX_LEVEL, applyXp, regenHp, xpToNext } from "../../shared/rules/progression.ts";
-import { type Buffs, type HeroStats, type PetRecord, computeHeroStats } from "../../shared/rules/stats.ts";
+import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower } from "../../shared/rules/stats.ts";
+import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
 import { dayKey } from "../lib/time.ts";
@@ -27,10 +28,18 @@ export interface PlayerState {
   achievements?: string[];
   titles?: string[];
   dual?: { classId: string; level: number; xp: number } | null;
-  settings?: { autoSalvageCommon?: boolean; quickBattleDefault?: boolean };
+  settings?: {
+    autoSalvageCommon?: boolean;
+    quickBattleDefault?: boolean;
+    autoResolveAdventure?: boolean;
+    autoResolvePotions?: boolean;
+  };
+  autoResolveAdventure?: boolean;
+  autoResolvePotions?: boolean;
   worldBoss?: { day: string; attempts: number };
   arena?: { day: string; ranked: number };
   milestoneEggs?: number;
+  estate?: PlayerEstateState;
   onboarded?: boolean;
 }
 
@@ -47,6 +56,7 @@ export interface Player {
   hpAt: number;
   towerFloor: number;
   dungeonBest: number;
+  abyssBest: number;
   arenaRating: number;
   power: number;
   guildId: number | null;
@@ -63,7 +73,7 @@ export interface Player {
 
 interface PlayerRow {
   user_id: number; name: string; class_id: string; class_rarity: string; level: number; xp: number; total_xp: number;
-  coins: number; hp: number; hp_at: number; tower_floor: number; dungeon_best: number; arena_rating: number; power: number;
+  coins: number; hp: number; hp_at: number; tower_floor: number; dungeon_best: number; abyss_best?: number; arena_rating: number; power: number;
   guild_id: number | null; title: string | null; avatar: string | null; bio: string | null; counters: string; state: string;
   created_at: number; last_seen_at: number;
 }
@@ -71,6 +81,7 @@ interface PlayerRow {
 const fromRow = (r: PlayerRow): Player => ({
   userId: r.user_id, name: r.name, classId: r.class_id, classRarity: r.class_rarity as Rarity, level: r.level, xp: r.xp,
   totalXp: r.total_xp, coins: r.coins, hp: r.hp, hpAt: r.hp_at, towerFloor: r.tower_floor, dungeonBest: r.dungeon_best,
+  abyssBest: r.abyss_best ?? 0,
   arenaRating: r.arena_rating, power: r.power, guildId: r.guild_id, title: r.title, avatar: r.avatar, bio: r.bio,
   counters: json(r.counters, {}), state: json(r.state, {}), createdAt: r.created_at, lastSeenAt: r.last_seen_at, notices: [],
 });
@@ -89,9 +100,9 @@ export function loadPlayer(g: GameCtx, userId: number): Player {
 export function savePlayer(g: GameCtx, p: Player) {
   g.db.run(
     `UPDATE players SET name=?, class_id=?, class_rarity=?, level=?, xp=?, total_xp=?, coins=?, hp=?, hp_at=?, tower_floor=?,
-     dungeon_best=?, arena_rating=?, power=?, guild_id=?, title=?, avatar=?, bio=?, counters=?, state=?, last_seen_at=? WHERE user_id=?`,
+     dungeon_best=?, abyss_best=?, arena_rating=?, power=?, guild_id=?, title=?, avatar=?, bio=?, counters=?, state=?, last_seen_at=? WHERE user_id=?`,
     p.name, p.classId, p.classRarity, p.level, p.xp, p.totalXp, Math.max(0, Math.floor(p.coins)), p.hp, p.hpAt, p.towerFloor,
-    p.dungeonBest, p.arenaRating, p.power, p.guildId, p.title, p.avatar, p.bio, JSON.stringify(p.counters), JSON.stringify(p.state),
+    p.dungeonBest, p.abyssBest, p.arenaRating, p.power, p.guildId, p.title, p.avatar, p.bio, JSON.stringify(p.counters), JSON.stringify(p.state),
     p.lastSeenAt, p.userId,
   );
 }
@@ -113,6 +124,11 @@ export function activeBuffs(p: Player, now: number): ActiveBuff[] {
   return (p.state.buffs ?? []).filter((b) => b.until > now);
 }
 
+export function applyBuff(p: Player, id: string, durationSeconds: number, buff: Buffs, now = Date.now()) {
+  const active = activeBuffs(p, now).filter((b) => b.id !== id);
+  p.state.buffs = [...active, { id, until: now + durationSeconds * 1000, buff }];
+}
+
 export function combinedBuffs(p: Player, now: number): Buffs {
   const out: Buffs = {};
   for (const b of activeBuffs(p, now)) {
@@ -121,6 +137,11 @@ export function combinedBuffs(p: Player, now: number): Buffs {
     out.coinPct = (out.coinPct ?? 0) + (b.buff.coinPct ?? 0);
     out.xpPct = (out.xpPct ?? 0) + (b.buff.xpPct ?? 0);
   }
+  const estate = computeEstateStats(p.state.estate);
+  out.atkPct = (out.atkPct ?? 0) + estate.atkPct;
+  out.defPct = (out.defPct ?? 0) + estate.defPct;
+  out.coinPct = (out.coinPct ?? 0) + estate.coinPct;
+  out.xpPct = (out.xpPct ?? 0) + estate.xpPct;
   return out;
 }
 
@@ -149,7 +170,7 @@ export function guildPerk(g: GameCtx, p: Player): number {
 
 export function heroStats(g: GameCtx, p: Player): HeroStats {
   const now = g.clock.now();
-  return computeHeroStats({
+  const stats = computeHeroStats({
     classId: p.classId,
     classRarity: p.classRarity,
     level: p.level,
@@ -159,6 +180,19 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
     buffs: combinedBuffs(p, now),
     guildPerkPct: guildPerk(g, p),
   });
+  const estate = computeEstateStats(p.state.estate);
+  if (estate.hpPct) stats.maxHp = Math.round(stats.maxHp * (1 + estate.hpPct / 100));
+  if (estate.flatHp) stats.maxHp += estate.flatHp;
+  if (estate.flatAtk) stats.atk += estate.flatAtk;
+  if (estate.flatDef) stats.def += estate.flatDef;
+  if (estate.crit) stats.crit = Math.min(75, stats.crit + estate.crit);
+  if (estate.luck) stats.luck += estate.luck;
+  if (estate.bossDamage) stats.bossDamage += estate.bossDamage;
+  if (estate.skillPower) stats.skillPower += estate.skillPower;
+  if (estate.petPowerPct) stats.petPowerPct += estate.petPowerPct;
+  if (estate.regenPct) stats.regenPct += estate.regenPct;
+  stats.power = heroPower(stats);
+  return stats;
 }
 
 export function refreshPower(g: GameCtx, p: Player) {

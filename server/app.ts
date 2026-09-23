@@ -23,6 +23,7 @@ import { registerRealtime } from "./routes/realtime.ts";
 // Battle finalizers register themselves on import.
 import "./game/pve.ts";
 import "./game/modes.ts";
+import { ensureCompanions } from "./game/companions.ts";
 import "./game/events.ts";
 
 declare module "fastify" {
@@ -177,6 +178,10 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     hub.closeAll();
     if (!opts.db) db.close();
   });
+
+  if (config.env !== "test") {
+    await ensureCompanions(game);
+  }
 
   return app;
 }
