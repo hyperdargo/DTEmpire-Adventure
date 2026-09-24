@@ -214,6 +214,14 @@ export function loginWithDiscord(g: GameCtx, identity: { id: string; username: s
   });
 }
 
+export function unlinkDiscord(g: GameCtx, userId: number) {
+  const user = g.db.get<{ password_hash: string | null }>("SELECT password_hash FROM users WHERE id = ?", userId);
+  if (!user?.password_hash) {
+    throw new GameError("Set a password in Settings before disconnecting Discord so you can log back in.", { status: 400 });
+  }
+  g.db.run("UPDATE users SET discord_id = NULL WHERE id = ?", userId);
+}
+
 export function deleteAccount(g: GameCtx, userId: number) {
   g.db.tx(() => {
     const guild = g.db.get<{ guild_id: number; role: string }>("SELECT guild_id, role FROM guild_members WHERE user_id = ?", userId);

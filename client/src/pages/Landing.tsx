@@ -128,9 +128,14 @@ export function Landing() {
         </div>
       </section>
 
-      <footer className="landing__foot faint">
-        <span>DTEmpire Adventure</span>
-        <Link to="/login">Sign in</Link>
+      <footer className="landing__foot faint" style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+        <span>&copy; {new Date().getFullYear()} DTEmpire Adventure</span>
+        <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
+          <Link to="/apps">Get App</Link>
+          <Link to="/terms">Terms of Service</Link>
+          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/login">Sign in</Link>
+        </div>
       </footer>
     </div>
   );

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireUser } from "../app.ts";
 import {
   SESSION_COOKIE, SESSION_DAYS, changePassword, createGuest, createSession, deleteAccount, destroySession, discordAuthorizeUrl,
-  discordIdentify, login, loginWithDiscord, register, requestPasswordReset, resetPassword, upgradeGuest, userFromSession,
+  discordIdentify, login, loginWithDiscord, register, requestPasswordReset, resetPassword, unlinkDiscord, upgradeGuest, userFromSession,
 } from "../auth.ts";
 import { newToken } from "../lib/crypto.ts";
 import { GameError } from "../lib/errors.ts";
@@ -118,4 +118,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   app.get("/api/auth/discord/callback", handleDiscordCallback);
   app.get("/callback", handleDiscordCallback);
+
+  app.post("/api/auth/discord/unlink", async (req) => {
+    requireUser(req);
+    unlinkDiscord(g, req.user!.id);
+    return { ok: true };
+  });
 }

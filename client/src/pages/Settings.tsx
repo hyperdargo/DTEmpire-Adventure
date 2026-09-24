@@ -150,6 +150,9 @@ export default function SettingsPage() {
     const f = new FormData(form);
     void run("password", () => api.post("/api/auth/password", { current: f.get("current") || undefined, next: f.get("next") }), "Password changed.").then((ok) => ok && form.reset());
   };
+  const disconnectDiscord = () => {
+    void run("discord", () => api.post("/api/auth/discord/unlink", {}), "Discord account disconnected.");
+  };
   const upload = async (file: File | undefined) => {
     if (!file) return;
     const form = new FormData();
@@ -328,9 +331,18 @@ export default function SettingsPage() {
               <Button type="submit" size="sm" loading={busy === "password"}>{user!.hasPassword ? "Change password" : "Set a password"}</Button>
             </form>
             {providers.data?.discord && (
-              <p style={{ marginTop: "var(--s-4)" }}>
-                {user!.discordLinked ? <span className="chip chip--good">Discord linked</span> : <a className="btn btn--sm btn--discord" href="/api/auth/discord/start">Link Discord</a>}
-              </p>
+              <div style={{ marginTop: "var(--s-4)", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                {user!.discordLinked ? (
+                  <>
+                    <span className="chip chip--good">Discord linked</span>
+                    <Button variant="ghost" size="sm" loading={busy === "discord"} onClick={() => void disconnectDiscord()}>
+                      Disconnect Discord
+                    </Button>
+                  </>
+                ) : (
+                  <a className="btn btn--sm btn--discord" href="/api/auth/discord/start">Link Discord</a>
+                )}
+              </div>
             )}
           </Panel>
         )}

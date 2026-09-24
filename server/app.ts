@@ -164,7 +164,9 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       },
     });
     app.setNotFoundHandler((req, reply) => {
-      if (req.method === "GET" && !req.url.startsWith("/api/") && !req.url.startsWith("/uploads/") && req.headers.accept?.includes("text/html")) {
+      const isHtmlRoute = !req.url.startsWith("/api/") && !req.url.startsWith("/uploads/") &&
+        (req.headers.accept?.includes("text/html") || !req.url.slice(1).includes("."));
+      if ((req.method === "GET" || req.method === "HEAD") && isHtmlRoute) {
         // Arcade client gets its own shell — everything else falls through to the React SPA.
         const isArcade = req.url === "/arcade" || req.url.startsWith("/arcade?") || req.url.startsWith("/arcade/");
         return reply.header("Cache-Control", "no-cache").sendFile(isArcade ? "arcade.html" : "index.html", dist);

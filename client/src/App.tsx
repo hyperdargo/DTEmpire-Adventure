@@ -34,6 +34,10 @@ const EstatePage = lazy(() => import("./pages/Estate.tsx"));
 const GuidePage = lazy(() => import("./pages/Guide.tsx"));
 const AppsPage = lazy(() => import("./pages/Apps.tsx").then((m) => ({ default: m.AppsPage })));
 const AppsStandalone = lazy(() => import("./pages/Apps.tsx").then((m) => ({ default: m.AppsStandalone })));
+const TermsPage = lazy(() => import("./pages/Terms.tsx").then((m) => ({ default: m.TermsPage })));
+const TermsStandalone = lazy(() => import("./pages/Terms.tsx").then((m) => ({ default: m.TermsStandalone })));
+const PrivacyPage = lazy(() => import("./pages/Privacy.tsx").then((m) => ({ default: m.PrivacyPage })));
+const PrivacyStandalone = lazy(() => import("./pages/Privacy.tsx").then((m) => ({ default: m.PrivacyStandalone })));
 const ChatPage = lazy(() => import("./pages/Chat.tsx"));
 const GuildPage = lazy(() => import("./pages/Guild.tsx"));
 const FriendsPage = lazy(() => import("./pages/Friends.tsx"));
@@ -103,6 +107,8 @@ export function App() {
         <Route path="/register" element={<AuthPage mode="register" />} />
         <Route path="/reset" element={<AuthPage mode="reset" />} />
         <Route path="/apps" element={<Page><AppsStandalone /></Page>} />
+        <Route path="/terms" element={<Page><TermsStandalone /></Page>} />
+        <Route path="/privacy" element={<Page><PrivacyStandalone /></Page>} />
         <Route path="*" element={<Landing />} />
       </Routes>
     );
@@ -141,6 +147,8 @@ export function App() {
           <Route path="/records" element={<Page><RecordsPage /></Page>} />
           <Route path="/mail" element={<Page><MailPage /></Page>} />
           <Route path="/apps" element={<Page><AppsPage /></Page>} />
+          <Route path="/terms" element={<Page><TermsPage /></Page>} />
+          <Route path="/privacy" element={<Page><PrivacyPage /></Page>} />
           <Route path="/settings" element={<Page><SettingsPage /></Page>} />
           <Route path="/players/:name" element={<Page><ProfilePage /></Page>} />
           <Route path="/login" element={<Navigate to="/" replace />} />
