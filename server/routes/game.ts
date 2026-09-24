@@ -23,7 +23,7 @@ import * as inv from "../game/inventory.ts";
 import { meSnapshot } from "../game/me.ts";
 import * as modes from "../game/modes.ts";
 import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/realm.ts";
-import { type Player, bumpMission, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
+import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
 
@@ -497,6 +497,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
   app.get("/api/achievements", async (req) => {
     const p = loadPlayer(g, u(req).id);
+    checkAchievements(g, p);
+    savePlayer(g, p);
     const done = new Set(p.state.achievements ?? []);
     return { achievements: ACHIEVEMENTS.map((a) => ({ ...a, progress: Math.min(a.goal, p.counters[a.counter] ?? 0), done: done.has(a.id) })), titles: p.state.titles ?? [], active: p.title };
   });

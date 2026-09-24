@@ -237,6 +237,12 @@ export function setMax(g: GameCtx, p: Player, counter: Counter, value: number) {
 }
 
 export function checkAchievements(g: GameCtx, p: Player) {
+  try {
+    const skillCount = g.db.get<{ c: number }>("SELECT count(DISTINCT skill_id) as c FROM skills WHERE user_id = ?", p.userId)?.c ?? 0;
+    if (skillCount > (p.counters.skillsLearned ?? 0)) {
+      p.counters.skillsLearned = skillCount;
+    }
+  } catch {}
   const done = new Set(p.state.achievements ?? []);
   for (const a of ACHIEVEMENTS) {
     if (done.has(a.id)) continue;
