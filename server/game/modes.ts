@@ -278,6 +278,7 @@ export function simulateWorldBossStrike(g: GameCtx, p: Player) {
   const coins = grantCoins(g, p, Math.round(score * (1 + p.level / 20)));
   const xp = grantXp(g, p, Math.round(score * 0.6 * (1 + p.level / 25)), { applyBonus: true });
   bump(g, p, "worldBossHits");
+  savePlayer(g, p);
 
   const boss = g.db.get<BossRow>("SELECT * FROM world_boss WHERE week = ?", b.week)!;
   g.hub.toChannel("world", {

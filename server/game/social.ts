@@ -593,7 +593,7 @@ export function leaderboard(g: GameCtx, board: Board, userId: number) {
   const myRank = me ? (g.db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM players WHERE ${b.value} > ?`, me.value)?.n ?? 0) + 1 : null;
   return {
     board,
-    rows: rows.map((r, i) => ({ rank: i + 1, userId: r.user_id, name: r.name, level: r.level, classIcon: CLASS_BY_ID[r.class_id]?.icon ?? "⚔️", className: CLASS_BY_ID[r.class_id]?.name ?? "", value: r.value, guildTag: r.tag, online: g.hub.isOnline(r.user_id) })),
+    rows: rows.map((r, i) => ({ rank: i + 1, userId: r.user_id, name: r.name, level: r.level, classIcon: CLASS_BY_ID[r.class_id]?.icon ?? "⚔️", className: CLASS_BY_ID[r.class_id]?.name ?? "", value: r.value, guildId: r.guild_id, guildTag: r.tag, online: g.hub.isOnline(r.user_id) })),
     me: me ? { rank: myRank, value: me.value } : null,
   };
 }

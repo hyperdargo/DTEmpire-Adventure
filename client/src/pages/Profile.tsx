@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Ban, MessageCircle, Swords, Handshake, UserPlus } from "lucide-react";
 import { Link, useParams } from "react-router";
 import type { ItemView, PetView } from "../../../shared/data/types.ts";
 import { GameCard, ItemCard, PetCard } from "../components/GameCard.tsx";
 import { Button, Empty, Loading, PageHead, Panel } from "../components/ui.tsx";
+import { GuildSheet } from "../components/GuildSheet.tsx";
 import { STAT_LABEL, fmt, statValue, timeAgo } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
 import { useChallenge, useDirectMessage } from "./Friends.tsx";
@@ -25,6 +27,7 @@ const BOT_NAMES = new Set([
 export default function ProfilePage() {
   const { name = "" } = useParams();
   const { hero } = useHero();
+  const [selectedGuildId, setSelectedGuildId] = useState<number | null>(null);
   const { data, isPending, isError } = useData<Profile>(["profile", name], `/api/players/${encodeURIComponent(name)}`);
   const add = useAction<{ userId: number }>("/api/friends/request", { invalidate: [["profile", name]], success: "Friend request sent." });
   const block = useAction<{ userId: number; blocked: boolean }>("/api/block", { invalidate: [["profile", name]], success: "Updated." });
@@ -47,7 +50,20 @@ export default function ProfilePage() {
           <Button variant="ghost" icon={<Ban size={16} />} onClick={() => block.mutate({ userId: p.userId, blocked: !p.blocked })}>{p.blocked ? "Unblock" : "Block"}</Button>
         </>
       )}>
-        {p.title}{p.guild ? <> of <span className="art">{p.guild.emblem}</span> {p.guild.name} [{p.guild.tag}]</> : null} · {p.online ? "online now" : `seen ${timeAgo(p.lastSeenAt)}`}
+        {p.title}{p.guild ? (
+          <>
+            {" "}of{" "}
+            <button
+              type="button"
+              className="link faint"
+              style={{ border: "none", background: "none", cursor: "pointer", padding: 0 }}
+              title="View Clan & Members"
+              onClick={() => setSelectedGuildId(p.guild!.id)}
+            >
+              <span className="art">{p.guild.emblem}</span> <b>{p.guild.name}</b> [{p.guild.tag}]
+            </button>
+          </>
+        ) : null} · {p.online ? "online now" : `seen ${timeAgo(p.lastSeenAt)}`}
       </PageHead>
       <div className="profile">
         <div className="stack">
@@ -80,6 +96,7 @@ export default function ProfilePage() {
           </Panel>
         </div>
       </div>
+      <GuildSheet guildId={selectedGuildId} onClose={() => setSelectedGuildId(null)} />
     </>
   );
 }

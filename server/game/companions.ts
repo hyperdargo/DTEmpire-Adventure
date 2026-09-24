@@ -304,57 +304,6 @@ export async function ensureCompanions(g: GameCtx): Promise<number[]> {
       });
     } else {
       userId = row.id;
-
-      // If companion was previously created at a high level, reset to Level 1
-      if (row.level > 1 && row.level > 10) {
-        g.db.tx(() => {
-          const cls = CLASS_BY_ID[def.classId] ?? CLASS_BY_ID.warrior!;
-          // Reset items to Level 1
-          g.db.run("DELETE FROM items WHERE owner_id = ?", userId);
-          const gearTemplates = [def.starterWeapon, def.armor, def.helmet, def.boots];
-          for (const tId of gearTemplates) {
-            const t = GEAR_BY_ID[tId];
-            if (!t) continue;
-            const rolled = rollGear(rng, t, 1, "common");
-            g.db.run(
-              `INSERT INTO items (owner_id, template_id, rarity, ilvl, upgrade, qty, base, affixes, equipped, created_at)
-               VALUES (?, ?, ?, ?, 0, 1, ?, ?, 1, ?)`,
-              userId,
-              tId,
-              rolled.rarity,
-              1,
-              JSON.stringify(rolled.base),
-              JSON.stringify(rolled.affixes),
-              now
-            );
-          }
-
-          // Reset skills
-          g.db.run("DELETE FROM skills WHERE user_id = ?", userId);
-          g.db.run("INSERT INTO skills (user_id, skill_id, rank, slot) VALUES (?, 'power_strike', 1, 0)", userId);
-
-          // Reset pets
-          g.db.run("UPDATE pets SET level = 1, xp = 0 WHERE owner_id = ?", userId);
-
-          const eq = equippedItems(g, userId);
-          const stats = computeHeroStats({
-            classId: cls.id,
-            classRarity: def.classRarity,
-            level: 1,
-            equipped: eq,
-          });
-
-          g.db.run(
-            `UPDATE players
-             SET level = 1, xp = 0, total_xp = 0, coins = 150, hp = ?, tower_floor = 1, dungeon_best = 0, arena_rating = 1000, power = ?, state = ?
-             WHERE user_id = ?`,
-            stats.maxHp,
-            stats.power,
-            JSON.stringify({ isCompanion: true, shiftStartHour: def.shiftStartHour }),
-            userId
-          );
-        });
-      }
     }
 
     ids.push(userId);
@@ -586,6 +535,21 @@ export function tickCompanions(g: GameCtx) {
 
   // 3. Pick 1 or 2 awake companions to perform an action (1/4 real pace)
   const rng = createRng(freshSeed());
+
+  // Awake companion bots actively participate in the World Boss raid
+  for (const awake of awakeRows) {
+    if (rng.chance(35)) {
+      try {
+        const bp = loadPlayer(g, awake.user_id);
+        if (bp && bp.level >= 10) {
+          simulateWorldBossStrike(g, bp);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+  }
+
   const count = rng.chance(60) ? 2 : 1;
   const shuffled = [...awakeRows].sort(() => rng.next() - 0.5);
   const actors = shuffled.slice(0, Math.min(count, awakeRows.length));

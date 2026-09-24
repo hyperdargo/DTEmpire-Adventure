@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { GUILD_CREATE_COST, GUILD_CREATE_LEVEL } from "../../../shared/data/meta.ts";
 import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
+import { GuildSheet } from "../components/GuildSheet.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
 
@@ -18,10 +19,11 @@ export default function GuildPage() {
   return hero.guild ? <MyGuild id={hero.guild.id} /> : <FindGuild />;
 }
 
-function FindGuild() {
+function FindGuild({ inMyGuild }: { inMyGuild?: boolean } = {}) {
   const { hero } = useHero();
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState(false);
+  const [inspectGuildId, setInspectGuildId] = useState<number | null>(null);
   const { data, isPending } = useData<{ guilds: GuildSummary[] }>(["guilds", q], `/api/guilds?q=${encodeURIComponent(q)}`);
   const join = useAction<{ id: number }, string>((b) => `/api/guilds/${b.id}/join`, { invalidate: [["guilds"]], success: (r) => (r === "requested" ? "Request sent to the guild's officers." : "Welcome to the guild!") });
   const create = useAction<{ name: string; tag: string; emblem: string; description: string }>("/api/guilds", { success: "Your guild is founded.", onSuccess: () => setCreating(false) });
@@ -34,14 +36,22 @@ function FindGuild() {
 
   return (
     <>
-      <PageHead title="Guilds" actions={<Button variant="primary" disabled={hero.level < GUILD_CREATE_LEVEL} onClick={() => setCreating(true)}>{hero.level < GUILD_CREATE_LEVEL ? `Found a guild at level ${GUILD_CREATE_LEVEL}` : "Found a guild"}</Button>}>
-        Guilds share a chat channel, daily tasks, and a level that gives every member bonus XP.
-      </PageHead>
+      {!inMyGuild && (
+        <PageHead title="Guilds" actions={<Button variant="primary" disabled={hero.level < GUILD_CREATE_LEVEL} onClick={() => setCreating(true)}>{hero.level < GUILD_CREATE_LEVEL ? `Found a guild at level ${GUILD_CREATE_LEVEL}` : "Found a guild"}</Button>}>
+          Guilds share a chat channel, daily tasks, and a level that gives every member bonus XP.
+        </PageHead>
+      )}
       <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search guilds by name or tag" aria-label="Search guilds" style={{ marginBottom: "var(--s-5)" }} />
       {isPending ? <Loading rows={3} /> : (data?.guilds ?? []).length === 0 ? <Empty art="🛡️" title="No guilds found">Be the first to raise a banner.</Empty> : (
         <ul className="guild-list">
           {data!.guilds.map((g) => (
-            <li key={g.id} className="guild-row panel panel--tight">
+            <li
+              key={g.id}
+              className="guild-row panel panel--tight"
+              style={{ cursor: "pointer" }}
+              title="Click to view clan & members"
+              onClick={() => setInspectGuildId(g.id)}
+            >
               <span className="art guild-row__emblem" aria-hidden>{g.emblem}</span>
               <div className="guild-row__info">
                 <b>{g.name} <span className="faint">[{g.tag}]</span></b>
@@ -49,11 +59,14 @@ function FindGuild() {
               </div>
               <span className="chip">Lv {g.level}</span>
               <span className="chip">{g.members}/{g.maxMembers}</span>
-              <Button size="sm" variant={g.open ? "primary" : "default"} disabled={g.members >= g.maxMembers} onClick={() => join.mutate({ id: g.id })}>{g.open ? "Join" : "Request"}</Button>
+              {!inMyGuild && (
+                <Button size="sm" variant={g.open ? "primary" : "default"} disabled={g.members >= g.maxMembers} onClick={(e) => { e.stopPropagation(); join.mutate({ id: g.id }); }}>{g.open ? "Join" : "Request"}</Button>
+              )}
             </li>
           ))}
         </ul>
       )}
+      <GuildSheet guildId={inspectGuildId} onClose={() => setInspectGuildId(null)} />
       <Sheet open={creating} onClose={() => setCreating(false)} title="Found a guild">
         <form className="stack" onSubmit={submit}>
           <label className="field"><span>Name</span><input className="input" name="name" required minLength={3} maxLength={24} /></label>
@@ -72,7 +85,7 @@ function FindGuild() {
 function MyGuild({ id }: { id: number }) {
   const { user } = useHero();
   const { data, isPending } = useData<GuildDetail>(["guild", id], `/api/guilds/${id}`);
-  const [tab, setTab] = useState<"overview" | "war">("overview");
+  const [tab, setTab] = useState<"overview" | "war" | "clans">("overview");
   const [donation, setDonation] = useState(1000);
   const inv = [["guild", id]];
   const leave = useAction("/api/guild/leave", { success: "You left the guild." });
@@ -100,11 +113,14 @@ function MyGuild({ id }: { id: number }) {
           options={[
             { value: "overview", label: "Overview" },
             { value: "war", label: "⚔️ Guild War" },
+            { value: "clans", label: "🛡️ All Clans" },
           ]}
         />
       </div>
       {tab === "war" ? (
         <GuildWarPanel />
+      ) : tab === "clans" ? (
+        <FindGuild inMyGuild />
       ) : (
         <div className="guild">
         <Panel title={`Level ${data.level}`} action={<span className="gold">+{data.perkPct}% XP for members</span>}>
