@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import { Shell } from "./components/Shell.tsx";
 import { Celebrations, Toasts } from "./components/Overlays.tsx";
 import { Loading } from "./components/ui.tsx";
+import { GraphicsEngine } from "./components/GraphicsEngine.tsx";
 import { UpdatePrompt } from "./components/UpdatePrompt.tsx";
 import type { HeroSnap } from "./lib/api.ts";
 import { useMe } from "./state/game.ts";
@@ -142,6 +143,7 @@ export function App() {
 
   return (
     <>
+      <GraphicsEngine />
       {body}
       <Toasts />
       <Celebrations />

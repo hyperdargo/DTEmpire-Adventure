@@ -33,6 +33,8 @@ export interface PlayerState {
     quickBattleDefault?: boolean;
     autoResolveAdventure?: boolean;
     autoResolvePotions?: boolean;
+    graphicsQuality?: "low" | "medium" | "high";
+    crtFilter?: boolean;
   };
   autoResolveAdventure?: boolean;
   autoResolvePotions?: boolean;

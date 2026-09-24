@@ -60,6 +60,8 @@ export function Landing() {
           <div className="row row--wrap">
             <Button variant="primary" size="lg" loading={busy} onClick={() => void playAsGuest()}>Play now, no signup</Button>
             <Link className="btn btn--lg" to="/register">Create an account</Link>
+            <a className="btn btn--ghost" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe">💻 Windows (.exe)</a>
+            <a className="btn btn--ghost" href="/downloads/DTEmpire-Adventure.apk" download="DTEmpire-Adventure.apk">📱 Android (.apk)</a>
           </div>
           <p className="faint">Free to play. Guests can save their hero to an account at any time.</p>
         </div>

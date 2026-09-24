@@ -1,9 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, LogOut } from "lucide-react";
+import { Cpu, Download, LogOut, Monitor, RefreshCw, Smartphone, Sparkles, Zap } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { Portrait } from "../components/Shell.tsx";
 import { Button, PageHead, Panel } from "../components/ui.tsx";
+import {
+  getStoredCrtFilter,
+  getStoredGraphicsQuality,
+  setStoredCrtFilter,
+  setStoredGraphicsQuality,
+  type GraphicsQuality,
+} from "../components/GraphicsEngine.tsx";
 import { api, errorMessage } from "../lib/api.ts";
 import { setSoundEnabled, soundEnabled } from "../lib/sound.ts";
 import { meKey, useAction, useHero } from "../state/game.ts";
@@ -27,7 +34,16 @@ export default function SettingsPage() {
   const [sound, setSound] = useState(soundEnabled());
   const [installable, setInstallable] = useState(!!deferredInstall);
   const [busy, setBusy] = useState<string | null>(null);
-  const settings = useAction<{ autoSalvageCommon?: boolean }>("/api/settings", { success: "Saved." });
+  const [graphics, setGraphics] = useState<GraphicsQuality>(
+    () => (hero.settings?.graphicsQuality as GraphicsQuality) ?? getStoredGraphicsQuality()
+  );
+  const [crt, setCrt] = useState<boolean>(() => hero.settings?.crtFilter ?? getStoredCrtFilter());
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const settings = useAction<{
+    autoSalvageCommon?: boolean;
+    graphicsQuality?: GraphicsQuality;
+    crtFilter?: boolean;
+  }>("/api/settings", { success: "Saved." });
   const profile = useAction<{ bio: string }>("/api/profile", { success: "Profile saved." });
 
   useEffect(() => {
@@ -49,6 +65,76 @@ export default function SettingsPage() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const selectGraphics = (q: GraphicsQuality) => {
+    setGraphics(q);
+    setStoredGraphicsQuality(q);
+    settings.mutate({ graphicsQuality: q });
+    notify.toast({
+      tone: "good",
+      title: `Graphics set to ${q.toUpperCase()}`,
+    });
+  };
+
+  const toggleCrt = (enabled: boolean) => {
+    setCrt(enabled);
+    setStoredCrtFilter(enabled);
+    settings.mutate({ crtFilter: enabled });
+  };
+
+  const handleLiveUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      // 1. Fetch server version info
+      const ver = await api.get<{ version: string; buildTime: number; appVersion?: string }>("/api/version");
+      
+      // 2. Check Service Worker for new cache assets
+      let foundSwUpdate = false;
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          await reg.update();
+          if (reg.waiting || reg.installing) {
+            foundSwUpdate = true;
+          }
+        }
+      }
+
+      if (foundSwUpdate) {
+        notify.toast({
+          tone: "good",
+          title: "New realm patch found! Reloading assets...",
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        notify.toast({
+          tone: "good",
+          title: `You are playing on the latest version (${ver.appVersion ?? ver.version}). Realm is synchronized!`,
+        });
+      }
+    } catch {
+      notify.toast({
+        tone: "warn",
+        title: "Could not reach version server. Refreshing local caches...",
+      });
+      setTimeout(() => window.location.reload(), 1000);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const forceCachePurge = async () => {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    notify.toast({ tone: "good", title: "Caches cleared. Reloading realm..." });
+    setTimeout(() => {
+      window.location.href = window.location.pathname + "?v=" + Date.now();
+    }, 800);
   };
 
   const upgrade = (e: FormEvent<HTMLFormElement>) => {
@@ -117,19 +203,118 @@ export default function SettingsPage() {
           <p className="faint" style={{ marginTop: "var(--s-3)" }}>Titles are chosen in <Link to="/records">Records</Link>. Your public page: <Link to={`/players/${encodeURIComponent(hero.name)}`}>{hero.name}</Link>.</p>
         </Panel>
 
+        <Panel title={<h2><Sparkles size={20} aria-hidden /> Visuals & Graphics Quality</h2>}>
+          <p className="muted">Customize the visual fidelity of the realm. High mode activates dynamic 2D lighting, forge and dungeon particle atmosphere, and arcade combat popouts.</p>
+          <div className="stack" style={{ gap: "var(--s-4)", marginTop: "var(--s-3)" }}>
+            <div className="row row--wrap" role="radiogroup" aria-label="Graphics Quality">
+              <Button
+                variant={graphics === "low" ? "primary" : "ghost"}
+                size="sm"
+                icon={<Cpu size={16} />}
+                onClick={() => selectGraphics("low")}
+              >
+                Low (60 FPS Performance)
+              </Button>
+              <Button
+                variant={graphics === "medium" ? "primary" : "ghost"}
+                size="sm"
+                icon={<Sparkles size={16} />}
+                onClick={() => selectGraphics("medium")}
+              >
+                Medium (Balanced)
+              </Button>
+              <Button
+                variant={graphics === "high" ? "primary" : "ghost"}
+                size="sm"
+                icon={<Zap size={16} />}
+                onClick={() => selectGraphics("high")}
+              >
+                High (Ultra Engine)
+              </Button>
+            </div>
+            <div className="stack" style={{ gap: "var(--s-2)" }}>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={crt}
+                  onChange={(e) => toggleCrt(e.target.checked)}
+                />
+                Retro CRT & Scanline post-processing filter
+              </label>
+              <p className="faint">
+                {graphics === "high"
+                  ? "High mode enables real-time 2D canvas lighting, particle embers in forge/camp, mystical dungeon dust, and screen shakes."
+                  : graphics === "medium"
+                  ? "Medium mode provides smooth animations, clean isometric depth, and subtle ambient motes."
+                  : "Low mode turns off all canvas shaders and particles for maximum battery life and minimum latency."}
+              </p>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel title={<h2><RefreshCw size={20} aria-hidden /> Realm Version & Live Update</h2>}>
+          <p className="muted">Keep your client synchronized with the latest realm updates. When new content or balance patches are released, update immediately without losing game state.</p>
+          <div className="row row--wrap" style={{ gap: "var(--s-3)", marginTop: "var(--s-3)", alignItems: "center" }}>
+            <Button
+              variant="primary"
+              icon={<RefreshCw size={16} className={checkingUpdate ? "spin" : ""} />}
+              loading={checkingUpdate}
+              onClick={() => void handleLiveUpdate()}
+            >
+              Check for live updates
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void forceCachePurge()}
+            >
+              Force refresh realm assets
+            </Button>
+          </div>
+        </Panel>
+
+        <Panel title={<h2><Monitor size={20} aria-hidden /> Native Apps (.exe & .apk)</h2>}>
+          <p className="muted">Play on desktop or mobile with native hardware acceleration. Both the webapp and native apps use your same hero account in real-time sync.</p>
+          <div className="row row--wrap" style={{ gap: "var(--s-3)", marginTop: "var(--s-3)" }}>
+            <a
+              className="btn btn--primary"
+              href="/downloads/DTEmpire-Adventure-Setup.exe"
+              download="DTEmpire-Adventure-Setup.exe"
+            >
+              <Monitor size={16} /> Download for Windows (.exe)
+            </a>
+            <a
+              className="btn btn--primary"
+              href="/downloads/DTEmpire-Adventure.apk"
+              download="DTEmpire-Adventure.apk"
+            >
+              <Smartphone size={16} /> Download for Android (.apk)
+            </a>
+            {installable && (
+              <Button
+                variant="ghost"
+                icon={<Download size={16} />}
+                onClick={async () => {
+                  await deferredInstall?.prompt();
+                  deferredInstall = null;
+                  setInstallable(false);
+                }}
+              >
+                Install Web App (PWA)
+              </Button>
+            )}
+          </div>
+          <p className="faint" style={{ marginTop: "var(--s-3)" }}>
+            All progress, equipment, and level advancements save to your central account across Web, Windows, and Android.
+          </p>
+        </Panel>
+
         <Panel title="Preferences">
           <div className="stack">
             <label className="toggle"><input type="checkbox" checked={sound} onChange={(e) => { setSoundEnabled(e.target.checked); setSound(e.target.checked); }} /> Sound effects</label>
             <label className="toggle"><input type="checkbox" checked={!!hero.settings.autoSalvageCommon} onChange={(e) => settings.mutate({ autoSalvageCommon: e.target.checked })} /> Automatically salvage common gear drops into materials</label>
             <p className="faint">Animations follow your device's reduced-motion setting.</p>
           </div>
-        </Panel>
-
-        <Panel title="App">
-          <p className="muted">Install DTEmpire on your phone or desktop for a full-screen app that opens instantly and works offline for browsing.</p>
-          {installable ? (
-            <Button variant="primary" icon={<Download size={16} />} onClick={async () => { await deferredInstall?.prompt(); deferredInstall = null; setInstallable(false); }}>Install the app</Button>
-          ) : <p className="faint">Already installed, or use your browser's “Add to Home Screen” / “Install app” option.</p>}
         </Panel>
 
         {!user!.isGuest && (

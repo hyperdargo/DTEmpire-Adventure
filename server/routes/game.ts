@@ -75,10 +75,27 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/settings", async (req) => {
-    const body = parse(z.object({ autoSalvageCommon: z.boolean().optional(), quickBattleDefault: z.boolean().optional(), autoResolveAdventure: z.boolean().optional(), autoResolvePotions: z.boolean().optional() }), req);
+    const body = parse(z.object({
+      autoSalvageCommon: z.boolean().optional(),
+      quickBattleDefault: z.boolean().optional(),
+      autoResolveAdventure: z.boolean().optional(),
+      autoResolvePotions: z.boolean().optional(),
+      graphicsQuality: z.enum(["low", "medium", "high"]).optional(),
+      crtFilter: z.boolean().optional(),
+    }), req);
     return mutate(g, u(req), (p) => {
       p.state.settings = { ...p.state.settings, ...body };
     });
+  });
+
+  app.get("/api/version", async () => {
+    return {
+      version: "5.1.0",
+      appVersion: "5.1.0-ultra",
+      buildTime: Date.now(),
+      status: "online",
+      name: "DTEmpire Adventure RPG"
+    };
   });
 
   app.post("/api/profile", async (req) => {
