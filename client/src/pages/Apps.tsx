@@ -34,24 +34,30 @@ export function AppsPage() {
                 <Monitor size={32} style={{ color: "var(--gold)" }} />
                 <div>
                   <h3 style={{ margin: 0 }}>Windows PC Edition</h3>
-                  <span className="faint">Windows 10 / 11 · 64-bit · v5.1.0</span>
+                  <span className="faint">Windows 10 / 11 · 64-bit · v5.1.1</span>
                 </div>
               </div>
               <p className="muted" style={{ fontSize: "14px", lineHeight: "1.5" }}>
-                Full desktop experience with high-resolution scaling, native notifications, multi-tier graphics engine, and 60 FPS rendering.
+                Full desktop experience with high-resolution scaling, Discord Rich Presence integration, multi-tier graphics engine, and 60 FPS rendering.
               </p>
-              <div style={{ marginTop: "16px" }}>
+              <div className="row row--wrap" style={{ marginTop: "16px", gap: "10px" }}>
                 <Button
                   variant="primary"
-                  size="lg"
                   loading={downloading === "DTEmpire-Adventure-Setup.exe"}
                   onClick={() => triggerDownload("DTEmpire-Adventure-Setup.exe")}
                 >
-                  <Download size={18} /> Download Installer (.exe)
+                  <Download size={16} /> Installer (.exe)
                 </Button>
-                <div className="faint" style={{ marginTop: "8px", fontSize: "12px" }}>
-                  File: DTEmpire-Adventure-Setup.exe (78 MB)
-                </div>
+                <Button
+                  variant="ghost"
+                  loading={downloading === "DTEmpire-Adventure-Portable.exe"}
+                  onClick={() => triggerDownload("DTEmpire-Adventure-Portable.exe")}
+                >
+                  <Download size={16} /> Portable (.exe)
+                </Button>
+              </div>
+              <div className="faint" style={{ marginTop: "8px", fontSize: "12px" }}>
+                Installer: 78 MB · Portable: 8.6 MB (No install required)
               </div>
             </div>
 

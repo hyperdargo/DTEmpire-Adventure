@@ -104,9 +104,14 @@ export function Landing() {
               </div>
             </div>
             <p className="muted" style={{ fontSize: "13px", margin: "8px 0 12px" }}>Smooth 60 FPS gameplay with hardware acceleration and dedicated window frame.</p>
-            <a className="btn btn--primary" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe" style={{ width: "100%", justifyContent: "center" }}>
-              <Download size={16} /> Download .exe (Windows)
-            </a>
+            <div className="row" style={{ gap: "8px" }}>
+              <a className="btn btn--primary" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe" style={{ flex: 1, justifyContent: "center" }}>
+                <Download size={15} /> Installer
+              </a>
+              <a className="btn btn--ghost" href="/downloads/DTEmpire-Adventure-Portable.exe" download="DTEmpire-Adventure-Portable.exe" style={{ flex: 1, justifyContent: "center" }}>
+                <Download size={15} /> Portable
+              </a>
+            </div>
           </div>
 
           <div className="card" style={{ flex: "1 1 280px", maxWidth: "360px", padding: "16px", background: "var(--surface-sunken)", border: "1px solid var(--line)", textAlign: "left" }}>
