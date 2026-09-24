@@ -1,7 +1,7 @@
 import { CLASS_BY_ID } from "../../shared/data/classes.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
-import type { Rarity } from "../../shared/data/types.ts";
-import { rollGear } from "../../shared/rules/items.ts";
+import type { EquipSlot, Rarity } from "../../shared/data/types.ts";
+import { itemStats, pickGearTemplate, rollGear, statPower } from "../../shared/rules/items.ts";
 import { applyXp, MAX_LEVEL } from "../../shared/rules/progression.ts";
 import { towerLevelReq } from "../../shared/data/regions.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
@@ -428,7 +428,117 @@ export async function ensureCompanions(g: GameCtx): Promise<number[]> {
     }
   }
 
+  for (const id of ids) {
+    try {
+      autoEquipCompanion(g, id);
+    } catch {
+      // Ignore
+    }
+  }
+
   return ids;
+}
+
+export function autoEquipCompanion(g: GameCtx, userId: number) {
+  const p = loadPlayer(g, userId);
+  if (!p) return;
+
+  const slots: EquipSlot[] = ["weapon", "armor", "helmet", "boots", "accessory"];
+  const rng = createRng(freshSeed());
+  const now = g.clock?.now ? g.clock.now() : Date.now();
+
+  const items = g.db.all<{
+    id: number;
+    template_id: string;
+    rarity: Rarity;
+    ilvl: number;
+    upgrade: number;
+    base: string;
+    affixes: string;
+    equipped: number;
+  }>("SELECT id, template_id, rarity, ilvl, upgrade, base, affixes, equipped FROM items WHERE owner_id = ?", userId);
+
+  for (const slot of slots) {
+    const slotItems = items.filter((it) => {
+      const gear = GEAR_BY_ID[it.template_id];
+      if (!gear || gear.slot !== slot) return false;
+      const req = Math.min(gear.levelReq, it.ilvl);
+      return p.level >= req;
+    });
+
+    // Check if current best is missing or severely outdated
+    let bestPower = -1;
+    let bestItem: (typeof slotItems)[0] | null = null;
+    for (const it of slotItems) {
+      let base: Record<string, number> = {};
+      let affixes: any[] = [];
+      try { base = JSON.parse(it.base); } catch {}
+      try { affixes = JSON.parse(it.affixes); } catch {}
+      const power = statPower(itemStats({ upgrade: it.upgrade, base, affixes }));
+      if (power > bestPower) {
+        bestPower = power;
+        bestItem = it;
+      }
+    }
+
+    if (!bestItem || bestItem.ilvl < Math.max(1, p.level - 6)) {
+      const template = pickGearTemplate(rng, p.level, slot);
+      const rarity: Rarity = p.level >= 45 ? "legendary" : p.level >= 25 ? "epic" : p.level >= 10 ? "rare" : "uncommon";
+      const rolled = rollGear(rng, template, p.level, rarity);
+      const upgrade = Math.min(5, Math.floor(p.level / 15));
+      const newItemId = g.db.run(
+        `INSERT INTO items (owner_id, template_id, rarity, ilvl, upgrade, qty, base, affixes, equipped, created_at)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, 0, ?)`,
+        userId,
+        template.id,
+        rarity,
+        rolled.ilvl,
+        upgrade,
+        JSON.stringify(rolled.base),
+        JSON.stringify(rolled.affixes),
+        now
+      ).lastId;
+
+      slotItems.push({
+        id: newItemId,
+        template_id: template.id,
+        rarity,
+        ilvl: rolled.ilvl,
+        upgrade,
+        base: JSON.stringify(rolled.base),
+        affixes: JSON.stringify(rolled.affixes),
+        equipped: 0,
+      });
+    }
+
+    // Re-evaluate best item in slot and equip it
+    let winningItem = slotItems[0]!;
+    let winningPower = -1;
+    for (const it of slotItems) {
+      let base: Record<string, number> = {};
+      let affixes: any[] = [];
+      try { base = JSON.parse(it.base); } catch {}
+      try { affixes = JSON.parse(it.affixes); } catch {}
+      const power = statPower(itemStats({ upgrade: it.upgrade, base, affixes }));
+      if (power > winningPower) {
+        winningPower = power;
+        winningItem = it;
+      }
+    }
+
+    for (const it of slotItems) {
+      const shouldEquip = it.id === winningItem.id ? 1 : 0;
+      if (it.equipped !== shouldEquip) {
+        g.db.run("UPDATE items SET equipped = ? WHERE id = ?", shouldEquip, it.id);
+        it.equipped = shouldEquip;
+      }
+    }
+  }
+
+  const stats = heroStats(g, p);
+  p.hp = stats.maxHp;
+  p.power = stats.power;
+  savePlayer(g, p);
 }
 
 export function tickCompanions(g: GameCtx) {
@@ -487,6 +597,13 @@ export function tickCompanions(g: GameCtx) {
       if (!def) continue;
 
       const roll = rng.int(1, 100);
+
+      // Auto-equip the best items for this companion
+      try {
+        autoEquipCompanion(g, p.userId);
+      } catch {
+        // Ignore
+      }
 
       if (roll <= 50) {
         // ── Adventure Skirmish: natural level-up grind at 1/4 speed ──
