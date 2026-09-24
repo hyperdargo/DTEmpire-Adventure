@@ -92,13 +92,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // ── Discord ──
   app.get("/api/auth/discord/start", async (req, reply) => {
     const state = newToken();
-    reply.setCookie("dte_oauth", state, { httpOnly: true, sameSite: "lax", secure: g.config.secureCookies, path: "/api/auth/discord", maxAge: 600, signed: true });
+    reply.setCookie("dte_oauth", state, { httpOnly: true, sameSite: "lax", secure: g.config.secureCookies, path: "/", maxAge: 600, signed: true });
     return reply.redirect(discordAuthorizeUrl(g, state));
   });
 
-  app.get("/api/auth/discord/callback", async (req, reply) => {
+  const handleDiscordCallback = async (req: FastifyRequest, reply: FastifyReply) => {
     const q = z.object({ code: z.string().max(200).optional(), state: z.string().max(200).optional(), error: z.string().max(200).optional() }).parse(req.query);
     const cookie = req.cookies.dte_oauth ? req.unsignCookie(req.cookies.dte_oauth) : null;
+    reply.clearCookie("dte_oauth", { path: "/" });
     reply.clearCookie("dte_oauth", { path: "/api/auth/discord" });
     if (q.error || !q.code || !q.state || !cookie?.valid || cookie.value !== q.state) {
       return reply.redirect("/login?error=discord");
@@ -113,5 +114,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       const code = err instanceof GameError && err.status === 409 ? "discord_taken" : "discord";
       return reply.redirect(`/login?error=${code}`);
     }
-  });
+  };
+
+  app.get("/api/auth/discord/callback", handleDiscordCallback);
+  app.get("/callback", handleDiscordCallback);
 }
