@@ -61,13 +61,44 @@
 @media (max-width: 860px) {
   .landing { padding: 0 var(--s-3) var(--s-7); }
   .landing__hero { grid-template-columns: 1fr; min-height: 0; }
-  .landing__fan { height: 260px; order: -1; max-width: 100%; overflow: hidden; }
-  .landing__fan .card { --w: 130px; }
-  .landing__fan .fan-1 { transform: translate(-90%, -44%) rotate(-8deg); }
-  .landing__fan .fan-2 { transform: translate(-50%, -52%); }
-  .landing__fan .fan-3 { transform: translate(-10%, -44%) rotate(8deg); }
+  .landing__fan {
+    height: auto;
+    min-height: 250px;
+    order: -1;
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: var(--s-4) 0;
+    overflow: visible;
+  }
+  .landing__fan .card {
+    position: relative;
+    top: auto;
+    left: auto;
+    --w: 160px;
+    transform: none !important;
+  }
+  .landing__fan .fan-1,
+  .landing__fan .fan-3 {
+    display: none;
+  }
+  .landing__fan .fan-2 {
+    display: block;
+    box-shadow: var(--shadow-3), 0 0 45px rgb(240 180 60 / 0.3);
+  }
   .landing__features { grid-template-columns: 1fr; }
-  .landing__bar nav { flex-wrap: wrap; }
+  .landing__bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-3);
+  }
+  .landing__bar nav {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 /* ── Auth ──────────────────────────────────────────────────── */
