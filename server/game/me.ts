@@ -47,6 +47,7 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       avatar: p.avatar,
       bio: p.bio,
       level: p.level,
+      paragon: Number(p.state.paragon ?? 0),
       xp: p.xp,
       xpToNext: xpToNext(p.level),
       coins: p.coins,

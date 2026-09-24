@@ -8,6 +8,36 @@ import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { computeHeroStats } from "../../shared/rules/stats.ts";
 import type { GameCtx } from "./context.ts";
 import { equippedItems, heroStats, loadPlayer, savePlayer } from "./player.ts";
+import { buyAuction } from "./social.ts";
+import { getOrCreateWar } from "./guildWar.ts";
+import { simulateWorldBossStrike } from "./modes.ts";
+
+export const GUILD1_BOTS = [
+  "Aria_Dawnseeker",
+  "Seraphina_Vane",
+  "Theron_Shieldheart",
+  "Brant_Oakhaven",
+  "Lyra_Starweaver",
+];
+
+export const GUILD2_BOTS = [
+  "Kaelen_Voidstrider",
+  "Valen_Ironbark",
+  "Zephyr_Shadowstep",
+  "Morwenna_Frost",
+  "Garrick_Flamehand",
+];
+
+export const COMPANION_GUILDS = {
+  guild1Name: "DTEmpire",
+  guild1Tag: "DTEMP",
+  guild1Members: GUILD1_BOTS,
+  guild2Name: "Shadow Legion",
+  guild2Tag: "VOID",
+  guild2Emblem: "🌑",
+  guild2Desc: "The vanguard of shadows. Masters of the arena and tower.",
+  guild2Members: GUILD2_BOTS,
+};
 
 export interface CompanionDef {
   name: string;
@@ -337,6 +367,67 @@ export async function ensureCompanions(g: GameCtx): Promise<number[]> {
     }
   }
 
+  // Ensure Guild 1 and Guild 2 exist and partition the 10 companion bots
+  let g1 = g.db.get<{ id: number }>("SELECT id FROM guilds WHERE tag = 'DTEMP' OR id = 1");
+  if (!g1) {
+    const leaderUser = g.db.get<{ id: number }>("SELECT id FROM users WHERE username = 'DargoTamber'");
+    const leaderId = leaderUser?.id ?? ids[0] ?? 1;
+    const g1Id = g.db.run(
+      `INSERT INTO guilds (name, tag, emblem, description, leader_id, level, xp, open, state, created_at)
+       VALUES ('DTEmpire', 'DTEMP', '👑', 'The premier founding order of the realm.', ?, 5, 5000, 1, '{}', ?)`,
+      leaderId,
+      now
+    ).lastId;
+    g1 = { id: g1Id };
+  }
+
+  let g2 = g.db.get<{ id: number }>("SELECT id FROM guilds WHERE tag = 'VOID' OR name = 'Shadow Legion'");
+  if (!g2) {
+    const kaelenUser = g.db.get<{ id: number }>("SELECT id FROM users WHERE username = 'Kaelen_Voidstrider'");
+    const kaelenId = kaelenUser?.id ?? ids[8] ?? 10;
+    const g2Id = g.db.run(
+      `INSERT INTO guilds (name, tag, emblem, description, leader_id, level, xp, open, state, created_at)
+       VALUES ('Shadow Legion', 'VOID', '🌑', 'The vanguard of shadows. Masters of the arena and tower.', ?, 5, 2500, 1, '{}', ?)`,
+      kaelenId,
+      now
+    ).lastId;
+    g2 = { id: g2Id };
+  }
+
+  if (g1) {
+    for (const bname of GUILD1_BOTS) {
+      const u = g.db.get<{ id: number }>("SELECT id FROM users WHERE username = ?", bname);
+      if (u) {
+        g.db.run("UPDATE players SET guild_id = ? WHERE user_id = ?", g1.id, u.id);
+        const role = bname === "Aria_Dawnseeker" ? "officer" : "member";
+        g.db.run(
+          "INSERT INTO guild_members (user_id, guild_id, role, joined_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET guild_id = excluded.guild_id, role = excluded.role",
+          u.id,
+          g1.id,
+          role,
+          now
+        );
+      }
+    }
+  }
+
+  if (g2) {
+    for (const bname of GUILD2_BOTS) {
+      const u = g.db.get<{ id: number }>("SELECT id FROM users WHERE username = ?", bname);
+      if (u) {
+        g.db.run("UPDATE players SET guild_id = ? WHERE user_id = ?", g2.id, u.id);
+        const role = bname === "Kaelen_Voidstrider" ? "leader" : bname === "Valen_Ironbark" ? "officer" : "member";
+        g.db.run(
+          "INSERT INTO guild_members (user_id, guild_id, role, joined_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET guild_id = excluded.guild_id, role = excluded.role",
+          u.id,
+          g2.id,
+          role,
+          now
+        );
+      }
+    }
+  }
+
   return ids;
 }
 
@@ -400,7 +491,7 @@ export function tickCompanions(g: GameCtx) {
       if (roll <= 50) {
         // ── Adventure Skirmish: natural level-up grind at 1/4 speed ──
         const xpGain = Math.max(12, Math.round(15 + p.level * 3.5 + rng.int(0, 10)));
-        const coinGain = Math.max(18, Math.round(20 + p.level * 5.5 + rng.int(5, 20)));
+        const coinGain = Math.max(80, Math.round(100 + p.level * 15 + rng.int(20, 80)));
 
         p.coins += coinGain;
         p.counters.kills = (p.counters.kills ?? 0) + 1;
@@ -448,7 +539,7 @@ export function tickCompanions(g: GameCtx) {
           const winChance = p.level >= nextFloor ? 75 : 45;
           if (rng.chance(winChance)) {
             p.towerFloor = nextFloor;
-            p.coins += nextFloor * 35;
+            p.coins += nextFloor * 75;
             p.totalXp += nextFloor * 20;
 
             if (nextFloor % 5 === 0) {
@@ -469,6 +560,72 @@ export function tickCompanions(g: GameCtx) {
         p.arenaRating = Math.max(900, Math.min(2400, p.arenaRating + delta));
         p.lastSeenAt = now;
         savePlayer(g, p);
+      }
+
+      // ── Auction House shopping: companion bots buy listings from human players ──
+      if (p.coins >= 300 && rng.chance(40)) {
+        try {
+          const activeListings = g.db.all<{ id: number; price: number; seller_id: number }>(
+            "SELECT id, price, seller_id FROM auctions WHERE status = 'active' AND seller_id != ? AND price <= ? AND expires_at > ? ORDER BY RANDOM() LIMIT 1",
+            p.userId,
+            p.coins,
+            now
+          );
+          if (activeListings.length > 0) {
+            const target = activeListings[0]!;
+            buyAuction(g, p, target.id);
+            savePlayer(g, p);
+            g.hub.toChannel("world", {
+              type: "feed",
+              icon: "🏷️",
+              text: `${p.name} bought an item from the Auction House for ${target.price.toLocaleString("en-US")} coins!`,
+              at: now,
+            });
+          }
+        } catch {
+          // Ignore concurrent buy or expiry
+        }
+      }
+
+      // ── Guild War: awake companions fight for their guild ──
+      if (p.guildId && rng.chance(25)) {
+        try {
+          const war = getOrCreateWar(g);
+          const rivalGuildId = p.guildId === war.guild_a_id ? war.guild_b_id : war.guild_a_id;
+          const rivalDefenders = g.db.all<{ user_id: number; name: string }>(
+            "SELECT user_id, name FROM players WHERE guild_id = ? AND user_id != ?",
+            rivalGuildId,
+            p.userId
+          );
+          if (rivalDefenders.length > 0) {
+            const opp = rng.pick(rivalDefenders);
+            const warPoints = 35 + rng.int(5, 25);
+            if (p.guildId === war.guild_a_id) {
+              g.db.run("UPDATE guild_wars SET score_a = score_a + ?, updated_at = ? WHERE week = ?", warPoints, now, war.week);
+            } else {
+              g.db.run("UPDATE guild_wars SET score_b = score_b + ?, updated_at = ? WHERE week = ?", warPoints, now, war.week);
+            }
+            const myGuild = g.db.get<{ tag: string }>("SELECT tag FROM guilds WHERE id = ?", p.guildId);
+            const defGuild = g.db.get<{ tag: string }>("SELECT tag FROM guilds WHERE id = ?", rivalGuildId);
+            g.hub.toChannel("world", {
+              type: "feed",
+              icon: "⚔️",
+              text: `[${myGuild?.tag ?? "GUILD"}] ${p.name} won a Guild War skirmish against [${defGuild?.tag ?? "RIVAL"}] ${opp.name} (+${warPoints} pts)!`,
+              at: now,
+            });
+          }
+        } catch {
+          // Ignore war error
+        }
+      }
+
+      // ── World Boss: awake companions level 10+ attack the World Boss ──
+      if (p.level >= 10 && rng.chance(25)) {
+        try {
+          simulateWorldBossStrike(g, p);
+        } catch {
+          // Ignore boss strike errors
+        }
       }
 
       // 4. Occasional friendly world chat message (only while awake)

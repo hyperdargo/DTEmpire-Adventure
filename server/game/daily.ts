@@ -303,4 +303,104 @@ export function collectExpedition(g: GameCtx, p: Player) {
   return { coins, xp, fights, drops: given };
 }
 
+// ── High-Roller Salon (Unlimited High Stakes Gamble) ───────────────────
+
+export function highRollerGamble(
+  g: GameCtx,
+  p: Player,
+  input: { game: "coin" | "dice" | "slots"; stake: number; choice?: string }
+) {
+  const allowedStakes = [10_000, 50_000, 100_000, 250_000, 500_000];
+  const stake = Math.floor(input.stake);
+  if (!allowedStakes.includes(stake)) {
+    throw new GameError("Invalid stake amount. Allowed stakes: 10k, 50k, 100k, 250k, 500k.");
+  }
+  if (p.coins < stake) {
+    throw new GameError(`You need ${stake.toLocaleString("en-US")} coins for this wager.`);
+  }
+
+  spendCoins(p, stake, `a ${input.game} high-roller wager`);
+  const rng = createRng(freshSeed());
+  let win = 0;
+  let multiplier = 0;
+  let outcomeDesc = "";
+  let details: Record<string, unknown> = {};
+
+  if (input.game === "coin") {
+    const call = input.choice === "tails" ? "tails" : "heads";
+    const flip = rng.chance(50) ? "heads" : "tails";
+    const won = call === flip;
+    multiplier = won ? 2.0 : 0;
+    win = Math.round(stake * multiplier);
+    outcomeDesc = won
+      ? `Coin showed ${flip.toUpperCase()}! You doubled your wager!`
+      : `Coin showed ${flip.toUpperCase()}. House took the pot.`;
+    details = { flip, call, won };
+  } else if (input.game === "dice") {
+    const d1 = rng.int(1, 6);
+    const d2 = rng.int(1, 6);
+    const total = d1 + d2;
+    if (total === 12) {
+      multiplier = 10.0;
+      outcomeDesc = `DOUBLE SIXES! 🐉 Imperial Dragon Jackpot! 10× Payout!`;
+    } else if (total === 2) {
+      multiplier = 5.0;
+      outcomeDesc = `SNAKE EYES! 🐍 5× Payout!`;
+    } else if (total === 10 || total === 11) {
+      multiplier = 3.0;
+      outcomeDesc = `HIGH ROLL! (${total}) 3× Payout!`;
+    } else if (total >= 7 && total <= 9) {
+      multiplier = 1.5;
+      outcomeDesc = `SOLID ROLL! (${total}) 1.5× Payout!`;
+    } else {
+      multiplier = 0;
+      outcomeDesc = `Roll was ${total} (low). The house wins.`;
+    }
+    win = Math.round(stake * multiplier);
+    details = { d1, d2, total, multiplier };
+  } else {
+    const reels = [0, 1, 2].map(() => rng.weighted(LUCKY_WEIGHTS)) as (typeof LUCKY_SYMBOLS)[number][];
+    let jackpot = false;
+    if (reels[0] === reels[1] && reels[1] === reels[2]) {
+      multiplier = LUCKY_PAYOUT[reels[0]!];
+      jackpot = reels[0] === "👑";
+      outcomeDesc = jackpot ? "HIGH-ROLLER JACKPOT! 👑👑👑" : `TRIPLE MATCH! ${reels[0]} 3-of-a-kind!`;
+    } else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) {
+      multiplier = LUCKY_PAIR_MULT;
+      outcomeDesc = "Matching pair! 1.2× return.";
+    } else {
+      multiplier = 0;
+      outcomeDesc = "No match. The house keeps the stake.";
+    }
+    win = Math.round(stake * multiplier);
+    details = { reels, jackpot, multiplier };
+  }
+
+  if (win > 0) {
+    grantCoins(g, p, win);
+    p.counters.highRollerWon = (p.counters.highRollerWon ?? 0) + win;
+  } else {
+    p.counters.highRollerLost = (p.counters.highRollerLost ?? 0) + stake;
+  }
+
+  if (win >= 250_000) {
+    g.hub.toChannel("world", {
+      type: "feed",
+      icon: "💎",
+      text: `${p.name} won ${win.toLocaleString("en-US")} coins in the High-Roller Salon!`,
+      at: g.clock.now(),
+    });
+  }
+
+  return {
+    game: input.game,
+    stake,
+    win,
+    multiplier,
+    outcomeDesc,
+    coins: p.coins,
+    details,
+  };
+}
+
 export const DAILY_RESET_MS = DAY;

@@ -35,6 +35,11 @@ export function useChallenge() {
   };
 }
 
+const BOT_NAMES = new Set([
+  "Aria_Dawnseeker", "Seraphina_Vane", "Theron_Shieldheart", "Brant_Oakhaven", "Lyra_Starweaver",
+  "Kaelen_Voidstrider", "Valen_Ironbark", "Zephyr_Shadowstep", "Morwenna_Frost", "Garrick_Flamehand"
+]);
+
 export default function FriendsPage() {
   const { data, isPending } = useData<{ friends: Friend[] }>(["friends"], "/api/friends");
   const [q, setQ] = useState("");
@@ -97,7 +102,7 @@ export default function FriendsPage() {
                   <Link to={`/players/${encodeURIComponent(f.name)}`}><b>{f.name}</b></Link>
                   <span className="faint">Lv {f.level} · {f.online ? "online" : `seen ${timeAgo(f.lastSeenAt)}`}</span>
                   <Button size="sm" icon={<MessageCircle size={16} />} onClick={() => void dm(f.userId)}>Message</Button>
-                  <Button size="sm" icon={<Swords size={16} />} disabled={!f.online} onClick={() => void challenge(f.userId, f.name)}>Duel</Button>
+                  <Button size="sm" icon={<Swords size={16} />} disabled={!f.online && !BOT_NAMES.has(f.name)} onClick={() => void challenge(f.userId, f.name)}>Duel</Button>
                   <Button size="sm" variant="ghost" onClick={() => remove.mutate({ userId: f.userId })}>Remove</Button>
                 </li>
               ))}

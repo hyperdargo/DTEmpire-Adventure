@@ -1,4 +1,5 @@
 import { ASCENSION_COST, CLASS_BY_ID, CLASSES, DUAL_CLASS_COST, DUAL_CLASS_LEVEL, REROLL_COST, REROLL_WEIGHTS, STARTER_WEIGHTS, dualXpToNext } from "../../shared/data/classes.ts";
+import { PARAGON_COST, PARAGON_MAX } from "../../shared/data/meta.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
 import { SKILL_BY_ID, SKILL_MAX_RANK, loadoutSlots, skillUpgradeCost } from "../../shared/data/skills.ts";
 import type { ClassDef, Rarity } from "../../shared/data/types.ts";
@@ -98,6 +99,48 @@ export function unlockDualClass(g: GameCtx, p: Player) {
   const cls = rollClass(g, createRng(freshSeed()), { common: 40, uncommon: 30, rare: 18, epic: 9, legendary: 3 }, [p.classId]);
   p.state.dual = { classId: cls.id, level: 1, xp: 0 };
   return { cls, xpToNext: dualXpToNext(1) };
+}
+
+export function ascendParagon(g: GameCtx, p: Player) {
+  requireLevel(p, 100, "Paragon Ascension");
+  const current = Number(p.state.paragon ?? 0);
+  if (current >= PARAGON_MAX) {
+    throw new GameError(`You have already reached the maximum Paragon rank (${PARAGON_MAX}).`);
+  }
+  const cost = PARAGON_COST(current);
+  spendCoins(p, cost, `Paragon Ascension Rank ${current + 1}`);
+  p.state.paragon = current + 1;
+  const newRank = p.state.paragon;
+
+  const titles: Record<number, string> = {
+    1: "⚡ Paragon I",
+    2: "⚡ Paragon II",
+    3: "⚡ Paragon III",
+    5: "👑 Ascended Master",
+    10: "🌌 Celestial Sovereign",
+  };
+  if (titles[newRank]) {
+    p.title = titles[newRank]!;
+  }
+
+  const stats = heroStats(g, p);
+  p.hp = stats.maxHp;
+  p.power = stats.power;
+
+  g.hub.toChannel("world", {
+    type: "feed",
+    icon: "🌟",
+    text: `${p.name} ascended to Paragon Rank ${newRank}! Total power surged to ${stats.power.toLocaleString("en-US")}!`,
+    at: g.clock.now(),
+  });
+
+  return {
+    paragon: newRank,
+    cost,
+    power: p.power,
+    title: p.title,
+    titleAwarded: titles[newRank],
+  };
 }
 
 // ── Skills ────────────────────────────────────────────────────────────

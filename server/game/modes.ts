@@ -254,6 +254,56 @@ registerFinalizer("worldboss", (g, p, b) => {
   return { result: "won", coins, xp, extra: { score, dealt } };
 });
 
+export function simulateWorldBossStrike(g: GameCtx, p: Player) {
+  if (p.level < 10) return null;
+  const b = currentWorldBoss(g);
+  if (b.defeated_at) return null;
+  const day = today(g);
+  const ws = p.state.worldBoss?.day === day ? p.state.worldBoss : { day, attempts: 0 };
+  if (ws.attempts >= WORLD_BOSS_ATTEMPTS_PER_DAY) return null;
+
+  const rng = createRng(freshSeed());
+  const score = Math.max(20, Math.round(40 + p.level * 6.5 + rng.int(10, 30)));
+  ws.attempts++;
+  p.state.worldBoss = ws;
+
+  g.db.run(
+    "INSERT INTO world_boss_hits (week, user_id, damage, hits) VALUES (?, ?, ?, 1) ON CONFLICT(week, user_id) DO UPDATE SET damage = damage + excluded.damage, hits = hits + 1",
+    b.week,
+    p.userId,
+    score
+  );
+  g.db.run("UPDATE world_boss SET hp = MAX(0, hp - ?) WHERE week = ? AND defeated_at IS NULL", score, b.week);
+
+  const coins = grantCoins(g, p, Math.round(score * (1 + p.level / 20)));
+  const xp = grantXp(g, p, Math.round(score * 0.6 * (1 + p.level / 25)), { applyBonus: true });
+  bump(g, p, "worldBossHits");
+
+  const boss = g.db.get<BossRow>("SELECT * FROM world_boss WHERE week = ?", b.week)!;
+  g.hub.toChannel("world", {
+    type: "worldboss",
+    week: b.week,
+    hp: Math.max(0, boss.hp),
+    maxHp: boss.max_hp,
+    by: p.name,
+    score,
+  });
+
+  if (boss.hp <= 0 && !boss.defeated_at) {
+    g.db.run("UPDATE world_boss SET defeated_at = ? WHERE week = ?", g.clock.now(), b.week);
+    rewardWorldBoss(g, b.week, true);
+    g.hub.toChannel("world", {
+      type: "feed",
+      icon: "🌋",
+      text: `The realm has slain ${JSON.parse(boss.boss).name}! ${p.name} landed the final blow.`,
+      at: g.clock.now(),
+    });
+  }
+
+  savePlayer(g, p);
+  return { score, coins, xp };
+}
+
 function settlePreviousBosses(g: GameCtx, currentWeek: string) {
   for (const row of g.db.all<BossRow>("SELECT * FROM world_boss WHERE rewarded = 0 AND week != ?", currentWeek)) {
     rewardWorldBoss(g, row.week, !!row.defeated_at);

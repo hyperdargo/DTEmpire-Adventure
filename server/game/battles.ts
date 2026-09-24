@@ -13,7 +13,7 @@ import { throttle } from "../lib/throttle.ts";
 import type { GameCtx, Notice } from "./context.ts";
 import { type Player, activePet, heroStats, loadPlayer, refreshPower, savePlayer, settleHp } from "./player.ts";
 
-export type BattleKind = "adventure" | "tower" | "dungeon" | "duel_ai" | "arena" | "worldboss" | "event" | "abyss";
+export type BattleKind = "adventure" | "tower" | "dungeon" | "duel_ai" | "arena" | "worldboss" | "event" | "abyss" | "guild_war";
 
 export interface BattleRow {
   id: string;

@@ -173,6 +173,7 @@ function ClassPanel() {
           </div>
         )}
       </Panel>
+      <ParagonPanel />
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Reroll your class?">
         <div className="stack">
           <p>You'll lose the {hero.class.rarity} {hero.class.name} and its tier. Your level, gear, skills and pets stay.</p>
@@ -183,5 +184,61 @@ function ClassPanel() {
         </div>
       </Sheet>
     </div>
+  );
+}
+
+function ParagonPanel() {
+  const { hero } = useHero();
+  const ascendParagon = useAction<void, { paragon: number; titleAwarded?: string }>("/api/hero/paragon", {
+    success: (r) => `Ascended to Paragon Rank ${r.paragon}!${r.titleAwarded ? ` Unlocked title: ${r.titleAwarded}` : ""}`,
+  });
+
+  const rank = (hero as unknown as { paragon?: number }).paragon ?? 0;
+  const cost = (rank + 1) * 250_000;
+  const maxRank = 10;
+  const isMax = rank >= maxRank;
+  const bonusPct = rank * 5;
+
+  return (
+    <Panel title="Paragon Transcendence ⚡">
+      <div className="stack">
+        <p className="muted">
+          Available only to heroes of Level 100. Channel immense wealth into transcendent power. Each Paragon Rank permanently amplifies your Attack, Defense, and Max HP by <b>+5%</b>.
+        </p>
+
+        <div className="row" style={{ alignItems: "center", gap: "var(--s-4)" }}>
+          <div style={{ fontSize: "2rem" }}>⚡</div>
+          <div>
+            <h4 style={{ margin: 0 }}>
+              Current Rank: <span className="gold">Paragon {rank}</span>
+            </h4>
+            <p className="faint" style={{ margin: "var(--s-1) 0 0 0" }}>
+              Permanent Stat Bonus: <b>+{bonusPct}% all base attributes</b>
+            </p>
+          </div>
+        </div>
+
+        {hero.level < 100 ? (
+          <p className="faint">Reach Level 100 to awaken the Paragon Altar.</p>
+        ) : isMax ? (
+          <span className="chip chip--gold" style={{ alignSelf: "flex-start" }}>
+            🌌 Maximum Paragon Rank Achieved
+          </span>
+        ) : (
+          <Button
+            variant="primary"
+            disabled={hero.coins < cost}
+            loading={ascendParagon.isPending}
+            onClick={() => ascendParagon.mutate(undefined)}
+          >
+            {hero.coins < cost ? (
+              <>Need <Coins value={cost} compact /> to Ascend</>
+            ) : (
+              <>Ascend to Paragon Rank {rank + 1} · <Coins value={cost} compact /></>
+            )}
+          </Button>
+        )}
+      </div>
+    </Panel>
   );
 }

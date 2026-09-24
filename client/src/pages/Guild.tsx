@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { GUILD_CREATE_COST, GUILD_CREATE_LEVEL } from "../../../shared/data/meta.ts";
-import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet } from "../components/ui.tsx";
+import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
 
@@ -72,6 +72,7 @@ function FindGuild() {
 function MyGuild({ id }: { id: number }) {
   const { user } = useHero();
   const { data, isPending } = useData<GuildDetail>(["guild", id], `/api/guilds/${id}`);
+  const [tab, setTab] = useState<"overview" | "war">("overview");
   const [donation, setDonation] = useState(1000);
   const inv = [["guild", id]];
   const leave = useAction("/api/guild/leave", { success: "You left the guild." });
@@ -91,7 +92,21 @@ function MyGuild({ id }: { id: number }) {
         actions={<><Link className="btn" to={`/chat?c=guild:${data.id}`}>Guild chat</Link><Button variant="ghost" onClick={() => setConfirmLeave(true)}>Leave</Button></>}>
         {data.description || "A guild with no motto yet."}
       </PageHead>
-      <div className="guild">
+      <div style={{ marginBottom: "var(--s-4)" }}>
+        <Tabs
+          label="Guild views"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "overview", label: "Overview" },
+            { value: "war", label: "⚔️ Guild War" },
+          ]}
+        />
+      </div>
+      {tab === "war" ? (
+        <GuildWarPanel />
+      ) : (
+        <div className="guild">
         <Panel title={`Level ${data.level}`} action={<span className="gold">+{data.perkPct}% XP for members</span>}>
           <Bar value={data.xp} max={data.xpToNext} kind="xp" showNumbers label="Guild XP" />
           <div className="row row--wrap" style={{ marginTop: "var(--s-4)" }}>
@@ -164,6 +179,7 @@ function MyGuild({ id }: { id: number }) {
           </table>
         </Panel>
       </div>
+      )}
       <Sheet open={confirmLeave} onClose={() => setConfirmLeave(false)} title="Leave the guild?">
         <div className="stack">
           <p>{data.myRole === "leader" ? "Leadership passes to your most senior officer. If you're the last member, the guild disbands." : "You can rejoin later if the guild allows."}</p>
@@ -171,5 +187,105 @@ function MyGuild({ id }: { id: number }) {
         </div>
       </Sheet>
     </>
+  );
+}
+
+function GuildWarPanel() {
+  const navigate = useNavigate();
+  const { data, isPending } = useData<{
+    war: {
+      week: string;
+      day: string;
+      myGuildId: number;
+      rivalGuildId: number;
+      myGuildName: string;
+      rivalGuildName: string;
+      myScore: number;
+      rivalScore: number;
+      attacksRemaining: number;
+      maxAttacks: number;
+      opponents: {
+        userId: number;
+        name: string;
+        level: number;
+        classId: string;
+        className: string;
+        classIcon: string;
+        power: number;
+        role: string;
+      }[];
+    } | null;
+  }>(["guildWar"], "/api/guild/war");
+
+  const attack = useAction<{ targetUserId: number }, unknown>("/api/guild/war/attack", {
+    onSuccess: () => {
+      navigate("/battle");
+    },
+  });
+
+  if (isPending) return <Loading rows={3} />;
+  const war = data?.war;
+  if (!war) return <Empty art="🛡️" title="No active war">Your guild does not have an active rival guild war today.</Empty>;
+
+  return (
+    <div className="stack stack--lg">
+      <Panel title="Guild War Clash ⚔️">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center", padding: "var(--s-3)", background: "rgba(255,255,255,0.03)", borderRadius: "6px" }}>
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <h3 style={{ margin: 0 }}>{war.myGuildName}</h3>
+            <span className="gold" style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{war.myScore} pts</span>
+          </div>
+          <div style={{ fontSize: "1.5rem", fontWeight: "bold", padding: "0 var(--s-3)" }}>VS</div>
+          <div style={{ textAlign: "center", flex: 1 }}>
+            <h3 style={{ margin: 0 }}>{war.rivalGuildName}</h3>
+            <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "var(--danger)" }}>{war.rivalScore} pts</span>
+          </div>
+        </div>
+
+        <p className="muted" style={{ marginTop: "var(--s-3)" }}>
+          Defeat champions from the rival guild to earn <b>+100 War Points</b>, large coin bounties, and massive guild XP.
+          {" "}<b>{war.attacksRemaining} / {war.maxAttacks}</b> daily attacks remaining.
+        </p>
+      </Panel>
+
+      <Panel title={`Rival Champions (${war.opponents.length})`}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Champion</th>
+              <th>Class</th>
+              <th>Level</th>
+              <th>Power</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {war.opponents.map((opp) => (
+              <tr key={opp.userId}>
+                <td>
+                  <span className="art">{opp.classIcon}</span>{" "}
+                  <Link to={`/players/${encodeURIComponent(opp.name)}`}><b>{opp.name}</b></Link>
+                  <span className="faint" style={{ textTransform: "capitalize", marginLeft: "var(--s-1)" }}>({opp.role})</span>
+                </td>
+                <td>{opp.className}</td>
+                <td className="num">{opp.level}</td>
+                <td className="num gold">{opp.power}</td>
+                <td>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={war.attacksRemaining <= 0 || attack.isPending}
+                    loading={attack.isPending}
+                    onClick={() => attack.mutate({ targetUserId: opp.userId })}
+                  >
+                    ⚔️ Attack
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+    </div>
   );
 }

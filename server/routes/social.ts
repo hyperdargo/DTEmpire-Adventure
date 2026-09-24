@@ -4,6 +4,8 @@ import { requireUser } from "../app.ts";
 import { GameError, notFound } from "../lib/errors.ts";
 import { itemFromRow, loadPlayer } from "../game/player.ts";
 import * as social from "../game/social.ts";
+import { battleView } from "../game/battles.ts";
+import { guildWarView, startGuildWarBattle } from "../game/guildWar.ts";
 import { toItemView } from "../../shared/rules/views.ts";
 import { mutate } from "./game.ts";
 
@@ -91,6 +93,27 @@ export async function registerSocialRoutes(app: FastifyInstance) {
   app.post("/api/guild/task", async (req) => {
     const { taskId } = parse(z.object({ taskId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => social.claimGuildTask(g, p, taskId));
+  });
+
+  // ── Guild Wars ──
+  app.get("/api/guild/war", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return guildWarView(g, p);
+    });
+  });
+  app.post("/api/guild/war/attack", async (req) => {
+    const body = parse(
+      z.object({
+        defenderId: id.optional(),
+        targetUserId: id.optional(),
+      }),
+      req
+    );
+    const target = body.defenderId ?? body.targetUserId;
+    if (!target) throw new GameError("Target champion required.");
+    return mutate(g, u(req), (p) => battleView(startGuildWarBattle(g, p, target)));
   });
 
   // ── Trades ──

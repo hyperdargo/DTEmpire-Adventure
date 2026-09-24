@@ -219,6 +219,7 @@ export default function BattlePage() {
       if (kind === "adventure") { path = "/api/adventure/start"; body = { regionId: ctx.regionId ?? rememberedRegion() }; }
       else if (kind === "tower") path = "/api/tower/start";
       else if (kind === "dungeon") { navigate("/dungeon"); return; }
+      else if (kind === "guild_war") { navigate("/guild"); return; }
       else if (kind === "duel_ai") { path = "/api/duels/ai"; body = { duelistId: ctx.duelistId }; }
       else if (kind === "arena") path = "/api/arena/ranked";
       else if (kind === "worldboss") path = "/api/worldboss/strike";

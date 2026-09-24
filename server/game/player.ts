@@ -1,5 +1,5 @@
 import { CLASS_BY_ID, rankTitle } from "../../shared/data/classes.ts";
-import { ACHIEVEMENTS, type Counter, type MissionType } from "../../shared/data/meta.ts";
+import { ACHIEVEMENTS, PARAGON_STAT_PCT, type Counter, type MissionType } from "../../shared/data/meta.ts";
 import type { Rarity } from "../../shared/data/types.ts";
 import type { ItemRecord } from "../../shared/rules/items.ts";
 import type { LootDrop } from "../../shared/rules/loot.ts";
@@ -41,6 +41,8 @@ export interface PlayerState {
   milestoneEggs?: number;
   estate?: PlayerEstateState;
   onboarded?: boolean;
+  guildWar?: { day: string; attacks: number; defeated: number[] };
+  paragon?: number;
 }
 
 export interface Player {
@@ -191,6 +193,13 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
   if (estate.skillPower) stats.skillPower += estate.skillPower;
   if (estate.petPowerPct) stats.petPowerPct += estate.petPowerPct;
   if (estate.regenPct) stats.regenPct += estate.regenPct;
+  const paragon = Number(p.state.paragon ?? 0);
+  if (paragon > 0) {
+    const mult = 1 + (paragon * PARAGON_STAT_PCT) / 100;
+    stats.atk = Math.round(stats.atk * mult);
+    stats.def = Math.round(stats.def * mult);
+    stats.maxHp = Math.round(stats.maxHp * mult);
+  }
   stats.power = heroPower(stats);
   return stats;
 }

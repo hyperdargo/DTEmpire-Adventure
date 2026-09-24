@@ -4,7 +4,8 @@ export type Counter =
   | "kills" | "bossKills" | "eliteKills" | "deaths" | "battlesWon" | "towerFloor" | "dungeonBest" | "level"
   | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsUpgraded" | "petsHatched" | "skillsLearned"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
-  | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots";
+  | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
+  | "highRollerWon" | "highRollerLost" | "guildWarWins";
 
 export interface AchievementDef {
   id: string;
@@ -192,3 +193,31 @@ export const AUCTION_FEE_PCT = 5;
 export const AUCTION_HOURS = [12, 24, 48] as const;
 export const TRADE_EXPIRY_HOURS = 24;
 export const CHAT_MAX_LENGTH = 400;
+
+// ── Endgame: Paragon / Ascension (Level 100+) ─────────────────────────
+export const PARAGON_MAX = 10;
+export const PARAGON_COST = (rank: number) => 250_000 * (rank + 1);
+export const PARAGON_STAT_PCT = 5; // +5% atk, def, maxHp per rank
+export const PARAGON_TITLES = [
+  "⚡ Paragon I",
+  "⚡ Paragon II",
+  "⚡ Paragon III",
+  "⚡ Paragon IV",
+  "👑 Ascended Master",
+  "👑 Paragon VI",
+  "👑 Paragon VII",
+  "👑 Paragon VIII",
+  "👑 Paragon IX",
+  "🌌 Celestial Sovereign",
+] as const;
+
+// ── Endgame: High-Roller Salon ────────────────────────────────────────
+export const HIGH_ROLLER_STAKES = [10_000, 50_000, 100_000, 250_000, 500_000] as const;
+
+// ── Guild Wars ────────────────────────────────────────────────────────
+export const GUILD_WAR_ATTACKS_PER_DAY = 5;
+export const GUILD_WAR_WIN_PTS = 100;
+export const GUILD_WAR_WIN_COINS = (level: number) => 10_000 + level * 100;
+export const GUILD_WAR_WIN_XP = 5_000;
+export const GUILD_WAR_WIN_GUILD_XP = 300;
+

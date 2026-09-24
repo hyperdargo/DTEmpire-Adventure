@@ -114,6 +114,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/class/reroll", async (req) => mutate(g, u(req), (p) => hero.rerollClass(g, p)));
   app.post("/api/class/ascend", async (req) => mutate(g, u(req), (p) => hero.ascendClass(g, p)));
   app.post("/api/class/dual", async (req) => mutate(g, u(req), (p) => hero.unlockDualClass(g, p)));
+  app.post("/api/hero/ascend", async (req) => mutate(g, u(req), (p) => hero.ascendParagon(g, p)));
+  app.post("/api/hero/paragon", async (req) => mutate(g, u(req), (p) => hero.ascendParagon(g, p)));
 
   // ── Skills ──
   app.get("/api/skills", async (req) => ({ skills: hero.listSkills(g, u(req).id) }));
@@ -443,6 +445,17 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
   app.post("/api/inn/rest", async (req) => mutate(g, u(req), (p) => daily.rest(g, p)));
   app.post("/api/lucky/spin", { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, async (req) => mutate(g, u(req), (p) => daily.luckyRoll(g, p)));
+  app.post("/api/lucky/highroller", { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } }, async (req) => {
+    const input = parse(
+      z.object({
+        game: z.enum(["coin", "dice", "slots"]),
+        stake: z.number().int().positive(),
+        choice: z.string().max(20).optional(),
+      }),
+      req
+    );
+    return mutate(g, u(req), (p) => daily.highRollerGamble(g, p, input));
+  });
   app.post("/api/expedition/start", async (req) => {
     const { regionId, durationId } = parse(z.object({ regionId: z.string().max(60), durationId: z.string().max(20) }), req);
     return mutate(g, u(req), (p) => daily.startExpedition(g, p, regionId, durationId));

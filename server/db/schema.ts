@@ -271,4 +271,20 @@ ALTER TABLE players ADD COLUMN abyss_best INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS players_abyss ON players(abyss_best DESC);
 `,
   },
+  {
+    id: 3,
+    name: "guild_wars",
+    sql: `
+CREATE TABLE IF NOT EXISTS guild_wars (
+  week TEXT PRIMARY KEY,
+  guild_a_id INTEGER NOT NULL REFERENCES guilds(id),
+  guild_b_id INTEGER NOT NULL REFERENCES guilds(id),
+  score_a INTEGER NOT NULL DEFAULT 0,
+  score_b INTEGER NOT NULL DEFAULT 0,
+  state TEXT NOT NULL DEFAULT '{}',
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS guild_wars_week ON guild_wars(week);
+`,
+  },
 ];

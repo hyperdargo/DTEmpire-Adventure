@@ -17,6 +17,11 @@ interface Profile {
   online: boolean; lastSeenAt: number; createdAt: number; relation: "self" | "friend" | "outgoing" | "incoming" | "none"; blocked: boolean;
 }
 
+const BOT_NAMES = new Set([
+  "Aria_Dawnseeker", "Seraphina_Vane", "Theron_Shieldheart", "Brant_Oakhaven", "Lyra_Starweaver",
+  "Kaelen_Voidstrider", "Valen_Ironbark", "Zephyr_Shadowstep", "Morwenna_Frost", "Garrick_Flamehand"
+]);
+
 export default function ProfilePage() {
   const { name = "" } = useParams();
   const { hero } = useHero();
@@ -37,7 +42,7 @@ export default function ProfilePage() {
         <>
           <Button icon={<MessageCircle size={16} />} onClick={() => void dm(p.userId)} disabled={p.blocked}>Message</Button>
           {p.relation === "none" && <Button icon={<UserPlus size={16} />} onClick={() => add.mutate({ userId: p.userId })}>Add friend</Button>}
-          {p.online && hero.level >= 5 && <Button icon={<Swords size={16} />} onClick={() => void challenge(p.userId, p.name)}>Duel now</Button>}
+          {(p.online || BOT_NAMES.has(p.name)) && hero.level >= 5 && <Button icon={<Swords size={16} />} onClick={() => void challenge(p.userId, p.name)}>Duel now</Button>}
           <Link className="btn" to={`/trade?to=${p.userId}&name=${encodeURIComponent(p.name)}`}><Handshake size={16} aria-hidden /> Trade</Link>
           <Button variant="ghost" icon={<Ban size={16} />} onClick={() => block.mutate({ userId: p.userId, blocked: !p.blocked })}>{p.blocked ? "Unblock" : "Block"}</Button>
         </>

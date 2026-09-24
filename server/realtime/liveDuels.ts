@@ -23,6 +23,13 @@ interface Room {
 
 const CHALLENGE_TTL = 60_000;
 
+function isBotUser(g: GameCtx, userId: number): boolean {
+  const p = findPlayer(g, userId);
+  if ((p?.state as { isCompanion?: boolean })?.isCompanion) return true;
+  const u = g.db.get<{ password_hash: string }>("SELECT password_hash FROM users WHERE id = ?", userId);
+  return u?.password_hash === "bot_locked";
+}
+
 /**
  * Real-time PvP. Both players pick an action each round; the round resolves when both have chosen or the
  * timer runs out (idle fighters auto-act). State lives in memory; results are persisted when the duel ends.
@@ -43,15 +50,37 @@ export class LiveDuels {
     const from = findPlayer(g, fromId);
     const to = findPlayer(g, toId);
     if (!from || !to) throw notFound("Player");
-    if (from.level < DUEL_MIN_LEVEL || to.level < DUEL_MIN_LEVEL) throw new GameError(`Both fighters must be level ${DUEL_MIN_LEVEL}+.`);
-    if (!g.hub.isOnline(toId)) throw new GameError(`${to.name} isn't online right now.`);
+    const toIsBot = isBotUser(g, toId);
+    if (from.level < DUEL_MIN_LEVEL || (!toIsBot && to.level < DUEL_MIN_LEVEL)) throw new GameError(`Both fighters must be level ${DUEL_MIN_LEVEL}+.`);
+    if (!toIsBot && !g.hub.isOnline(toId)) throw new GameError(`${to.name} isn't online right now.`);
     if (isBlocked(g, fromId, toId)) throw forbidden("You can't challenge this player.");
-    if (this.#byUser.has(fromId) || this.#byUser.has(toId)) throw new GameError("One of you is already in a live duel.");
+    if (this.#byUser.has(fromId)) throw new GameError("You are already in a live duel.");
+    if (this.#byUser.has(toId)) {
+      if (toIsBot) {
+        const staleRoomId = this.#byUser.get(toId);
+        if (staleRoomId) {
+          const r = this.#rooms.get(staleRoomId);
+          if (r) {
+            if (r.timer) clearTimeout(r.timer);
+            this.#rooms.delete(r.id);
+            this.#byUser.delete(r.a);
+            this.#byUser.delete(r.b);
+          }
+        }
+      } else {
+        throw new GameError("One of you is already in a live duel.");
+      }
+    }
     for (const c of this.#challenges.values()) if (c.from === fromId && c.to === toId) throw new GameError("Challenge already sent.");
     const c: Challenge = { id: randomId(), from: fromId, to: toId, fromName: from.name, expiresAt: g.clock.now() + CHALLENGE_TTL };
     this.#challenges.set(c.id, c);
     g.hub.toUser(toId, { type: "duel_challenge", challengeId: c.id, from: from.name, fromId, level: from.level, expiresAt: c.expiresAt });
     setTimeout(() => this.#challenges.delete(c.id), CHALLENGE_TTL + 1000).unref();
+
+    if (toIsBot) {
+      // Companion bot immediately auto-accepts challenge!
+      this.respond(toId, c.id, true);
+    }
     return c.id;
   }
 
@@ -89,8 +118,19 @@ export class LiveDuels {
     if (action.type === "item") throw new GameError("Potions aren't allowed in duels.");
     room.pending[side] = action;
     room.missed[side] = 0;
-    this.g.hub.toUser(side === "a" ? room.b : room.a, { type: "duel_opponent_ready", roomId });
-    if (room.pending.a && room.pending.b) this.#resolve(room);
+
+    const otherId = side === "a" ? room.b : room.a;
+    if (isBotUser(this.g, otherId)) {
+      const otherSide = side === "a" ? "b" : "a";
+      room.pending[otherSide] = autoAction(room.state, otherSide === "a" ? "player" : "enemy");
+      room.missed[otherSide] = 0;
+    }
+
+    if (room.pending.a && room.pending.b) {
+      this.#resolve(room);
+    } else {
+      this.g.hub.toUser(side === "a" ? room.b : room.a, { type: "duel_opponent_ready", roomId });
+    }
   }
 
   forfeit(userId: number) {

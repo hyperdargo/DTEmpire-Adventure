@@ -2,6 +2,10 @@ node_modules/
 dist/
 data/*.db
 data/*.db-*
+data/*.bak
+data/*.lock
+data/legacy_backup/
+data/version.json
 data/uploads/
 .env
 .env.*
@@ -15,3 +19,6 @@ test-results/
 .DS_Store
 .impeccable/review/
 .impeccable/mocks/
+*.py
+cogs/
+requirements-backup.txt
