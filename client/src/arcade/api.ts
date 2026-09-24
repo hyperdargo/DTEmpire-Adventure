@@ -67,10 +67,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const isPost = method === "POST" || method === "PUT" || method === "DELETE" || method === "PATCH";
   const res = await fetch(path, {
     method,
     credentials: "same-origin",
-    headers: body === undefined ? { accept: "application/json" } : { accept: "application/json", "content-type": "application/json" },
+    headers: {
+      accept: "application/json",
+      ...(isPost ? { "content-type": "application/json", "x-dte-request": "1" } : {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();
