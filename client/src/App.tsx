@@ -78,8 +78,13 @@ function Page({ children }: { children: ReactNode }) {
 }
 
 export function App() {
+  const location = useLocation();
   const { data, isPending, isError, refetch } = useMe();
   useDocumentTitle();
+
+  if (location.pathname === "/callback") {
+    return <DiscordCallbackBridge />;
+  }
 
   let body: ReactNode;
   if (isPending) body = <Splash />;
@@ -155,6 +160,15 @@ export function App() {
       <UpdatePrompt />
     </>
   );
+}
+
+function DiscordCallbackBridge() {
+  useEffect(() => {
+    // If client router or Service Worker intercepted /callback,
+    // forward directly to the backend Discord OAuth callback handler.
+    window.location.replace("/api/auth/discord/callback" + window.location.search);
+  }, []);
+  return <Splash />;
 }
 
 function NotFound() {

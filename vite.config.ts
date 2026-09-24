@@ -64,7 +64,7 @@ export default defineConfig({
         // Precache the shell plus the Latin font subsets the UI actually uses; other subsets stay on demand.
         globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}", "assets/*latin-*.woff2"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/ws/, /^\/uploads\//, /^\/health/],
+        navigateFallbackDenylist: [/^\/api\//, /^\/callback/, /^\/ws/, /^\/uploads\//, /^\/health/],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
