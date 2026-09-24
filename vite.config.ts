@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -11,6 +12,14 @@ export default defineConfig({
     sourcemap: false,
     target: "es2022",
     chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      // Two entry points: the React web app and the canvas arcade client
+      // used by the desktop (.exe) and Android (.apk) shells.
+      input: {
+        main: resolve(__dirname, "client/index.html"),
+        arcade: resolve(__dirname, "client/arcade.html"),
+      },
+    },
   },
   server: {
     port: 5173,

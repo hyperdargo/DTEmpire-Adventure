@@ -165,7 +165,9 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     });
     app.setNotFoundHandler((req, reply) => {
       if (req.method === "GET" && !req.url.startsWith("/api/") && !req.url.startsWith("/uploads/") && req.headers.accept?.includes("text/html")) {
-        return reply.header("Cache-Control", "no-cache").sendFile("index.html", dist);
+        // Arcade client gets its own shell — everything else falls through to the React SPA.
+        const isArcade = req.url === "/arcade" || req.url.startsWith("/arcade?") || req.url.startsWith("/arcade/");
+        return reply.header("Cache-Control", "no-cache").sendFile(isArcade ? "arcade.html" : "index.html", dist);
       }
       return reply.code(404).send({ error: { code: "not_found", message: "Not found." } });
     });
