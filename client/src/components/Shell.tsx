@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Backpack, LayoutGrid, Lock, Mail, Menu, MessageCircle, Swords, Volume2, VolumeX, WifiOff } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { CLASS_BY_ID } from "../../../shared/data/classes.ts";
 import type { Badges, HeroSnap } from "../lib/api.ts";
@@ -8,6 +8,7 @@ import { realtime, type ConnectionState, type ServerEvent } from "../lib/realtim
 import { play, setSoundEnabled, soundEnabled } from "../lib/sound.ts";
 import { useAction, meKey } from "../state/game.ts";
 import { useNotify } from "../state/notify.tsx";
+import { isNativeApp } from "../lib/platform.ts";
 import { NAV } from "./nav.ts";
 import { Bar, Button, Coins, Countdown, Sheet } from "./ui.tsx";
 
@@ -166,6 +167,15 @@ export function Shell({ me, children }: { me: HeroSnap; children: ReactNode }) {
     };
   }, []);
 
+  const isNative = isNativeApp();
+  const navGroups = useMemo(() => {
+    if (!isNative) return NAV;
+    return NAV.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.to !== "/apps"),
+    }));
+  }, [isNative]);
+
   const quests = badgeCount("quests", me.badges);
   const mail = badgeCount("mail", me.badges);
   const toggleSound = () => {
@@ -184,7 +194,7 @@ export function Shell({ me, children }: { me: HeroSnap; children: ReactNode }) {
             <span>Adventure</span>
           </div>
         </Link>
-        {NAV.map((group) => (
+        {navGroups.map((group) => (
           <div className="rail__group" key={group.label}>
             <div className="rail__label">{group.label}</div>
             {group.items.map((item) => {
@@ -260,7 +270,7 @@ export function Shell({ me, children }: { me: HeroSnap; children: ReactNode }) {
 
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Everywhere">
         <div className="menu-grid">
-          {NAV.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.label}>
               <h4>{group.label}</h4>
               <div className="menu-grid__group">

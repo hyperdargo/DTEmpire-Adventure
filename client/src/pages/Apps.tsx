@@ -144,3 +144,24 @@ export function AppsPage() {
     </>
   );
 }
+
+export function AppsStandalone() {
+  return (
+    <div className="landing" style={{ minHeight: "100vh", padding: "0 var(--s-4) var(--s-8)" }}>
+      <header className="landing__bar">
+        <Link to="/" className="rail__brand">
+          <img src="/logo.png" alt="" width={46} height={46} />
+          <div><b>DTEmpire</b><span>Adventure</span></div>
+        </Link>
+        <nav className="row" style={{ gap: "10px" }}>
+          <Link className="btn btn--ghost" to="/">Home</Link>
+          <Link className="btn btn--ghost" to="/login">Sign in</Link>
+          <Link className="btn btn--primary" to="/register">Create account</Link>
+        </nav>
+      </header>
+      <div style={{ maxWidth: "980px", margin: "0 auto", paddingTop: "24px" }}>
+        <AppsPage />
+      </div>
+    </div>
+  );
+}

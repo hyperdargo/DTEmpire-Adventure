@@ -2,6 +2,7 @@ import { BedDouble, Compass, Download, Hammer, Home, Monitor, Smartphone, Sparkl
 import { useState } from "react";
 import { Link } from "react-router";
 import { innCost } from "../../../shared/rules/progression.ts";
+import { isNativeApp } from "../lib/platform.ts";
 import { Button, Coins, Countdown, Loading, PageHead, Panel, useNow } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
@@ -129,20 +130,22 @@ export default function TownPage() {
           </div>
         </Panel>
 
-        <Panel title={<h2><Download size={22} aria-hidden /> Native Client Apps (PC & Android)</h2>}>
-          <p className="muted">Experience DTEmpire Adventure with dedicated hardware acceleration, dynamic 2D lighting, and cross-platform save sync on PC and Android.</p>
-          <div className="row row--wrap" style={{ marginTop: "12px", gap: "10px" }}>
-            <a href="/downloads/DTEmpire-Adventure-Setup.exe" download className="btn btn--primary">
-              <Monitor size={16} aria-hidden /> Windows PC (.exe)
-            </a>
-            <a href="/downloads/DTEmpire-Adventure.apk" download className="btn btn--primary">
-              <Smartphone size={16} aria-hidden /> Android (.apk)
-            </a>
-            <Link to="/apps" className="btn btn--default">
-              Details & Guide
-            </Link>
-          </div>
-        </Panel>
+        {!isNativeApp() && (
+          <Panel title={<h2><Download size={22} aria-hidden /> Native Client Apps (PC & Android)</h2>}>
+            <p className="muted">Experience DTEmpire Adventure with dedicated hardware acceleration, dynamic 2D lighting, and cross-platform save sync on PC and Android.</p>
+            <div className="row row--wrap" style={{ marginTop: "12px", gap: "10px" }}>
+              <a href="/downloads/DTEmpire-Adventure-Setup.exe" download className="btn btn--primary">
+                <Monitor size={16} aria-hidden /> Windows PC (.exe)
+              </a>
+              <a href="/downloads/DTEmpire-Adventure.apk" download className="btn btn--primary">
+                <Smartphone size={16} aria-hidden /> Android (.apk)
+              </a>
+              <Link to="/apps" className="btn btn--default">
+                Details & Guide
+              </Link>
+            </div>
+          </Panel>
+        )}
 
         <Panel title={<h2><BedDouble size={22} aria-hidden /> The Inn</h2>}>
           <p className="muted">Health returns on its own over four minutes. A bed restores it instantly.</p>

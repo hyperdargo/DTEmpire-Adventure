@@ -33,6 +33,7 @@ const LuckyPage = lazy(() => import("./pages/Lucky.tsx"));
 const EstatePage = lazy(() => import("./pages/Estate.tsx"));
 const GuidePage = lazy(() => import("./pages/Guide.tsx"));
 const AppsPage = lazy(() => import("./pages/Apps.tsx").then((m) => ({ default: m.AppsPage })));
+const AppsStandalone = lazy(() => import("./pages/Apps.tsx").then((m) => ({ default: m.AppsStandalone })));
 const ChatPage = lazy(() => import("./pages/Chat.tsx"));
 const GuildPage = lazy(() => import("./pages/Guild.tsx"));
 const FriendsPage = lazy(() => import("./pages/Friends.tsx"));
@@ -96,6 +97,7 @@ export function App() {
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/register" element={<AuthPage mode="register" />} />
         <Route path="/reset" element={<AuthPage mode="reset" />} />
+        <Route path="/apps" element={<Page><AppsStandalone /></Page>} />
         <Route path="*" element={<Landing />} />
       </Routes>
     );

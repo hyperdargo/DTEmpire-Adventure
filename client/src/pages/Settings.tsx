@@ -12,6 +12,7 @@ import {
   type GraphicsQuality,
 } from "../components/GraphicsEngine.tsx";
 import { api, errorMessage } from "../lib/api.ts";
+import { isNativeApp } from "../lib/platform.ts";
 import { setSoundEnabled, soundEnabled } from "../lib/sound.ts";
 import { meKey, useAction, useHero } from "../state/game.ts";
 import { useNotify } from "../state/notify.tsx";
@@ -273,41 +274,43 @@ export default function SettingsPage() {
           </div>
         </Panel>
 
-        <Panel title={<h2><Monitor size={20} aria-hidden /> Native Apps (.exe & .apk)</h2>}>
-          <p className="muted">Play on desktop or mobile with native hardware acceleration. Both the webapp and native apps use your same hero account in real-time sync.</p>
-          <div className="row row--wrap" style={{ gap: "var(--s-3)", marginTop: "var(--s-3)" }}>
-            <a
-              className="btn btn--primary"
-              href="/downloads/DTEmpire-Adventure-Setup.exe"
-              download="DTEmpire-Adventure-Setup.exe"
-            >
-              <Monitor size={16} /> Download for Windows (.exe)
-            </a>
-            <a
-              className="btn btn--primary"
-              href="/downloads/DTEmpire-Adventure.apk"
-              download="DTEmpire-Adventure.apk"
-            >
-              <Smartphone size={16} /> Download for Android (.apk)
-            </a>
-            {installable && (
-              <Button
-                variant="ghost"
-                icon={<Download size={16} />}
-                onClick={async () => {
-                  await deferredInstall?.prompt();
-                  deferredInstall = null;
-                  setInstallable(false);
-                }}
+        {!isNativeApp() && (
+          <Panel title={<h2><Monitor size={20} aria-hidden /> Native Apps (.exe & .apk)</h2>}>
+            <p className="muted">Play on desktop or mobile with native hardware acceleration. Both the webapp and native apps use your same hero account in real-time sync.</p>
+            <div className="row row--wrap" style={{ gap: "var(--s-3)", marginTop: "var(--s-3)" }}>
+              <a
+                className="btn btn--primary"
+                href="/downloads/DTEmpire-Adventure-Setup.exe"
+                download="DTEmpire-Adventure-Setup.exe"
               >
-                Install Web App (PWA)
-              </Button>
-            )}
-          </div>
-          <p className="faint" style={{ marginTop: "var(--s-3)" }}>
-            All progress, equipment, and level advancements save to your central account across Web, Windows, and Android.
-          </p>
-        </Panel>
+                <Monitor size={16} /> Download for Windows (.exe)
+              </a>
+              <a
+                className="btn btn--primary"
+                href="/downloads/DTEmpire-Adventure.apk"
+                download="DTEmpire-Adventure.apk"
+              >
+                <Smartphone size={16} /> Download for Android (.apk)
+              </a>
+              {installable && (
+                <Button
+                  variant="ghost"
+                  icon={<Download size={16} />}
+                  onClick={async () => {
+                    await deferredInstall?.prompt();
+                    deferredInstall = null;
+                    setInstallable(false);
+                  }}
+                >
+                  Install Web App (PWA)
+                </Button>
+              )}
+            </div>
+            <p className="faint" style={{ marginTop: "var(--s-3)" }}>
+              All progress, equipment, and level advancements save to your central account across Web, Windows, and Android.
+            </p>
+          </Panel>
+        )}
 
         <Panel title="Preferences">
           <div className="stack">

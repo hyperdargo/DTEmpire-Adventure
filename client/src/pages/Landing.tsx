@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Download, Monitor, Smartphone } from "lucide-react";
 import { Link } from "react-router";
 import { CLASS_BY_ID } from "../../../shared/data/classes.ts";
 import { REGIONS, STORY_CHAPTERS } from "../../../shared/data/regions.ts";
@@ -44,7 +45,10 @@ export function Landing() {
           <img src="/logo.png" alt="" width={46} height={46} />
           <div><b>DTEmpire</b><span>Adventure</span></div>
         </Link>
-        <nav className="row">
+        <nav className="row" style={{ gap: "8px" }}>
+          <Link className="btn btn--primary" to="/apps" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Download size={15} /> Install App
+          </Link>
           <Link className="btn btn--ghost" to="/login">Sign in</Link>
           <Link className="btn" to="/register">Create account</Link>
         </nav>
@@ -57,9 +61,12 @@ export function Landing() {
             DTEmpire Adventure is a multiplayer RPG played in cards. Your class, your gear, your pets and every monster you face
             is a card on the table. Climb the Tower, delve the Dungeon, and duel your friends in real time, right in your browser.
           </p>
-          <div className="row row--wrap">
+          <div className="row row--wrap" style={{ gap: "8px", alignItems: "center" }}>
             <Button variant="primary" size="lg" loading={busy} onClick={() => void playAsGuest()}>Play now, no signup</Button>
             <Link className="btn btn--lg" to="/register">Create an account</Link>
+            <Link className="btn btn--lg btn--default" to="/apps" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <Download size={16} /> Install App
+            </Link>
             <a className="btn btn--ghost" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe">💻 Windows (.exe)</a>
             <a className="btn btn--ghost" href="/downloads/DTEmpire-Adventure.apk" download="DTEmpire-Adventure.apk">📱 Android (.apk)</a>
           </div>
@@ -85,13 +92,39 @@ export function Landing() {
       </section>
 
       <section className="landing__install panel">
-        <h2>Play Everywhere · Web, Windows PC & Android</h2>
-        <p>Enjoy synchronized cross-platform gameplay. Play directly in your browser, or install the standalone Windows desktop client and Android mobile app for high-fidelity graphics and offline asset caching.</p>
-        <div className="row row--wrap" style={{ gap: "10px", marginTop: "12px", justifyContent: "center" }}>
-          <Button variant="primary" loading={busy} onClick={() => void playAsGuest()}>Play Instantly in Browser</Button>
-          <a className="btn btn--default" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe">💻 Windows (.exe)</a>
-          <a className="btn btn--default" href="/downloads/DTEmpire-Adventure.apk" download="DTEmpire-Adventure.apk">📱 Android (.apk)</a>
-          <Link className="btn btn--ghost" to="/apps">Learn More</Link>
+        <h2>Install Our App · Windows PC & Android</h2>
+        <p>Get the full standalone experience. Install our app on your Windows PC or Android phone for instant launching, hardware acceleration, and seamless cross-platform character progress.</p>
+        <div className="row row--wrap" style={{ gap: "16px", marginTop: "16px", justifyContent: "center" }}>
+          <div className="card" style={{ flex: "1 1 280px", maxWidth: "360px", padding: "16px", background: "var(--surface-sunken)", border: "1px solid var(--line)", textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <Monitor size={24} style={{ color: "var(--gold)" }} />
+              <div>
+                <b>Windows PC Edition</b>
+                <div className="faint" style={{ fontSize: "12px" }}>64-bit Installer · 78 MB</div>
+              </div>
+            </div>
+            <p className="muted" style={{ fontSize: "13px", margin: "8px 0 12px" }}>Smooth 60 FPS gameplay with hardware acceleration and dedicated window frame.</p>
+            <a className="btn btn--primary" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe" style={{ width: "100%", justifyContent: "center" }}>
+              <Download size={16} /> Download .exe (Windows)
+            </a>
+          </div>
+
+          <div className="card" style={{ flex: "1 1 280px", maxWidth: "360px", padding: "16px", background: "var(--surface-sunken)", border: "1px solid var(--line)", textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <Smartphone size={24} style={{ color: "var(--gold)" }} />
+              <div>
+                <b>Android Mobile Edition</b>
+                <div className="faint" style={{ fontSize: "12px" }}>APK Package · 65 KB</div>
+              </div>
+            </div>
+            <p className="muted" style={{ fontSize: "13px", margin: "8px 0 12px" }}>Ultra-fast lightweight client with immersive full-screen play on mobile devices.</p>
+            <a className="btn btn--primary" href="/downloads/DTEmpire-Adventure.apk" download="DTEmpire-Adventure.apk" style={{ width: "100%", justifyContent: "center" }}>
+              <Download size={16} /> Download .apk (Android)
+            </a>
+          </div>
+        </div>
+        <div style={{ marginTop: "14px", textAlign: "center" }}>
+          <Link className="btn btn--ghost" to="/apps">View Installation Guide & Details &rarr;</Link>
         </div>
       </section>
 
