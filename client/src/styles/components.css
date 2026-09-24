@@ -707,3 +707,19 @@
 [data-graphics="low"] .realm-fx-canvas {
   display: none !important;
 }
+
+/* Mobile viewport containment safety */
+@media (max-width: 768px) {
+  .panel, .card, .stack, .shell, .main, .landing {
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  .row:not(.row--nowrap) {
+    flex-wrap: wrap;
+  }
+  .table-wrap, .table {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

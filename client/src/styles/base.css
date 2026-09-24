@@ -9,10 +9,15 @@ html {
   text-size-adjust: 100%;
   scrollbar-color: var(--felt-4) var(--felt-0);
   scrollbar-width: thin;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  width: 100%;
+  max-width: 100vw;
   min-height: 100dvh;
   font-family: var(--font-ui);
   font-size: var(--text-md);
@@ -30,6 +35,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   caret-color: var(--gold-bright);
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
   overflow-x: hidden;
 }
 
