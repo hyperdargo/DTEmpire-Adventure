@@ -5,6 +5,7 @@ import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from
 import { GuildSheet } from "../components/GuildSheet.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
+import { useStartBattle } from "./Table.tsx";
 
 interface GuildSummary { id: number; name: string; tag: string; emblem: string; description: string; level: number; members: number; maxMembers: number; open: boolean }
 interface GuildDetail extends Omit<GuildSummary, "members"> {
@@ -233,11 +234,7 @@ function GuildWarPanel() {
     } | null;
   }>(["guildWar"], "/api/guild/war");
 
-  const attack = useAction<{ targetUserId: number }, unknown>("/api/guild/war/attack", {
-    onSuccess: () => {
-      navigate("/battle");
-    },
-  });
+  const attack = useStartBattle("/api/guild/war/attack", [["guildWar"]]);
 
   if (isPending) return <Loading rows={3} />;
   const war = data?.war;

@@ -224,6 +224,10 @@ export default function BattlePage() {
       else if (kind === "arena") path = "/api/arena/ranked";
       else if (kind === "worldboss") path = "/api/worldboss/strike";
       else if (kind === "event") path = "/api/event/fight";
+      else if (kind === "guild_war") {
+        path = "/api/guild/war/attack";
+        body = { targetUserId: (ctx as { defenderId?: number }).defenderId };
+      }
       const r = await api.post<Mutation<ClientBattle>>(path, body);
       qc.setQueryData(meKey, r.me);
       qc.setQueryData(["battle"], { battle: r.result });
@@ -344,7 +348,15 @@ export default function BattlePage() {
           onAgain={() => void again()}
           onLeave={() => {
             qc.setQueryData(["battle"], { battle: null });
-            navigate(battle.kind === "dungeon" ? "/dungeon" : battle.kind === "tower" ? "/tower" : battle.kind === "worldboss" ? "/raid" : battle.kind === "event" ? "/festival" : battle.kind === "adventure" ? "/" : "/arena");
+            navigate(
+              battle.kind === "dungeon" ? "/dungeon"
+              : battle.kind === "tower" ? "/tower"
+              : battle.kind === "worldboss" ? "/raid"
+              : battle.kind === "event" ? "/festival"
+              : battle.kind === "guild_war" ? "/guild"
+              : battle.kind === "adventure" ? "/"
+              : "/arena"
+            );
           }}
           autoResolveAdventure={autoResolveAdventure}
           onToggleAuto={toggleAutoResolve}
@@ -363,6 +375,7 @@ function battleTitle(b: ClientBattle) {
     case "arena": return "Ranked arena";
     case "worldboss": return "World boss";
     case "event": return "Festival hunt";
+    case "guild_war": return "Guild War Clash";
     default: return "Adventure";
   }
 }

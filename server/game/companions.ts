@@ -8,7 +8,7 @@ import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { computeHeroStats } from "../../shared/rules/stats.ts";
 import type { GameCtx } from "./context.ts";
 import { equippedItems, heroStats, loadPlayer, savePlayer } from "./player.ts";
-import { buyAuction } from "./social.ts";
+import { buyAuction, donateToGuild } from "./social.ts";
 import { getOrCreateWar } from "./guildWar.ts";
 import { simulateWorldBossStrike } from "./modes.ts";
 
@@ -336,7 +336,7 @@ export async function ensureCompanions(g: GameCtx): Promise<number[]> {
     const kaelenId = kaelenUser?.id ?? ids[8] ?? 10;
     const g2Id = g.db.run(
       `INSERT INTO guilds (name, tag, emblem, description, leader_id, level, xp, open, state, created_at)
-       VALUES ('Shadow Legion', 'VOID', '🌑', 'The vanguard of shadows. Masters of the arena and tower.', ?, 5, 2500, 1, '{}', ?)`,
+       VALUES ('Shadow Legion', 'VOID', '🌑', 'The vanguard of shadows. Masters of the arena and tower.', ?, 3, 2500, 1, '{}', ?)`,
       kaelenId,
       now
     ).lastId;
@@ -665,6 +665,26 @@ export function tickCompanions(g: GameCtx) {
           }
         } catch {
           // Ignore concurrent buy or expiry
+        }
+      }
+
+      // ── Guild Donations: awake bots donate portion of their earnings to treasury ──
+      if (p.guildId && p.coins >= 500 && rng.chance(40)) {
+        try {
+          const donation = Math.min(2500, Math.floor(p.coins * 0.1));
+          if (donation >= 100) {
+            donateToGuild(g, p, donation);
+            savePlayer(g, p);
+            const myGuild = g.db.get<{ name: string; tag: string }>("SELECT name, tag FROM guilds WHERE id = ?", p.guildId);
+            g.hub.toChannel("world", {
+              type: "feed",
+              icon: "🪙",
+              text: `[${myGuild?.tag ?? "GUILD"}] ${p.name} donated ${donation.toLocaleString("en-US")} coins to the guild treasury!`,
+              at: now,
+            });
+          }
+        } catch {
+          // Ignore donation errors
         }
       }
 
