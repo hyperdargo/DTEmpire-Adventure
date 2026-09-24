@@ -75,7 +75,7 @@ function setState(a: ActorView, s: AnimState) {
 }
 
 // ── global game state ────────────────────────────────────────────────────
-type Screen = "loading" | "hub" | "battle" | "result" | "offline";
+type Screen = "loading" | "login" | "hub" | "battle" | "result" | "offline";
 
 let screen: Screen = "loading";
 let me: Me | null = null;
@@ -544,6 +544,7 @@ function render(dt: number) {
 
   fx.drawFlash(ctx, W, H);
 
+  if (screen === "login") drawLoginScreen();
   if (screen === "hub") drawHubOverlay();
   if (inBattle) drawBattleHud();
 
@@ -631,25 +632,134 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 
+// ── login screen ─────────────────────────────────────────────────────────
+let loginOverlay: HTMLDivElement | null = null;
+let loginError = "";
+
+function showLoginForm() {
+  if (loginOverlay) return;
+  const el = document.createElement("div");
+  el.id = "login-overlay";
+  el.innerHTML = `
+    <div style="position:fixed;inset:0;display:grid;place-content:center;z-index:40;pointer-events:all">
+      <div style="width:340px;padding:32px 28px;background:rgba(14,14,14,.94);border:1px solid #333;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.7)">
+        <div style="text-align:center;margin-bottom:20px">
+          <img src="/icon-192.png" style="width:56px;height:56px;image-rendering:pixelated;margin-bottom:10px" alt="">
+          <div style="color:#f0e0b8;font:800 22px 'Segoe UI',system-ui,sans-serif;letter-spacing:.04em">DTEMPIRE ADVENTURE</div>
+          <div style="color:#8a8a8a;font:600 12px 'Segoe UI',system-ui,sans-serif;margin-top:4px">ARCADE CLIENT</div>
+        </div>
+        <div id="login-err" style="color:#ff6a5a;font:600 12px 'Segoe UI',system-ui,sans-serif;text-align:center;min-height:18px;margin-bottom:8px"></div>
+        <input id="login-user" type="text" placeholder="Username" autocomplete="username"
+          style="width:100%;padding:10px 14px;margin-bottom:10px;background:#1a1a1a;border:1px solid #444;border-radius:8px;color:#e8e8e8;font:600 14px 'Segoe UI',system-ui,sans-serif;outline:none">
+        <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password"
+          style="width:100%;padding:10px 14px;margin-bottom:16px;background:#1a1a1a;border:1px solid #444;border-radius:8px;color:#e8e8e8;font:600 14px 'Segoe UI',system-ui,sans-serif;outline:none">
+        <button id="login-btn"
+          style="width:100%;padding:12px;background:#d8b45a;border:none;border-radius:8px;color:#14100a;font:800 15px 'Segoe UI',system-ui,sans-serif;cursor:pointer;margin-bottom:10px">SIGN IN</button>
+        <button id="guest-btn"
+          style="width:100%;padding:10px;background:transparent;border:1px solid #555;border-radius:8px;color:#b8b8b8;font:700 13px 'Segoe UI',system-ui,sans-serif;cursor:pointer">PLAY AS GUEST</button>
+        <div style="color:#666;font:500 11px 'Segoe UI',system-ui,sans-serif;text-align:center;margin-top:14px">
+          Or <a href="/" style="color:#d8b45a;text-decoration:underline">open the full web app</a> to register
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  loginOverlay = el;
+
+  const errEl = el.querySelector("#login-err") as HTMLDivElement;
+  const userEl = el.querySelector("#login-user") as HTMLInputElement;
+  const passEl = el.querySelector("#login-pass") as HTMLInputElement;
+  const loginBtn = el.querySelector("#login-btn") as HTMLButtonElement;
+  const guestBtn = el.querySelector("#guest-btn") as HTMLButtonElement;
+
+  async function doLogin() {
+    const u = userEl.value.trim();
+    const p = passEl.value;
+    if (!u || !p) { errEl.textContent = "Enter username and password"; return; }
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Signing in…";
+    errEl.textContent = "";
+    try {
+      await gameApi.login(u, p);
+      await loginComplete();
+    } catch (e) {
+      errEl.textContent = e instanceof ApiError ? e.message : "Connection failed";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "SIGN IN";
+    }
+  }
+
+  async function doGuest() {
+    guestBtn.disabled = true;
+    guestBtn.textContent = "Creating guest…";
+    errEl.textContent = "";
+    try {
+      await gameApi.guest();
+      await loginComplete();
+    } catch (e) {
+      errEl.textContent = e instanceof ApiError ? e.message : "Connection failed";
+      guestBtn.disabled = false;
+      guestBtn.textContent = "PLAY AS GUEST";
+    }
+  }
+
+  loginBtn.addEventListener("click", doLogin);
+  guestBtn.addEventListener("click", doGuest);
+  passEl.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+  userEl.addEventListener("keydown", (e) => { if (e.key === "Enter") passEl.focus(); });
+  setTimeout(() => userEl.focus(), 100);
+}
+
+async function loginComplete() {
+  const r = await gameApi.me();
+  if (!r.user) { loginError = "Login failed"; return; }
+  // Remove overlay
+  if (loginOverlay) { loginOverlay.remove(); loginOverlay = null; }
+  await enterGame(r);
+}
+
+function drawLoginScreen() {
+  drawScene(ctx, "town", W, H, clock, prof);
+  // Dim overlay
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,.55)";
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // The actual login form is a DOM overlay (loginOverlay) so text input works
+}
+
 // ── startup ──────────────────────────────────────────────────────────────
 async function start() {
   const r = await guarded(() => gameApi.me());
   if (!r) { screen = "offline"; }
   else {
     me = r;
-    if (!r.user) { location.href = "/"; return; }
-    const q = r.hero?.settings?.graphicsQuality;
-    if (q) { quality = q; prof = profile(q); fx.resize(prof.particles); resize(); }
-    hero.palette = paletteFor(r.hero?.classId ?? "warrior");
-    hero.weapon = weaponFor(r.hero?.classId, hero.palette);
-    const ab = await guarded(() => gameApi.activeBattle());
-    if (ab?.battle) adoptBattle(ab.battle, Math.max(0, ab.battle.state.events.length - 6));
-    else { screen = "hub"; scene = "town"; }
+    if (!r.user) {
+      screen = "login";
+      showLoginForm();
+      // Don't proceed — loginComplete() will call enterGame()
+      boot.style.transition = "opacity .4s";
+      boot.style.opacity = "0";
+      setTimeout(() => boot.remove(), 420);
+      requestAnimationFrame(frame);
+      return;
+    }
+    await enterGame(r);
   }
   boot.style.transition = "opacity .4s";
   boot.style.opacity = "0";
   setTimeout(() => boot.remove(), 420);
   requestAnimationFrame(frame);
+}
+
+async function enterGame(r: Me) {
+  me = r;
+  const q = r.hero?.settings?.graphicsQuality;
+  if (q) { quality = q; prof = profile(q); fx.resize(prof.particles); resize(); }
+  hero.palette = paletteFor(r.hero?.classId ?? "warrior");
+  hero.weapon = weaponFor(r.hero?.classId, hero.palette);
+  const ab = await guarded(() => gameApi.activeBattle());
+  if (ab?.battle) adoptBattle(ab.battle, Math.max(0, ab.battle.state.events.length - 6));
+  else { screen = "hub"; scene = "town"; }
 }
 
 // keep the session warm and pick up web-app changes made in another tab

@@ -100,4 +100,6 @@ export const gameApi = {
     api.post<{ battle: Battle; outcome: unknown; notices?: unknown[]; me?: Me }>(`/api/battle/${battleId}/auto`, { usePotions }),
   forfeit: (battleId: string) => api.post<{ battle: Battle; outcome: unknown }>(`/api/battle/${battleId}/forfeit`, {}),
   saveGraphics: (graphicsQuality: "low" | "medium" | "high") => api.post("/api/settings", { graphicsQuality }),
+  guest: () => api.post<{ user: unknown }>("/api/auth/guest", {}),
+  login: (username: string, password: string) => api.post<{ user: unknown }>("/api/auth/login", { username, password }),
 };
