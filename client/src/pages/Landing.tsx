@@ -85,9 +85,14 @@ export function Landing() {
       </section>
 
       <section className="landing__install panel">
-        <h2>Install it like an app</h2>
-        <p>Add DTEmpire to your home screen from your browser menu. It opens full screen, loads instantly, and remembers your hero between sessions.</p>
-        <Button variant="primary" loading={busy} onClick={() => void playAsGuest()}>Start playing</Button>
+        <h2>Play Everywhere · Web, Windows PC & Android</h2>
+        <p>Enjoy synchronized cross-platform gameplay. Play directly in your browser, or install the standalone Windows desktop client and Android mobile app for high-fidelity graphics and offline asset caching.</p>
+        <div className="row row--wrap" style={{ gap: "10px", marginTop: "12px", justifyContent: "center" }}>
+          <Button variant="primary" loading={busy} onClick={() => void playAsGuest()}>Play Instantly in Browser</Button>
+          <a className="btn btn--default" href="/downloads/DTEmpire-Adventure-Setup.exe" download="DTEmpire-Adventure-Setup.exe">💻 Windows (.exe)</a>
+          <a className="btn btn--default" href="/downloads/DTEmpire-Adventure.apk" download="DTEmpire-Adventure.apk">📱 Android (.apk)</a>
+          <Link className="btn btn--ghost" to="/apps">Learn More</Link>
+        </div>
       </section>
 
       <footer className="landing__foot faint">

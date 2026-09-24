@@ -1,5 +1,5 @@
 import {
-  Award, Backpack, BookOpen, Castle, Compass, Contact, PartyPopper, Crown, Dices, Flame, Gavel, Hammer, Handshake, Home, LayoutGrid, Mail, MessageCircle,
+  Award, Backpack, BookOpen, Castle, Compass, Contact, PartyPopper, Crown, Dices, Download, Flame, Gavel, Hammer, Handshake, Home, LayoutGrid, Mail, MessageCircle,
   PawPrint, ScrollText, Settings, Shield, Store, Swords, Trophy, Users, Landmark, type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +49,7 @@ export const NAV: NavGroup[] = [
       { to: "/ranks", label: "Leaderboards", icon: Award },
       { to: "/records", label: "Records", icon: BookOpen },
       { to: "/guide", label: "Guide Book", icon: Compass },
+      { to: "/apps", label: "Get App (PC/APK)", icon: Download },
       { to: "/mail", label: "Mail", icon: Mail, badge: "mail" },
       { to: "/settings", label: "Settings", icon: Settings },
     ],

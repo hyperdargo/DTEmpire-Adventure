@@ -32,6 +32,7 @@ const AuctionPage = lazy(() => import("./pages/Auction.tsx"));
 const LuckyPage = lazy(() => import("./pages/Lucky.tsx"));
 const EstatePage = lazy(() => import("./pages/Estate.tsx"));
 const GuidePage = lazy(() => import("./pages/Guide.tsx"));
+const AppsPage = lazy(() => import("./pages/Apps.tsx").then((m) => ({ default: m.AppsPage })));
 const ChatPage = lazy(() => import("./pages/Chat.tsx"));
 const GuildPage = lazy(() => import("./pages/Guild.tsx"));
 const FriendsPage = lazy(() => import("./pages/Friends.tsx"));
@@ -47,6 +48,7 @@ const TITLES: Record<string, string> = {
   "/raid": "World Boss", "/festival": "Festival", "/hero": "Hero", "/bag": "Bag", "/pets": "Pets", "/smithy": "Blacksmith", "/quests": "Quests",
   "/town": "Town", "/estate": "Estate & Housing", "/guide": "Guide Book", "/market": "Market", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
   "/friends": "Friends", "/trade": "Trades", "/ranks": "Leaderboards", "/records": "Records", "/mail": "Mail",
+  "/apps": "Native Apps & Downloads",
   "/settings": "Settings", "/battle": "Battle", "/login": "Sign in", "/register": "Create account",
 };
 
@@ -131,6 +133,7 @@ export function App() {
           <Route path="/ranks" element={<Page><RanksPage /></Page>} />
           <Route path="/records" element={<Page><RecordsPage /></Page>} />
           <Route path="/mail" element={<Page><MailPage /></Page>} />
+          <Route path="/apps" element={<Page><AppsPage /></Page>} />
           <Route path="/settings" element={<Page><SettingsPage /></Page>} />
           <Route path="/players/:name" element={<Page><ProfilePage /></Page>} />
           <Route path="/login" element={<Navigate to="/" replace />} />
