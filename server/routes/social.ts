@@ -90,6 +90,18 @@ export async function registerSocialRoutes(app: FastifyInstance) {
     const { coins } = parse(z.object({ coins: z.number().int().min(1).max(1_000_000_000) }), req);
     return mutate(g, u(req), (p) => social.donateToGuild(g, p, coins));
   });
+  app.post("/api/guild/vault/donate", async (req) => {
+    const { coins } = parse(z.object({ coins: z.number().int().min(1).max(1_000_000_000) }), req);
+    return mutate(g, u(req), (p) => social.donateToGuildVault(g, p, coins));
+  });
+  app.post("/api/guild/vault/request", async (req) => {
+    const { coins, reason } = parse(z.object({ coins: z.number().int().min(1).max(1_000_000_000), reason: z.string().max(120).optional() }), req);
+    return mutate(g, u(req), (p) => social.requestGuildVaultWithdrawal(g, p, coins, reason ?? ""));
+  });
+  app.post("/api/guild/vault/review", async (req) => {
+    const { requestId, approve } = parse(z.object({ requestId: z.string().min(1), approve: z.boolean() }), req);
+    return mutate(g, u(req), (p) => social.reviewGuildVaultRequest(g, p, requestId, approve));
+  });
   app.post("/api/guild/task", async (req) => {
     const { taskId } = parse(z.object({ taskId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => social.claimGuildTask(g, p, taskId));

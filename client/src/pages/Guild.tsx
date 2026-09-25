@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { GUILD_CREATE_COST, GUILD_CREATE_LEVEL } from "../../../shared/data/meta.ts";
-import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
+import { Bar, Button, Chip, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
 import { GuildSheet } from "../components/GuildSheet.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
+import { play } from "../lib/sound.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
 import { useStartBattle } from "./Table.tsx";
 
@@ -13,6 +14,30 @@ interface GuildDetail extends Omit<GuildSummary, "members"> {
   members: { userId: number; name: string; role: string; level: number; classIcon: string; power: number; contribution: number; online: boolean; lastSeenAt: number }[];
   requests: { userId: number; name: string; level: number }[];
   tasks: { id: string; name: string; icon: string; desc: string; goal: number; progress: number; guildXp: number; coins: number; claimed: boolean }[] | null;
+  vault?: {
+    balance: number;
+    requests: {
+      id: string;
+      userId: number;
+      userName: string;
+      userLevel: number;
+      amount: number;
+      reason: string;
+      status: "pending" | "approved" | "denied";
+      createdAt: number;
+      resolvedAt?: number;
+      resolvedBy?: string;
+    }[];
+    log: {
+      id: string;
+      type: "donate" | "payout" | "request" | "denied";
+      userId: number;
+      userName: string;
+      amount: number;
+      timestamp: number;
+      note?: string;
+    }[];
+  } | null;
 }
 
 export default function GuildPage() {
@@ -86,7 +111,7 @@ function FindGuild({ inMyGuild }: { inMyGuild?: boolean } = {}) {
 function MyGuild({ id }: { id: number }) {
   const { user } = useHero();
   const { data, isPending } = useData<GuildDetail>(["guild", id], `/api/guilds/${id}`);
-  const [tab, setTab] = useState<"overview" | "war" | "clans">("overview");
+  const [tab, setTab] = useState<"overview" | "vault" | "war" | "clans">("overview");
   const [donation, setDonation] = useState(1000);
   const inv = [["guild", id]];
   const leave = useAction("/api/guild/leave", { success: "You left the guild." });
@@ -113,6 +138,7 @@ function MyGuild({ id }: { id: number }) {
           onChange={setTab}
           options={[
             { value: "overview", label: "Overview" },
+            { value: "vault", label: `🏦 Guild Vault (${fmt(data.vault?.balance ?? 0)})` },
             { value: "war", label: "⚔️ Guild War" },
             { value: "clans", label: "🛡️ All Clans" },
           ]}
@@ -120,6 +146,8 @@ function MyGuild({ id }: { id: number }) {
       </div>
       {tab === "war" ? (
         <GuildWarPanel />
+      ) : tab === "vault" ? (
+        <GuildVaultPanel guild={data} officer={officer} />
       ) : tab === "clans" ? (
         <FindGuild inMyGuild />
       ) : (
@@ -302,3 +330,302 @@ function GuildWarPanel() {
     </div>
   );
 }
+
+function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: boolean }) {
+  const { hero } = useHero();
+  const inv = [["guild", guild.id]];
+  const [donateAmount, setDonateAmount] = useState<string>("");
+  const [reqAmount, setReqAmount] = useState<string>("");
+  const [reqReason, setReqReason] = useState<string>("");
+
+  const donateVault = useAction<{ coins: number }>("/api/guild/vault/donate", {
+    invalidate: [...inv, ["me"]],
+    success: "Donation deposited into the Guild Vault!",
+    onSuccess: () => {
+      play("coin");
+      setDonateAmount("");
+    },
+  });
+
+  const requestVault = useAction<{ coins: number; reason: string }>("/api/guild/vault/request", {
+    invalidate: inv,
+    success: "Withdrawal request submitted for review.",
+    onSuccess: () => {
+      play("coin");
+      setReqAmount("");
+      setReqReason("");
+    },
+  });
+
+  const reviewVault = useAction<{ requestId: string; approve: boolean }, { status: string }>("/api/guild/vault/review", {
+    invalidate: [...inv, ["me"]],
+    success: (r) => (r.status === "approved" ? "Request approved and coins transferred." : "Request denied."),
+    onSuccess: (r) => {
+      play(r.status === "approved" ? "level" : "hit");
+    },
+  });
+
+  const vault = guild.vault;
+  const balance = vault?.balance ?? 0;
+  const requests = vault?.requests ?? [];
+  const log = vault?.log ?? [];
+  const pendingRequests = requests.filter((r) => r.status === "pending");
+
+  const numDonate = parseInt(donateAmount || "0", 10);
+  const numReq = parseInt(reqAmount || "0", 10);
+
+  return (
+    <div className="stack" style={{ gap: "1.5rem" }}>
+      {/* Vault Balance Hero Card */}
+      <Panel title="Guild Treasury & Vault">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <div style={{ fontSize: "0.8rem", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Total Vault Balance
+            </div>
+            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--gold, #d4af37)", marginTop: "0.25rem" }}>
+              {fmt(balance)} coins
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "0.25rem" }}>
+              Shared treasury for clan operations, equipment forging, and member emergencies.
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.8rem", color: "#888" }}>Your Purse</div>
+            <div style={{ fontSize: "1.2rem", fontWeight: 600, color: "#fff" }}>
+              <Coins value={hero.coins} />
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Action Cards: Donate and Request */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem" }}>
+        {/* Donate */}
+        <Panel title="Donate to Guild Vault">
+          <div className="stack" style={{ gap: "1rem" }}>
+            <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>
+              Deposit coins into the common guild treasury. Every 10 coins donated grants +1 Guild Contribution XP.
+            </p>
+            <div className="row" style={{ gap: "0.5rem" }}>
+              {[1000, 10000, 50000].map((amt) => (
+                <Button
+                  key={amt}
+                  size="sm"
+                  variant="ghost"
+                  disabled={hero.coins < amt}
+                  onClick={() => setDonateAmount(String(amt))}
+                >
+                  +{fmt(amt)}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={hero.coins <= 0}
+                onClick={() => setDonateAmount(String(hero.coins))}
+              >
+                Max
+              </Button>
+            </div>
+            <div className="row" style={{ gap: "0.5rem" }}>
+              <input
+                type="number"
+                placeholder="Coins to donate"
+                value={donateAmount}
+                onChange={(e) => setDonateAmount(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: "#141414",
+                  border: "1px solid #333",
+                  color: "#fff",
+                  padding: "0.6rem 0.8rem",
+                  borderRadius: "4px",
+                }}
+              />
+              <Button
+                variant="primary"
+                loading={donateVault.isPending}
+                disabled={numDonate < 100 || numDonate > hero.coins}
+                onClick={() => donateVault.mutate({ coins: numDonate })}
+              >
+                Donate
+              </Button>
+            </div>
+          </div>
+        </Panel>
+
+        {/* Request Withdrawal */}
+        <Panel title="Request Vault Withdrawal">
+          <div className="stack" style={{ gap: "1rem" }}>
+            <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>
+              Request coins from the vault for personal or clan needs. Guild leaders and officers review and vote on all requests.
+            </p>
+            <div className="stack" style={{ gap: "0.5rem" }}>
+              <input
+                type="number"
+                placeholder={`Amount (Max: ${fmt(balance)})`}
+                value={reqAmount}
+                onChange={(e) => setReqAmount(e.target.value)}
+                style={{
+                  background: "#141414",
+                  border: "1px solid #333",
+                  color: "#fff",
+                  padding: "0.6rem 0.8rem",
+                  borderRadius: "4px",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Reason (e.g. Forge gear, raid supplies)"
+                maxLength={100}
+                value={reqReason}
+                onChange={(e) => setReqReason(e.target.value)}
+                style={{
+                  background: "#141414",
+                  border: "1px solid #333",
+                  color: "#fff",
+                  padding: "0.6rem 0.8rem",
+                  borderRadius: "4px",
+                }}
+              />
+              <Button
+                variant="primary"
+                loading={requestVault.isPending}
+                disabled={numReq < 100 || numReq > balance}
+                onClick={() => requestVault.mutate({ coins: numReq, reason: reqReason })}
+              >
+                Submit Request
+              </Button>
+            </div>
+          </div>
+        </Panel>
+      </div>
+
+      {/* Withdrawal Requests Review Panel */}
+      <Panel title={`Withdrawal Requests (${pendingRequests.length} pending)`}>
+        {pendingRequests.length === 0 ? (
+          <div style={{ color: "#777", textAlign: "center", padding: "1.5rem" }}>
+            No pending withdrawal requests.
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: "0.75rem" }}>
+            {pendingRequests.map((req) => (
+              <div
+                key={req.id}
+                style={{
+                  background: "#121212",
+                  border: "1px solid #282828",
+                  borderRadius: "6px",
+                  padding: "1rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "1rem",
+                }}
+              >
+                <div>
+                  <div className="row" style={{ gap: "0.5rem", alignItems: "center" }}>
+                    <span style={{ fontWeight: 600, color: "#fff" }}>{req.userName}</span>
+                    <span className="faint">(Lv. {req.userLevel})</span>
+                    <span className="gold" style={{ fontWeight: 700 }}>
+                      requests {fmt(req.amount)} coins
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "#bbb", marginTop: "0.25rem" }}>
+                    Reason: <em>"{req.reason}"</em>
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "#666", marginTop: "0.2rem" }}>
+                    Requested {timeAgo(req.createdAt)}
+                  </div>
+                </div>
+
+                <div className="row" style={{ gap: "0.5rem" }}>
+                  {officer ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        loading={reviewVault.isPending}
+                        disabled={balance < req.amount}
+                        onClick={() => reviewVault.mutate({ requestId: req.id, approve: true })}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        loading={reviewVault.isPending}
+                        onClick={() => reviewVault.mutate({ requestId: req.id, approve: false })}
+                      >
+                        Deny
+                      </Button>
+                    </>
+                  ) : (
+                    <Chip tone="warn">Under Review</Chip>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      {/* Vault Transaction History / Audit Log */}
+      <Panel title="Vault Activity Ledger">
+        {log.length === 0 ? (
+          <div style={{ color: "#777", textAlign: "center", padding: "1.5rem" }}>
+            No recent vault transactions recorded.
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: "0.5rem" }}>
+            {log.map((entry) => {
+              const isDonate = entry.type === "donate";
+              const isPayout = entry.type === "payout";
+              const isDenied = entry.type === "denied";
+
+              return (
+                <div
+                  key={entry.id}
+                  style={{
+                    background: "#101010",
+                    border: "1px solid #202020",
+                    borderRadius: "4px",
+                    padding: "0.6rem 0.8rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  <div className="row" style={{ gap: "0.5rem", alignItems: "center" }}>
+                    <span style={{ fontSize: "1rem" }}>
+                      {isDonate ? "📥" : isPayout ? "💰" : isDenied ? "❌" : "📝"}
+                    </span>
+                    <span>
+                      <strong style={{ color: "#fff" }}>{entry.userName}</strong>
+                      {isDonate && ` donated ${fmt(entry.amount)} coins`}
+                      {isPayout && ` received ${fmt(entry.amount)} coins payout`}
+                      {isDenied && ` request for ${fmt(entry.amount)} coins was denied`}
+                      {entry.type === "request" && ` requested ${fmt(entry.amount)} coins`}
+                    </span>
+                    {entry.note && (
+                      <span style={{ color: "#777", fontSize: "0.8rem" }}>
+                        ({entry.note})
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ color: "#666", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                    {timeAgo(entry.timestamp)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+

@@ -6,6 +6,7 @@ import type { LootDrop } from "../../shared/rules/loot.ts";
 import { MAX_LEVEL, applyXp, regenHp, xpToNext } from "../../shared/rules/progression.ts";
 import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower } from "../../shared/rules/stats.ts";
 import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
+import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
 import { dayKey } from "../lib/time.ts";
@@ -45,6 +46,7 @@ export interface PlayerState {
   onboarded?: boolean;
   guildWar?: { day: string; attacks: number; defeated: number[] };
   paragon?: number;
+  bank?: PlayerBankState;
 }
 
 export interface Player {

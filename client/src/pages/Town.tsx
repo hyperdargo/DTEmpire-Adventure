@@ -1,4 +1,4 @@
-import { BedDouble, Compass, Download, Hammer, Home, Monitor, Smartphone, Sparkles } from "lucide-react";
+import { BedDouble, Compass, Download, Hammer, Home, Monitor, Smartphone, Sparkles, Vault } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { innCost } from "../../../shared/rules/progression.ts";
@@ -120,6 +120,13 @@ export default function TownPage() {
           <p className="muted">Invest your wealth in property, luxury furnishings, and pet sanctuaries for permanent hero stat bonuses and daily coin dividends.</p>
           <div style={{ marginTop: "12px" }}>
             <Link to="/estate" className="btn btn--primary">Visit Estate District</Link>
+          </div>
+        </Panel>
+
+        <Panel title={<h2><Vault size={22} aria-hidden /> Iron Bank of the Realm</h2>}>
+          <p className="muted">Safeguard your fortune in private savings against death and banditry, lock fixed deposits for guaranteed yields, or take emergency gold loans.</p>
+          <div style={{ marginTop: "12px" }}>
+            <Link to="/bank" className="btn btn--primary">Enter the Bank</Link>
           </div>
         </Panel>
 

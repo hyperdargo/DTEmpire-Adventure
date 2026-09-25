@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { CLASS_BY_ID } from "../../shared/data/classes.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
 import {
@@ -149,7 +150,40 @@ export function removeFriend(g: GameCtx, userId: number, otherId: number) {
 // ═════════════════════════════════ Guilds ═════════════════════════════════
 
 interface GuildRow { id: number; name: string; tag: string; emblem: string; description: string; leader_id: number; level: number; xp: number; open: number; state: string; created_at: number }
-type GuildState = { tasks?: { day: string; ids: string[]; baseline: Record<string, Partial<Record<Counter, number>>>; claimed: string[] }; bank?: number };
+export interface GuildVaultRequest {
+  id: string;
+  userId: number;
+  userName: string;
+  userLevel: number;
+  amount: number;
+  reason: string;
+  status: "pending" | "approved" | "denied";
+  createdAt: number;
+  resolvedAt?: number;
+  resolvedBy?: string;
+}
+
+export interface GuildVaultLog {
+  id: string;
+  type: "donate" | "payout" | "request" | "denied";
+  userId: number;
+  userName: string;
+  amount: number;
+  timestamp: number;
+  note?: string;
+}
+
+export interface GuildVaultState {
+  balance: number;
+  requests: GuildVaultRequest[];
+  log: GuildVaultLog[];
+}
+
+type GuildState = {
+  tasks?: { day: string; ids: string[]; baseline: Record<string, Partial<Record<Counter, number>>>; claimed: string[] };
+  bank?: number;
+  vault?: GuildVaultState;
+};
 type Role = "leader" | "officer" | "member";
 
 function memberRole(g: GameCtx, userId: number, guildId: number): Role | null {
@@ -202,12 +236,19 @@ export function guildDetail(g: GameCtx, viewer: Player, guildId: number) {
   const requests = myRole === "leader" || myRole === "officer"
     ? g.db.all<{ user_id: number; name: string; level: number }>("SELECT r.user_id, pl.name, pl.level FROM guild_requests r JOIN players pl ON pl.user_id = r.user_id WHERE r.guild_id = ?", guildId)
     : [];
+  const state = json<GuildState>(r.state, {});
+  const vault = myRole ? {
+    balance: state.vault?.balance ?? 0,
+    requests: (state.vault?.requests ?? []).slice(-20).reverse(),
+    log: (state.vault?.log ?? []).slice(-30).reverse(),
+  } : null;
   return {
     id: r.id, name: r.name, tag: r.tag, emblem: r.emblem, description: r.description, level: r.level, xp: r.xp, xpToNext: guildXpToNext(r.level),
     open: !!r.open, perkPct: Math.min(10, r.level), maxMembers: GUILD_MAX_MEMBERS(r.level), myRole,
     members: members.map((m) => ({ userId: m.user_id, name: m.name, role: m.role, level: m.level, classIcon: CLASS_BY_ID[m.class_id]?.icon ?? "⚔️", power: m.power, contribution: m.contribution, online: g.hub.isOnline(m.user_id), lastSeenAt: m.last_seen_at })),
     requests: requests.map((x) => ({ userId: x.user_id, name: x.name, level: x.level })),
     tasks: myRole ? guildTasks(g, guildId) : null,
+    vault,
   };
 }
 
@@ -321,6 +362,158 @@ export function donateToGuild(g: GameCtx, p: Player, coins: number) {
   addGuildXp(g, p.guildId, xp);
   g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", xp, p.userId);
   return { guildXp: xp };
+}
+
+export function donateToGuildVault(g: GameCtx, p: Player, coins: number) {
+  if (!p.guildId) throw new GameError("You aren't in a guild.");
+  const amount = Math.floor(coins);
+  if (amount < 100) throw new GameError("Donate at least 100 coins to the vault.");
+  spendCoins(p, amount, "guild vault donation");
+
+  const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
+  const state = json<GuildState>(r.state, {});
+  state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
+  state.vault.balance += amount;
+  state.vault.log = state.vault.log ?? [];
+  state.vault.log.push({
+    id: randomBytes(6).toString("hex"),
+    type: "donate",
+    userId: p.userId,
+    userName: p.name,
+    amount,
+    timestamp: g.clock.now(),
+    note: `Donated ${amount.toLocaleString()} coins`,
+  });
+  if (state.vault.log.length > 50) state.vault.log = state.vault.log.slice(-50);
+  g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
+
+  const xp = Math.floor(amount / 10);
+  g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", xp, p.userId);
+  guildBroadcast(g, p.guildId, `${p.name} donated ${amount.toLocaleString()} coins to the Guild Vault!`);
+  return { balance: state.vault.balance, contribution: xp };
+}
+
+export function requestGuildVaultWithdrawal(g: GameCtx, p: Player, coins: number, reason: string) {
+  if (!p.guildId) throw new GameError("You aren't in a guild.");
+  const amount = Math.floor(coins);
+  if (amount < 100) throw new GameError("Minimum withdrawal request is 100 coins.");
+
+  const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
+  const state = json<GuildState>(r.state, {});
+  state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
+
+  if (amount > state.vault.balance) {
+    throw new GameError(`The vault only holds ${state.vault.balance.toLocaleString()} coins.`);
+  }
+
+  state.vault.requests = state.vault.requests ?? [];
+  if (state.vault.requests.some((rq) => rq.userId === p.userId && rq.status === "pending")) {
+    throw new GameError("You already have an open withdrawal request waiting for review.");
+  }
+
+  const cleanReason = cleanText(reason, 120) || "Guild funds request";
+  const reqId = randomBytes(6).toString("hex");
+  const request: GuildVaultRequest = {
+    id: reqId,
+    userId: p.userId,
+    userName: p.name,
+    userLevel: p.level,
+    amount,
+    reason: cleanReason,
+    status: "pending",
+    createdAt: g.clock.now(),
+  };
+
+  state.vault.requests.push(request);
+  if (state.vault.requests.length > 50) state.vault.requests = state.vault.requests.slice(-50);
+
+  state.vault.log = state.vault.log ?? [];
+  state.vault.log.push({
+    id: randomBytes(6).toString("hex"),
+    type: "request",
+    userId: p.userId,
+    userName: p.name,
+    amount,
+    timestamp: g.clock.now(),
+    note: `Requested ${amount.toLocaleString()} coins: "${cleanReason}"`,
+  });
+  if (state.vault.log.length > 50) state.vault.log = state.vault.log.slice(-50);
+  g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
+
+  for (const o of g.db.all<{ user_id: number }>("SELECT user_id FROM guild_members WHERE guild_id = ? AND role IN ('leader','officer')", p.guildId)) {
+    g.hub.toUser(o.user_id, { type: "guild_event", text: `${p.name} requested ${amount.toLocaleString()} coins from the Guild Vault.`, at: g.clock.now() });
+  }
+
+  return { requestId: reqId };
+}
+
+export function reviewGuildVaultRequest(g: GameCtx, p: Player, requestId: string, approve: boolean) {
+  if (!p.guildId) throw forbidden();
+  const role = memberRole(g, p.userId, p.guildId);
+  if (role !== "leader" && role !== "officer") throw forbidden("Only leaders and officers can review vault requests.");
+
+  const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
+  const state = json<GuildState>(r.state, {});
+  state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
+  state.vault.requests = state.vault.requests ?? [];
+
+  const req = state.vault.requests.find((x) => x.id === requestId);
+  if (!req || req.status !== "pending") throw notFound("Pending vault request");
+
+  const now = g.clock.now();
+  if (approve) {
+    if (state.vault.balance < req.amount) {
+      throw new GameError(`Not enough coins in the vault (has ${state.vault.balance.toLocaleString()} coins).`);
+    }
+    state.vault.balance -= req.amount;
+    req.status = "approved";
+    req.resolvedAt = now;
+    req.resolvedBy = p.name;
+
+    g.db.run("UPDATE players SET coins = coins + ? WHERE user_id = ?", req.amount, req.userId);
+    sendMail(g, req.userId, {
+      sender: "Guild Vault",
+      subject: "💰 Vault Request Approved",
+      body: `Your request for ${req.amount.toLocaleString()} coins was approved by ${p.name}. The coins have been transferred into your purse.`,
+    });
+
+    state.vault.log = state.vault.log ?? [];
+    state.vault.log.push({
+      id: randomBytes(6).toString("hex"),
+      type: "payout",
+      userId: req.userId,
+      userName: req.userName,
+      amount: req.amount,
+      timestamp: now,
+      note: `Approved by ${p.name} (${req.reason})`,
+    });
+    guildBroadcast(g, p.guildId, `${p.name} approved ${req.userName}'s withdrawal of ${req.amount.toLocaleString()} coins from the Guild Vault.`);
+  } else {
+    req.status = "denied";
+    req.resolvedAt = now;
+    req.resolvedBy = p.name;
+
+    sendMail(g, req.userId, {
+      sender: "Guild Vault",
+      subject: "❌ Vault Request Denied",
+      body: `Your request for ${req.amount.toLocaleString()} coins was denied by ${p.name}.`,
+    });
+
+    state.vault.log = state.vault.log ?? [];
+    state.vault.log.push({
+      id: randomBytes(6).toString("hex"),
+      type: "denied",
+      userId: req.userId,
+      userName: req.userName,
+      amount: req.amount,
+      timestamp: now,
+      note: `Denied by ${p.name}`,
+    });
+  }
+
+  if (state.vault.log.length > 50) state.vault.log = state.vault.log.slice(-50);
+  g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
+  return { status: req.status };
 }
 
 function ensureGuildTasks(g: GameCtx, guildId: number) {

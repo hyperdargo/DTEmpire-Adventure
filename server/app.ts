@@ -19,6 +19,7 @@ import { LiveDuels } from "./realtime/liveDuels.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerGameRoutes } from "./routes/game.ts";
 import { registerSocialRoutes } from "./routes/social.ts";
+import { registerBankRoutes } from "./routes/bank.ts";
 import { registerRealtime } from "./routes/realtime.ts";
 // Battle finalizers register themselves on import.
 import "./game/pve.ts";
@@ -136,6 +137,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await registerAuthRoutes(app);
   await registerGameRoutes(app);
   await registerSocialRoutes(app);
+  await registerBankRoutes(app);
   await registerRealtime(app);
 
   // Uploaded avatars: served inert.
