@@ -464,7 +464,13 @@ export function reviewGuildVaultRequest(g: GameCtx, p: Player, requestId: string
     req.resolvedAt = now;
     req.resolvedBy = p.name;
 
-    g.db.run("UPDATE players SET coins = coins + ? WHERE user_id = ?", req.amount, req.userId);
+    if (p.userId === req.userId) {
+      p.coins += req.amount;
+    } else {
+      const recipient = loadPlayer(g, req.userId);
+      recipient.coins += req.amount;
+      savePlayer(g, recipient);
+    }
     sendMail(g, req.userId, {
       sender: "Guild Vault",
       subject: "💰 Vault Request Approved",
