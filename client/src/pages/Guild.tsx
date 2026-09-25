@@ -156,8 +156,8 @@ function MyGuild({ id }: { id: number }) {
           <Bar value={data.xp} max={data.xpToNext} kind="xp" showNumbers label="Guild XP" />
           <div className="row row--wrap" style={{ marginTop: "var(--s-4)" }}>
             <input className="input" type="number" min={100} step={100} value={donation} onChange={(e) => setDonation(Number(e.target.value))} aria-label="Donation" style={{ width: 140 }} />
-            <Button onClick={() => donate.mutate({ coins: donation })}>Donate coins</Button>
-            <span className="faint">10 coins = 1 guild XP</span>
+            <Button onClick={() => donate.mutate({ coins: donation })}>Donate to Vault</Button>
+            <span className="faint">Deposited to Vault • 10 coins = 1 Guild XP & 1 Contribution</span>
           </div>
           {data.myRole === "leader" && (
             <label className="row" style={{ marginTop: "var(--s-3)" }}>

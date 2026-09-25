@@ -354,14 +354,7 @@ function addGuildXp(g: GameCtx, guildId: number, amount: number) {
 }
 
 export function donateToGuild(g: GameCtx, p: Player, coins: number) {
-  if (!p.guildId) throw new GameError("You aren't in a guild.");
-  const amount = Math.floor(coins);
-  if (amount < 100) throw new GameError("Donate at least 100 coins.");
-  spendCoins(p, amount, "the donation");
-  const xp = Math.floor(amount / 10);
-  addGuildXp(g, p.guildId, xp);
-  g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", xp, p.userId);
-  return { guildXp: xp };
+  return donateToGuildVault(g, p, coins);
 }
 
 export function donateToGuildVault(g: GameCtx, p: Player, coins: number) {
@@ -388,9 +381,10 @@ export function donateToGuildVault(g: GameCtx, p: Player, coins: number) {
   g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
 
   const xp = Math.floor(amount / 10);
+  addGuildXp(g, p.guildId, xp);
   g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", xp, p.userId);
-  guildBroadcast(g, p.guildId, `${p.name} donated ${amount.toLocaleString()} coins to the Guild Vault!`);
-  return { balance: state.vault.balance, contribution: xp };
+  guildBroadcast(g, p.guildId, `${p.name} donated ${amount.toLocaleString()} coins to the Guild Vault (+${xp.toLocaleString()} Guild XP)!`);
+  return { balance: state.vault.balance, contribution: xp, guildXp: xp };
 }
 
 export function requestGuildVaultWithdrawal(g: GameCtx, p: Player, coins: number, reason: string) {
