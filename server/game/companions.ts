@@ -8,7 +8,7 @@ import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { computeHeroStats } from "../../shared/rules/stats.ts";
 import type { GameCtx } from "./context.ts";
 import { equippedItems, heroStats, loadPlayer, savePlayer } from "./player.ts";
-import { buyAuction, donateToGuild } from "./social.ts";
+import { buyAuction, donateToGuild, donateToGuildVault } from "./social.ts";
 import { getOrCreateWar } from "./guildWar.ts";
 import { simulateWorldBossStrike } from "./modes.ts";
 
@@ -668,18 +668,22 @@ export function tickCompanions(g: GameCtx) {
         }
       }
 
-      // ── Guild Donations: awake bots donate portion of their earnings to treasury ──
-      if (p.guildId && p.coins >= 500 && rng.chance(40)) {
+      // ── Guild Donations: awake bots donate portion of their earnings to treasury & vault ──
+      if (p.guildId && rng.chance(40)) {
         try {
-          const donation = Math.min(2500, Math.floor(p.coins * 0.1));
+          // Keep bot funded with simulated adventure rewards
+          if (p.coins < 10_000) {
+            p.coins += 25_000 + rng.int(5_000, 50_000);
+          }
+          const donation = Math.max(1000, Math.min(50_000, Math.floor(p.coins * 0.2)));
           if (donation >= 100) {
-            donateToGuild(g, p, donation);
+            donateToGuildVault(g, p, donation);
             savePlayer(g, p);
             const myGuild = g.db.get<{ name: string; tag: string }>("SELECT name, tag FROM guilds WHERE id = ?", p.guildId);
             g.hub.toChannel("world", {
               type: "feed",
               icon: "🪙",
-              text: `[${myGuild?.tag ?? "GUILD"}] ${p.name} donated ${donation.toLocaleString("en-US")} coins to the guild treasury!`,
+              text: `[${myGuild?.tag ?? "GUILD"}] ${p.name} donated ${donation.toLocaleString("en-US")} coins to the Guild Vault!`,
               at: now,
             });
           }
