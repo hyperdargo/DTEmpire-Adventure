@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { GUILD_CREATE_COST, GUILD_CREATE_LEVEL } from "../../../shared/data/meta.ts";
 import { Bar, Button, Chip, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
 import { GuildSheet } from "../components/GuildSheet.tsx";
@@ -236,7 +236,6 @@ function MyGuild({ id }: { id: number }) {
 }
 
 function GuildWarPanel() {
-  const navigate = useNavigate();
   const { data, isPending } = useData<{
     war: {
       week: string;

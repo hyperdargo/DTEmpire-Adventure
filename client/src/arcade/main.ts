@@ -150,7 +150,6 @@ function playBeat(ev: BattleEvent) {
     case "hit": {
       const src = actorOf(ev.by);
       const tgt = actorOf(ev.target);
-      const strength = ev.crit ? 1 : 0.55;
       tgt.flash = 1;
       setState(tgt, tgt.state === "dead" ? "dead" : "hurt");
       fx.slash(tgt.x, tgt.y - 62, src.facing, ev.crit ? "#ffe9a8" : "#ffffff", ev.crit ? 82 : 62);
@@ -329,7 +328,7 @@ function applyQuality(q: Quality, persist = true) {
 }
 
 // ── input ────────────────────────────────────────────────────────────────
-let pointer = { x: -1, y: -1, down: false };
+const pointer = { x: -1, y: -1, down: false };
 let buttons: HudButton[] = [];
 let focusIndex = -1;
 
@@ -634,7 +633,6 @@ function frame(now: number) {
 
 // ── login screen ─────────────────────────────────────────────────────────
 let loginOverlay: HTMLDivElement | null = null;
-let loginError = "";
 
 function showLoginForm() {
   if (loginOverlay) return;
@@ -711,7 +709,11 @@ function showLoginForm() {
 
 async function loginComplete() {
   const r = await gameApi.me();
-  if (!r.user) { loginError = "Login failed"; return; }
+  if (!r.user) {
+    const errEl = loginOverlay?.querySelector("#login-err") as HTMLDivElement | null;
+    if (errEl) errEl.textContent = "Login failed";
+    return;
+  }
   // Remove overlay
   if (loginOverlay) { loginOverlay.remove(); loginOverlay = null; }
   await enterGame(r);

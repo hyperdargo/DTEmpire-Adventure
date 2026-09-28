@@ -8,6 +8,26 @@
 
 ---
 
+## Session: `20260928` — Imperial Bank System, Guild Vault, Code Quality & Linting Overhaul
+
+### Added & Expanded
+- **Imperial Bank System (`/bank`)**:
+  - Secure savings account with instant deposits and withdrawals.
+  - Fixed Deposits (FD) with maturity intervals and guaranteed bonus interest payouts upon maturation.
+  - Emergency credit loans scaled with player level, clear interest and repayment schedules.
+- **Guild Vault & Communal Treasury**:
+  - Direct member donations to the communal Guild Vault.
+  - Member withdrawal request pipeline with custom purpose descriptions.
+  - Leader and officer review workflow with real-time audit event feed.
+  - Bot companion donation routine routing surplus coin directly to Guild Vault.
+- **ESLint & Quality Cleanup**:
+  - Fixed 31 ESLint errors across React client components, arcade client, and game servers.
+  - Fixed duplicate battle branch conditions and unused imports.
+  - Synchronized render-time graphics engine settings without cascading effects.
+- Update log entries signed `- By Hermes`.
+
+---
+
 ## Session: `20260923` — Royal Estate & Housing, Adventurer's Codex, Auto-Resolve Mode, Seasonal Festivals
 
 ### Added & Expanded

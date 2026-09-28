@@ -1,4 +1,4 @@
-import { FileText, Shield, Sparkles } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Link } from "react-router";
 import { Panel } from "../components/ui.tsx";
 

@@ -7,7 +7,7 @@ import {
 } from "../../shared/data/meta.ts";
 import { CLASS_BY_ID } from "../../shared/data/classes.ts";
 import { weekKey, dayKey } from "../lib/time.ts";
-import { GameError, notFound } from "../lib/errors.ts";
+import { GameError } from "../lib/errors.ts";
 import type { GameCtx } from "./context.ts";
 import { type Player, grantCoins, grantXp, heroStats, loadPlayer, savePlayer } from "./player.ts";
 import { assertCanStartBattle, heroCombatant, insertBattle, registerFinalizer } from "./battles.ts";

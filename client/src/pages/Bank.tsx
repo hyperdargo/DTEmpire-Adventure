@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, PiggyBank, Clock, ShieldCheck, AlertTriangle, ArrowUpRight, ArrowDownLeft, CheckCircle2 } from "lucide-react";
+import { Clock, AlertTriangle, ArrowUpRight, ArrowDownLeft, CheckCircle2 } from "lucide-react";
 import { Button, Chip, Coins, Countdown, PageHead, Panel, Tabs } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
 import { play } from "../lib/sound.ts";

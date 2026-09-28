@@ -246,7 +246,7 @@ export function checkAchievements(g: GameCtx, p: Player) {
     if (skillCount > (p.counters.skillsLearned ?? 0)) {
       p.counters.skillsLearned = skillCount;
     }
-  } catch {}
+  } catch { /* ignore */ }
   const done = new Set(p.state.achievements ?? []);
   for (const a of ACHIEVEMENTS) {
     if (done.has(a.id)) continue;

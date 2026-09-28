@@ -1,6 +1,6 @@
 import { CLASS_BY_ID } from "../../shared/data/classes.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
-import type { EquipSlot, Rarity } from "../../shared/data/types.ts";
+import type { Affix, EquipSlot, Rarity } from "../../shared/data/types.ts";
 import { itemStats, pickGearTemplate, rollGear, statPower } from "../../shared/rules/items.ts";
 import { applyXp, MAX_LEVEL } from "../../shared/rules/progression.ts";
 import { towerLevelReq } from "../../shared/data/regions.ts";
@@ -8,7 +8,7 @@ import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { computeHeroStats } from "../../shared/rules/stats.ts";
 import type { GameCtx } from "./context.ts";
 import { equippedItems, heroStats, loadPlayer, savePlayer } from "./player.ts";
-import { buyAuction, donateToGuild, donateToGuildVault } from "./social.ts";
+import { buyAuction, donateToGuildVault } from "./social.ts";
 import { getOrCreateWar } from "./guildWar.ts";
 import { simulateWorldBossStrike } from "./modes.ts";
 
@@ -420,9 +420,9 @@ export function autoEquipCompanion(g: GameCtx, userId: number) {
     let bestItem: (typeof slotItems)[0] | null = null;
     for (const it of slotItems) {
       let base: Record<string, number> = {};
-      let affixes: any[] = [];
-      try { base = JSON.parse(it.base); } catch {}
-      try { affixes = JSON.parse(it.affixes); } catch {}
+      let affixes: Affix[] = [];
+      try { base = JSON.parse(it.base); } catch { /* ignore */ }
+      try { affixes = JSON.parse(it.affixes); } catch { /* ignore */ }
       const power = statPower(itemStats({ upgrade: it.upgrade, base, affixes }));
       if (power > bestPower) {
         bestPower = power;
@@ -465,9 +465,9 @@ export function autoEquipCompanion(g: GameCtx, userId: number) {
     let winningPower = -1;
     for (const it of slotItems) {
       let base: Record<string, number> = {};
-      let affixes: any[] = [];
-      try { base = JSON.parse(it.base); } catch {}
-      try { affixes = JSON.parse(it.affixes); } catch {}
+      let affixes: Affix[] = [];
+      try { base = JSON.parse(it.base); } catch { /* ignore */ }
+      try { affixes = JSON.parse(it.affixes); } catch { /* ignore */ }
       const power = statPower(itemStats({ upgrade: it.upgrade, base, affixes }));
       if (power > winningPower) {
         winningPower = power;

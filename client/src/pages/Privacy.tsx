@@ -1,4 +1,4 @@
-import { Database, Lock, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 import { Panel } from "../components/ui.tsx";
 

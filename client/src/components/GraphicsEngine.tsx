@@ -58,19 +58,19 @@ export function GraphicsEngine() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Sync state if hero settings change on server
-  useEffect(() => {
-    if (heroSetting && heroSetting !== quality) {
-      setQuality(heroSetting);
-      setStoredGraphicsQuality(heroSetting);
-    }
-  }, [heroSetting, quality]);
+  const [prevHeroSetting, setPrevHeroSetting] = useState(heroSetting);
+  if (heroSetting && heroSetting !== prevHeroSetting) {
+    setPrevHeroSetting(heroSetting);
+    setQuality(heroSetting);
+    setStoredGraphicsQuality(heroSetting);
+  }
 
-  useEffect(() => {
-    if (crtSetting !== undefined && crtSetting !== crt) {
-      setCrt(crtSetting);
-      setStoredCrtFilter(crtSetting);
-    }
-  }, [crtSetting, crt]);
+  const [prevCrtSetting, setPrevCrtSetting] = useState(crtSetting);
+  if (crtSetting !== undefined && crtSetting !== prevCrtSetting) {
+    setPrevCrtSetting(crtSetting);
+    setCrt(crtSetting);
+    setStoredCrtFilter(crtSetting);
+  }
 
   // Apply data-attributes to document element
   useEffect(() => {

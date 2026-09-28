@@ -321,10 +321,10 @@ export function highRollerGamble(
 
   spendCoins(p, stake, `a ${input.game} high-roller wager`);
   const rng = createRng(freshSeed());
-  let win = 0;
-  let multiplier = 0;
-  let outcomeDesc = "";
-  let details: Record<string, unknown> = {};
+  let win: number;
+  let multiplier: number;
+  let outcomeDesc: string;
+  let details: Record<string, unknown>;
 
   if (input.game === "coin") {
     const call = input.choice === "tails" ? "tails" : "heads";
