@@ -1,8 +1,10 @@
 import { Moon, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
 import type { ItemView } from "../../../shared/data/types.ts";
 import { GameCard, ItemCard } from "../components/GameCard.tsx";
-import { Button, Countdown, Empty, Loading, PageHead, Panel } from "../components/ui.tsx";
+import { ImperialArcade } from "../components/ImperialArcade.tsx";
+import { Button, Countdown, Empty, Loading, PageHead, Panel, Tabs } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
 import { useStartBattle } from "./Table.tsx";
@@ -23,6 +25,7 @@ const TIER_RARITY = { normal: "uncommon", elite: "epic", boss: "mythic" } as con
 
 export default function EventPage() {
   const { hero, user, activeBattle } = useHero();
+  const [eventTab, setEventTab] = useState<"arcade" | "seasonal">("arcade");
   const { data, isPending } = useData<EventView>(["event"], "/api/event", { refetchInterval: 60_000 });
   const fight = useStartBattle("/api/event/fight", [["event"]]);
   const buy = useAction<{ entryId: string }, { kind: string; name: string; qty?: number }>("/api/event/buy", {
@@ -31,11 +34,41 @@ export default function EventPage() {
   });
 
   if (isPending || !data) return <Loading rows={3} />;
+
+  const tabsBar = (
+    <div style={{ marginBottom: "1.25rem" }}>
+      <Tabs
+        label="Event Sections"
+        value={eventTab}
+        onChange={setEventTab}
+        options={[
+          { value: "arcade", label: "🎪 Imperial Carnival (10 Mini-Games)" },
+          { value: "seasonal", label: "🌙 Seasonal Festival" },
+        ]}
+      />
+    </div>
+  );
+
+  if (eventTab === "arcade") {
+    return (
+      <>
+        <PageHead title="Imperial Carnival & Daily Mini-Games">
+          Ten daily games of chance, skill, and daring. Play the featured event for bonus gold payouts and double Carnival Tokens!
+        </PageHead>
+        {tabsBar}
+        <ImperialArcade />
+      </>
+    );
+  }
+
   if (!data.active || !data.event || !data.mine) {
     return (
-      <Empty art="🎏" title="No festival is running" action={<Link className="btn btn--primary" to="/">Back to the table</Link>}>
-        Seasonal festivals bring their own monsters, their own currency and gear you can't get anywhere else. The next one will appear here.
-      </Empty>
+      <>
+        {tabsBar}
+        <Empty art="🎏" title="No seasonal festival is running" action={<Button variant="primary" onClick={() => setEventTab("arcade")}>Play Imperial Carnival Mini-Games</Button>}>
+          Seasonal festivals bring their own monsters, their own currency and gear you can't get anywhere else. Play the Imperial Carnival mini-games in the meantime!
+        </Empty>
+      </>
     );
   }
   const { event, mine, shop = [], leaderboard = [] } = data;
@@ -49,6 +82,8 @@ export default function EventPage() {
       }>
         {event.description} Ends in <Countdown to={event.endsAt} done="moments" />.
       </PageHead>
+
+      {tabsBar}
 
       <div className="event">
         <Panel title="The festival grounds">

@@ -208,17 +208,30 @@ export function isCompanionAwake(shiftStartHour: number, nowMs: number): boolean
 }
 
 let lastChatMessageTime = 0;
-const CHAT_INTERVAL_MS = 10 * 60 * 1000; // max once every 10 mins
+const CHAT_INTERVAL_MS = 2.5 * 60 * 1000; // active chat every 2-3 mins
 
 const AWAKE_CHATS = [
-  "Back from resting! Time to grind some dungeons.",
-  "Checked my gear, heading back to the Tower.",
-  "Good morning realm! Starting another grind session.",
-  "Just started my shift, looking for good loot today.",
-  "Tower of Ascension, here I come!",
-  "Upgrading my weapons at the Blacksmith today.",
-  "The creatures in the Dark Forest won't stand a chance!",
-  "Arena rating won't raise itself — let's duel!",
+  "Back from resting! Time to grind some high tier dungeons.",
+  "Checked my gear stats, heading back to push the Tower of Ascension.",
+  "Good morning realm! Starting another intense grind session.",
+  "Just started my shift, hunting for ancient transcendent loot today.",
+  "Tower of Ascension floor cleared, on to the next milestone!",
+  "Upgrading my weapons at the Blacksmith. Need that +10 glow.",
+  "The creatures in the Dark Forest won't stand a chance today!",
+  "Arena rating won't raise itself — queue up for duels!",
+  "Just hit a crazy payout at the Imperial Carnival mini-games! 🎪",
+  "Donated a fresh chunk of coins to the Guild Vault. Build that War Forge!",
+  "DTEmpire is holding the line. Keep pushing the war skirmishes!",
+  "Shadow Legion never rests. The void claims all.",
+  "Anyone running Abyss or Catacombs? Drops are boosted today.",
+  "That boss almost one-shot my familiar... time to level up my pet.",
+  "Level 150+ monsters hit different... gotta refine my armor defense.",
+  "The realm level cap just expanded! The grind never stops.",
+  "Just cashed in festival tokens for limited event gear at the pavilion.",
+  "Mines of Eldoria in the Arcade is pure adrenaline when you hit 5x.",
+  "GGs to everyone in the Arena today, great matches!",
+  "Upgrading our Guild Citadel for extra clan perks. Check the buildings tab!",
+  "Paragon ranks give so much raw power. Don't slack on Paragon upgrades.",
 ];
 
 export async function ensureCompanions(g: GameCtx): Promise<number[]> {

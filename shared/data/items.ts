@@ -114,6 +114,12 @@ const eventGear: GearTemplate[] = [
   { id: "trident_of_abyss", name: "Trident of the Abyss", icon: "🔱", slot: "weapon", weaponType: "staff", levelReq: 5, desc: "Commands the crushing ocean depths.", eventOnly: true },
   { id: "carapace_of_deep", name: "Carapace of the Deep", icon: "🦞", slot: "armor", levelReq: 5, desc: "Withstands trench pressures.", eventOnly: true },
   { id: "crown_of_coral", name: "Crown of Coral", icon: "👑", slot: "helmet", levelReq: 5, desc: "Encrusted with glowing deep-sea pearls.", eventOnly: true },
+  // Limited Edition Transcendent Event Relics (Level 100-200)
+  { id: "void_annihilator_200", name: "Void Annihilator", icon: "⚔️", slot: "weapon", weaponType: "sword", levelReq: 100, desc: "A limited-edition cosmic blade capable of severing planar boundaries.", eventOnly: true },
+  { id: "celestial_aegis_200", name: "Celestial Sovereign Aegis", icon: "🛡️", slot: "armor", levelReq: 100, desc: "Limited edition plate woven from compressed stellar dust.", eventOnly: true },
+  { id: "crown_of_the_cosmos_200", name: "Crown of the Cosmos", icon: "👑", slot: "helmet", levelReq: 100, desc: "Pinnacle relic granted to transcendent festival champions.", eventOnly: true },
+  { id: "boots_of_infinity_200", name: "Starlight Greaves", icon: "🥾", slot: "boots", levelReq: 100, desc: "Leaves shimmering trails of astral energy across the battlefield.", eventOnly: true },
+  { id: "amulet_of_eternity_200", name: "Pendant of Eternity", icon: "📿", slot: "accessory", levelReq: 100, desc: "Ancient talisman pulsating with infinite realm vitality.", eventOnly: true },
   // Endless Abyss permanent rewards
   { id: "void_blade", name: "Void Edge", icon: "🌌", slot: "weapon", weaponType: "sword", levelReq: 15, desc: "Carved from solidified void aether." },
   { id: "null_aegis", name: "Null Aegis", icon: "🛡️", slot: "armor", levelReq: 15, desc: "Absorbs incoming force into non-existence." },

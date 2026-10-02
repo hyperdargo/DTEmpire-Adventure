@@ -124,6 +124,39 @@ export const ESTATE_HOUSES: EstateHouseDef[] = [
     minLevel: 70,
     stats: { hpPct: 22, atkPct: 22, defPct: 20, xpPct: 15, coinPct: 15, crit: 10, luck: 10 },
   },
+  {
+    id: "astral_palace",
+    name: "Astral Palace",
+    icon: "🌌",
+    desc: "A sprawling palace erected on an island of pure crystallized starlight. Wards pulse with cosmic energy.",
+    price: 8_000_000,
+    sellPrice: 6_000_000,
+    rooms: 25,
+    minLevel: 80,
+    stats: { hpPct: 30, atkPct: 30, defPct: 28, xpPct: 20, coinPct: 20, crit: 15, luck: 15 },
+  },
+  {
+    id: "sovereign_sky_empire",
+    name: "Sovereign Sky-Empire",
+    icon: "👑",
+    desc: "A magnificent floating domain commanding the clouds above the entire realm. Only legendary monarchs dwell here.",
+    price: 20_000_000,
+    sellPrice: 15_000_000,
+    rooms: 35,
+    minLevel: 90,
+    stats: { hpPct: 40, atkPct: 40, defPct: 38, xpPct: 25, coinPct: 25, crit: 20, luck: 20 },
+  },
+  {
+    id: "cosmic_pantheon",
+    name: "Cosmic Pantheon",
+    icon: "🪐",
+    desc: "The ultimate monument of imperial wealth and godly divinity. Transcends earthly architecture entirely.",
+    price: 50_000_000,
+    sellPrice: 37_500_000,
+    rooms: 50,
+    minLevel: 100,
+    stats: { hpPct: 50, atkPct: 50, defPct: 50, xpPct: 35, coinPct: 35, crit: 25, luck: 25 },
+  },
 ];
 
 export const ESTATE_PET_HOUSES: EstatePetHouseDef[] = [
@@ -162,6 +195,15 @@ export const ESTATE_PET_HOUSES: EstatePetHouseDef[] = [
     price: 500_000,
     sellPrice: 375_000,
     stats: { petPowerPct: 35, petXpPct: 80, eggDropBonus: 10 },
+  },
+  {
+    id: "celestial_sanctuary",
+    name: "Celestial Pet Sanctuary",
+    icon: "⭐",
+    desc: "A floating aetherial pavilion bathed in starlight where divine companion beasts thrive.",
+    price: 5_000_000,
+    sellPrice: 3_750_000,
+    stats: { petPowerPct: 50, petXpPct: 120, eggDropBonus: 25 },
   },
 ];
 
@@ -255,6 +297,24 @@ export const ESTATE_OBJECTS: EstateObjectDef[] = [
     price: 500_000,
     sellPrice: 375_000,
     stats: { flatAtk: 100, flatDef: 100, flatHp: 500, atkPct: 4, defPct: 4, hpPct: 4 },
+  },
+  {
+    id: "void_nexus_altar",
+    name: "Void Nexus Altar",
+    icon: "🔮",
+    desc: "An ominous altar humming with the resonance of conquered abyssal planes.",
+    price: 10_000_000,
+    sellPrice: 7_500_000,
+    stats: { flatAtk: 500, flatDef: 500, flatHp: 2000, bossDamage: 15 },
+  },
+  {
+    id: "throne_of_the_cosmos",
+    name: "Throne of the Cosmos",
+    icon: "💺",
+    desc: "Forged from fragments of dying stars and pure mithril. Radiates supreme supremacy.",
+    price: 25_000_000,
+    sellPrice: 18_750_000,
+    stats: { flatAtk: 1200, flatDef: 1200, flatHp: 5000, skillPower: 25 },
   },
 ];
 

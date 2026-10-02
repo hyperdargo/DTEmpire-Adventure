@@ -26,6 +26,7 @@ import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/rea
 import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
+import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 
 const id = z.coerce.number().int().positive();
 const actionSchema: z.ZodType<BattleAction> = z.discriminatedUnion("type", [
@@ -493,6 +494,27 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/event/buy", async (req) => {
     const { entryId } = parse(z.object({ entryId: z.string().max(60) }), req);
     return mutate(g, u(req), (p) => events.buyEventItem(g, p, entryId));
+  });
+
+  // ── Imperial Carnival / Daily Mini-Games ──
+  app.get("/api/arcade", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return getArcadeOverview(g, p);
+    });
+  });
+
+  app.post("/api/arcade/play", async (req) => {
+    const { gameId, stake, choice } = parse(
+      z.object({
+        gameId: z.string().max(60),
+        stake: z.number().int().min(100).max(100_000_000),
+        choice: z.any().optional(),
+      }),
+      req
+    );
+    return mutate(g, u(req), (p) => playMiniGame(g, p, gameId, stake, choice));
   });
 
   // ── Records ──

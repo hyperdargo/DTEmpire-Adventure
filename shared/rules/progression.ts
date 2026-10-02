@@ -1,9 +1,10 @@
 import type { Rarity } from "../data/types.ts";
+import realmCap from "../data/realm_cap.json" with { type: "json" };
 
 // One power curve for the whole game. Players, gear and monsters all derive from it,
-// so difficulty stays consistent from level 1 to level 100.
+// so difficulty stays consistent from level 1 to level 200+ (weekly realm expansion).
 
-export const MAX_LEVEL = 100;
+export const MAX_LEVEL = Number(realmCap?.maxLevel ?? 200);
 
 export const RARITY_INDEX: Record<Rarity, number> = {
   common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, unique: 6,

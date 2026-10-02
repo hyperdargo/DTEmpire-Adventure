@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ASCENSION_COST, CLASS_BY_ID, DUAL_CLASS_COST, DUAL_CLASS_LEVEL, REROLL_COST } from "../../../shared/data/classes.ts";
+import { PARAGON_COST, PARAGON_MAX } from "../../../shared/data/meta.ts";
 import { SKILLS, SKILL_MAX_RANK, loadoutSlots, skillRankMult, skillUpgradeCost } from "../../../shared/data/skills.ts";
 import type { EquipSlot, ItemView } from "../../../shared/data/types.ts";
 import { RARITY_ORDER } from "../../../shared/rules/progression.ts";
@@ -194,8 +195,8 @@ function ParagonPanel() {
   });
 
   const rank = (hero as unknown as { paragon?: number }).paragon ?? 0;
-  const cost = (rank + 1) * 250_000;
-  const maxRank = 10;
+  const cost = PARAGON_COST(rank);
+  const maxRank = PARAGON_MAX;
   const isMax = rank >= maxRank;
   const bonusPct = rank * 5;
 

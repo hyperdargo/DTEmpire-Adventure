@@ -195,24 +195,45 @@ export const TRADE_EXPIRY_HOURS = 24;
 export const CHAT_MAX_LENGTH = 400;
 
 // ── Endgame: Paragon / Ascension (Level 100+) ─────────────────────────
-export const PARAGON_MAX = 10;
-export const PARAGON_COST = (rank: number) => 250_000 * (rank + 1);
+export const PARAGON_MAX = 50;
+export const PARAGON_COST = (rank: number) => {
+  if (rank < 10) return 250_000 * (rank + 1);
+  if (rank < 25) return 2_500_000 + (rank - 9) * 1_000_000;
+  return 18_000_000 + (rank - 24) * 2_000_000;
+};
 export const PARAGON_STAT_PCT = 5; // +5% atk, def, maxHp per rank
-export const PARAGON_TITLES = [
-  "⚡ Paragon I",
-  "⚡ Paragon II",
-  "⚡ Paragon III",
-  "⚡ Paragon IV",
-  "👑 Ascended Master",
-  "👑 Paragon VI",
-  "👑 Paragon VII",
-  "👑 Paragon VIII",
-  "👑 Paragon IX",
-  "🌌 Celestial Sovereign",
-] as const;
+export const PARAGON_TITLES: Record<number, string> = {
+  1: "⚡ Paragon I",
+  2: "⚡ Paragon II",
+  3: "⚡ Paragon III",
+  4: "⚡ Paragon IV",
+  5: "👑 Ascended Master",
+  6: "👑 Paragon VI",
+  7: "👑 Paragon VII",
+  8: "👑 Paragon VIII",
+  9: "👑 Paragon IX",
+  10: "🌌 Celestial Sovereign",
+  15: "⚡ Astral Demigod",
+  20: "👑 Sovereign of Infinity",
+  25: "🌌 Prime Eternal",
+  30: "🔱 Grand Ascendant",
+  40: "🪐 Cosmic Overlord",
+  50: "✨ Mythic Transcendent",
+};
 
 // ── Endgame: High-Roller Salon ────────────────────────────────────────
-export const HIGH_ROLLER_STAKES = [10_000, 50_000, 100_000, 250_000, 500_000] as const;
+export const HIGH_ROLLER_STAKES = [
+  10_000,
+  50_000,
+  100_000,
+  250_000,
+  500_000,
+  1_000_000,
+  2_500_000,
+  5_000_000,
+  10_000_000,
+  25_000_000,
+] as const;
 
 // ── Guild Wars ────────────────────────────────────────────────────────
 export const GUILD_WAR_ATTACKS_PER_DAY = 5;

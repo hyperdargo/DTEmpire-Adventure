@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { GUILD_CREATE_COST, GUILD_CREATE_LEVEL } from "../../../shared/data/meta.ts";
+import type { GovernanceTaxInfo } from "../../../shared/rules/governance.ts";
 import { Bar, Button, Chip, Coins, Empty, Loading, PageHead, Panel, Sheet, Tabs } from "../components/ui.tsx";
 import { GuildSheet } from "../components/GuildSheet.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
@@ -38,6 +39,21 @@ interface GuildDetail extends Omit<GuildSummary, "members"> {
       note?: string;
     }[];
   } | null;
+  taxInfo?: GovernanceTaxInfo;
+  buildings?: Record<string, number>;
+  buildingBonuses?: Record<string, number>;
+  availableBuildings?: {
+    id: string;
+    name: string;
+    icon: string;
+    tagline: string;
+    description: string;
+    maxTier: number;
+    currentTier: number;
+    cost: number;
+    currentPerk: string;
+    nextPerk: string;
+  }[];
 }
 
 export default function GuildPage() {
@@ -111,7 +127,7 @@ function FindGuild({ inMyGuild }: { inMyGuild?: boolean } = {}) {
 function MyGuild({ id }: { id: number }) {
   const { user } = useHero();
   const { data, isPending } = useData<GuildDetail>(["guild", id], `/api/guilds/${id}`);
-  const [tab, setTab] = useState<"overview" | "vault" | "war" | "clans">("overview");
+  const [tab, setTab] = useState<"overview" | "buildings" | "vault" | "war" | "clans">("overview");
   const [donation, setDonation] = useState(1000);
   const inv = [["guild", id]];
   const leave = useAction("/api/guild/leave", { success: "You left the guild." });
@@ -138,13 +154,16 @@ function MyGuild({ id }: { id: number }) {
           onChange={setTab}
           options={[
             { value: "overview", label: "Overview" },
+            { value: "buildings", label: "🏗️ Buildings & Citadel" },
             { value: "vault", label: `🏦 Guild Vault (${fmt(data.vault?.balance ?? 0)})` },
             { value: "war", label: "⚔️ Guild War" },
             { value: "clans", label: "🛡️ All Clans" },
           ]}
         />
       </div>
-      {tab === "war" ? (
+      {tab === "buildings" ? (
+        <GuildBuildingsPanel guild={data} officer={officer} />
+      ) : tab === "war" ? (
         <GuildWarPanel />
       ) : tab === "vault" ? (
         <GuildVaultPanel guild={data} officer={officer} />
@@ -330,6 +349,141 @@ function GuildWarPanel() {
   );
 }
 
+function GuildBuildingsPanel({ guild, officer }: { guild: GuildDetail; officer: boolean }) {
+  const inv = [["guild", guild.id]];
+  const balance = guild.vault?.balance ?? 0;
+  const upgrade = useAction<{ buildingId: string }, any>("/api/guild/building/upgrade", {
+    invalidate: [...inv, ["me"]],
+    success: "Building upgraded! All guild members receive enhanced bonuses.",
+    onSuccess: () => play("level"),
+  });
+
+  const bBonuses = guild.buildingBonuses ?? {};
+
+  return (
+    <div className="stack" style={{ gap: "1.5rem" }}>
+      {/* Treasury & Summary */}
+      <Panel title="Guild Infrastructure & Citadel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <div style={{ fontSize: "0.85rem", color: "#aaa" }}>
+              Construct and upgrade monumental clan structures to bestow passive primordial enhancements on all guild members.
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "0.3rem" }}>
+              Funded directly from the <b>Guild Vault</b> treasury. Donate in the Vault tab to amass construction funds.
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.8rem", color: "#888" }}>Available Treasury</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gold, #d4af37)" }}>
+              {fmt(balance)} coins
+            </div>
+          </div>
+        </div>
+
+        {/* Active Clan-wide Buffs */}
+        <div style={{ marginTop: "1rem", background: "#111", border: "1px solid #282828", borderRadius: "6px", padding: "0.75rem 1rem" }}>
+          <div style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#888", marginBottom: "0.4rem" }}>
+            Active Clan Primordial Buffs
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <span className="chip" style={{ color: "#4ade80", border: "1px solid #22c55e44" }}>⚔️ ATK +{bBonuses.atkPct ?? 0}%</span>
+            <span className="chip" style={{ color: "#4ade80", border: "1px solid #22c55e44" }}>🛡️ DEF +{bBonuses.defPct ?? 0}%</span>
+            <span className="chip" style={{ color: "#4ade80", border: "1px solid #22c55e44" }}>❤️ HP +{bBonuses.hpPct ?? 0}%</span>
+            <span className="chip" style={{ color: "#38bdf8", border: "1px solid #38bdf844" }}>⚡ Crit +{(bBonuses.critBonus ?? 0).toFixed(1)}%</span>
+            <span className="chip" style={{ color: "#facc15", border: "1px solid #facc1544" }}>🪙 Tax Cut -{(bBonuses.taxDiscountPct ?? 0).toFixed(1)}%</span>
+            <span className="chip" style={{ color: "#c084fc", border: "1px solid #c084fc44" }}>🐾 Pet Power +{bBonuses.petPowerPct ?? 0}%</span>
+            <span className="chip" style={{ color: "#aaa", border: "1px solid #333" }}>👥 Member Slots +{bBonuses.extraMembers ?? 0}</span>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Buildings Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
+        {(guild.availableBuildings ?? []).map((b) => {
+          const isMax = b.currentTier >= b.maxTier;
+          const canAfford = balance >= b.cost;
+          return (
+            <div
+              key={b.id}
+              style={{
+                background: "#141414",
+                border: "1px solid #2e2e2e",
+                borderRadius: "6px",
+                padding: "1.1rem",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                gap: "0.8rem",
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <span style={{ fontSize: "1.8rem" }}>{b.icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>{b.name}</div>
+                      <div style={{ fontSize: "0.75rem", color: "#888" }}>{b.tagline}</div>
+                    </div>
+                  </div>
+                  <span
+                    className="chip"
+                    style={{
+                      background: isMax ? "#22c55e22" : "#222",
+                      color: isMax ? "#4ade80" : "#bbb",
+                      border: `1px solid ${isMax ? "#22c55e66" : "#333"}`,
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Tier {b.currentTier} / {b.maxTier}
+                  </span>
+                </div>
+
+                <p style={{ color: "#aaa", fontSize: "0.85rem", marginTop: "0.6rem", marginBottom: "0.5rem" }}>
+                  {b.description}
+                </p>
+
+                <div style={{ fontSize: "0.8rem", marginTop: "0.4rem" }}>
+                  <div style={{ color: "#4ade80" }}>
+                    <b>Current Perk:</b> {b.currentPerk}
+                  </div>
+                  {!isMax && (
+                    <div style={{ color: "var(--gold, #d4af37)", marginTop: "0.2rem" }}>
+                      <b>Next Tier:</b> {b.nextPerk}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginTop: "0.5rem" }}>
+                {!isMax ? (
+                  <Button
+                    variant="primary"
+                    block
+                    loading={upgrade.isPending}
+                    disabled={!officer || !canAfford}
+                    onClick={() => upgrade.mutate({ buildingId: b.id })}
+                  >
+                    {!officer
+                      ? `Officer Required (${fmt(b.cost)} coins)`
+                      : !canAfford
+                      ? `Need ${fmt(b.cost)} Vault Coins`
+                      : `Upgrade to Tier ${b.currentTier + 1} (${fmt(b.cost)} coins)`}
+                  </Button>
+                ) : (
+                  <div style={{ textAlign: "center", fontSize: "0.85rem", color: "#4ade80", padding: "0.4rem" }}>
+                    ✓ Masterwork Apex Tier
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: boolean }) {
   const { hero } = useHero();
   const inv = [["guild", guild.id]];
@@ -364,6 +518,12 @@ function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: bool
     },
   });
 
+  const buyCharter = useAction<void, { hasCharter: boolean; balance: number }>("/api/guild/charter/buy", {
+    invalidate: [...inv, ["me"]],
+    success: "Imperial Tax Haven Charter enacted! Vault donation tax reduced by 5% permanently.",
+    onSuccess: () => play("level"),
+  });
+
   const vault = guild.vault;
   const balance = vault?.balance ?? 0;
   const requests = vault?.requests ?? [];
@@ -372,6 +532,10 @@ function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: bool
 
   const numDonate = parseInt(donateAmount || "0", 10);
   const numReq = parseInt(reqAmount || "0", 10);
+
+  const taxPct = guild.taxInfo?.effectiveTaxPct ?? 20;
+  const estimatedTax = numDonate > 0 ? Math.max(1, Math.floor((numDonate * taxPct) / 100)) : 0;
+  const estimatedNet = Math.max(0, numDonate - estimatedTax);
 
   return (
     <div className="stack" style={{ gap: "1.5rem" }}>
@@ -394,6 +558,70 @@ function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: bool
             <div style={{ fontSize: "1.2rem", fontWeight: 600, color: "#fff" }}>
               <Coins value={hero.coins} />
             </div>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Imperial Governance Tax Office Panel */}
+      <Panel title="Imperial Governance Team · Tax Office 🏛️">
+        <div className="stack" style={{ gap: "0.8rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+            <div>
+              <div style={{ fontSize: "0.85rem", color: "#aaa" }}>
+                The Adventure Governance Team levies a base <b>20%</b> tax on all guild vault donations to fund the realm carnival, bounties, and infrastructure.
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginTop: "0.4rem" }}>
+                <span className="chip chip--gold" style={{ fontSize: "1rem", padding: "0.3rem 0.7rem" }}>
+                  Effective Tax Rate: {taxPct}%
+                </span>
+                <span style={{ fontSize: "0.8rem", color: "#888" }}>
+                  Base: 20% · Total Discount: -{Math.max(0, 20 - taxPct)}% (Min Floor: 2%)
+                </span>
+              </div>
+            </div>
+
+            {(guild.myRole === "leader" || guild.myRole === "officer") && (
+              <div>
+                {guild.taxInfo?.hasCharter ? (
+                  <span className="chip" style={{ color: "#4ade80", border: "1px solid #22c55e" }}>
+                    ✓ Imperial Haven Charter Active (-5%)
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    loading={buyCharter.isPending}
+                    disabled={balance < 250_000}
+                    onClick={() => buyCharter.mutate(undefined)}
+                  >
+                    Enact Tax Haven Charter (250k Vault)
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.5rem", marginTop: "0.2rem" }}>
+            {guild.taxInfo?.waysToCutTax?.map((w, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: w.active ? "#132115" : "#111",
+                  border: `1px solid ${w.active ? "#22c55e44" : "#282828"}`,
+                  padding: "0.5rem 0.7rem",
+                  borderRadius: "4px",
+                  fontSize: "0.8rem",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, color: w.active ? "#4ade80" : "#fff" }}>
+                  <span>{w.category}</span>
+                  <span>{w.discount}</span>
+                </div>
+                <div style={{ color: "#888", fontSize: "0.75rem", marginTop: "0.2rem" }}>
+                  {w.description}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </Panel>
@@ -451,6 +679,13 @@ function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: bool
                 Donate
               </Button>
             </div>
+            {numDonate >= 100 && (
+              <div style={{ fontSize: "0.8rem", color: "#888", display: "flex", justifyContent: "space-between" }}>
+                <span>Gov Tax ({taxPct}%): <span style={{ color: "#ef4444" }}>-{fmt(estimatedTax)}</span></span>
+                <span>Net to Vault: <b style={{ color: "var(--gold, #d4af37)" }}>+{fmt(estimatedNet)}</b></span>
+                <span>Guild XP: <span style={{ color: "#38bdf8" }}>+{fmt(Math.floor(numDonate / 10))}</span></span>
+              </div>
+            )}
           </div>
         </Panel>
 

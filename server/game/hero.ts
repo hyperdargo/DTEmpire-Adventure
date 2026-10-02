@@ -1,5 +1,5 @@
 import { ASCENSION_COST, CLASS_BY_ID, CLASSES, DUAL_CLASS_COST, DUAL_CLASS_LEVEL, REROLL_COST, REROLL_WEIGHTS, STARTER_WEIGHTS, dualXpToNext } from "../../shared/data/classes.ts";
-import { PARAGON_COST, PARAGON_MAX } from "../../shared/data/meta.ts";
+import { PARAGON_COST, PARAGON_MAX, PARAGON_TITLES } from "../../shared/data/meta.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
 import { SKILL_BY_ID, SKILL_MAX_RANK, loadoutSlots, skillUpgradeCost } from "../../shared/data/skills.ts";
 import type { ClassDef, Rarity } from "../../shared/data/types.ts";
@@ -112,13 +112,7 @@ export function ascendParagon(g: GameCtx, p: Player) {
   p.state.paragon = current + 1;
   const newRank = p.state.paragon;
 
-  const titles: Record<number, string> = {
-    1: "⚡ Paragon I",
-    2: "⚡ Paragon II",
-    3: "⚡ Paragon III",
-    5: "👑 Ascended Master",
-    10: "🌌 Celestial Sovereign",
-  };
+  const titles = PARAGON_TITLES;
   if (titles[newRank]) {
     p.title = titles[newRank]!;
   }

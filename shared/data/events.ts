@@ -71,6 +71,11 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
       { id: "moonbeam_elixir", ref: "moonbeam_elixir", kind: "stack", price: 30, once: false, qty: 1, note: "Bottled moonlight." },
       { id: "lunar_pet_egg", ref: "lunar_egg", kind: "stack", price: 50, once: false, qty: 1, note: "Hatches under moonlight." },
       { id: "festival_title_scroll", ref: "🌙 Moon Champion", kind: "title", price: 100, once: true, note: "Wear the festival's name beside your own." },
+      { id: "void_annihilator_limited", ref: "void_annihilator_200", kind: "gear", price: 350, once: true, note: "One-Time Limited Edition Lv.100-200 Astral Blade." },
+      { id: "celestial_aegis_limited", ref: "celestial_aegis_200", kind: "gear", price: 350, once: true, note: "One-Time Limited Edition Lv.100-200 Stardust Plate." },
+      { id: "crown_of_cosmos_limited", ref: "crown_of_the_cosmos_200", kind: "gear", price: 500, once: true, note: "One-Time Limited Edition Lv.100-200 Sovereign Crown." },
+      { id: "boots_infinity_limited", ref: "boots_of_infinity_200", kind: "gear", price: 300, once: true, note: "One-Time Limited Edition Lv.100-200 Starlight Greaves." },
+      { id: "amulet_eternity_limited", ref: "amulet_of_eternity_200", kind: "gear", price: 400, once: true, note: "One-Time Limited Edition Lv.100-200 Pendant of Eternity." },
     ],
   },
   // ── 2. Hollow Eve: Shadow Fall Festival (Oct 18 - Oct 31) ───────────────

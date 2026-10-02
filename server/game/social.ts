@@ -15,6 +15,14 @@ import { throttle } from "../lib/throttle.ts";
 import type { GameCtx } from "./context.ts";
 import { getOwnedItem } from "./inventory.ts";
 import { type Player, addStack, bump, findPlayer, heroStats, itemFromRow, loadPlayer, playerTitle, savePlayer, sendMail, spendCoins } from "./player.ts";
+import { computeGovernanceTax, type GovernanceTaxInfo } from "../../shared/rules/governance.ts";
+import {
+  GUILD_BUILDINGS,
+  GUILD_BUILDING_BY_ID,
+  computeGuildBuildingBonuses,
+  getGuildBuildingCost,
+  type GuildBuildingDef,
+} from "../../shared/rules/guildBuildings.ts";
 
 /** Strips control and invisible formatting characters (incl. bidi overrides), keeping newlines and the emoji joiner. */
 const cleanText = (s: string, max: number) =>
@@ -183,6 +191,8 @@ type GuildState = {
   tasks?: { day: string; ids: string[]; baseline: Record<string, Partial<Record<Counter, number>>>; claimed: string[] };
   bank?: number;
   vault?: GuildVaultState;
+  hasTaxCharter?: boolean;
+  buildings?: Record<string, number>;
 };
 type Role = "leader" | "officer" | "member";
 
@@ -242,13 +252,38 @@ export function guildDetail(g: GameCtx, viewer: Player, guildId: number) {
     requests: (state.vault?.requests ?? []).slice(-20).reverse(),
     log: (state.vault?.log ?? []).slice(-30).reverse(),
   } : null;
+  const buildings = state.buildings ?? {};
+  const buildingBonuses = computeGuildBuildingBonuses(buildings);
+  const taxInfo = computeGovernanceTax(
+    r.level,
+    !!state.hasTaxCharter,
+    viewer.state.estate?.houseId,
+    Number(viewer.state.paragon ?? 0),
+    viewer.title,
+    buildingBonuses.taxDiscountPct
+  );
   return {
     id: r.id, name: r.name, tag: r.tag, emblem: r.emblem, description: r.description, level: r.level, xp: r.xp, xpToNext: guildXpToNext(r.level),
-    open: !!r.open, perkPct: Math.min(10, r.level), maxMembers: GUILD_MAX_MEMBERS(r.level), myRole,
+    open: !!r.open, perkPct: Math.min(10, r.level), maxMembers: GUILD_MAX_MEMBERS(r.level) + buildingBonuses.extraMembers, myRole,
     members: members.map((m) => ({ userId: m.user_id, name: m.name, role: m.role, level: m.level, classIcon: CLASS_BY_ID[m.class_id]?.icon ?? "⚔️", power: m.power, contribution: m.contribution, online: g.hub.isOnline(m.user_id), lastSeenAt: m.last_seen_at })),
     requests: requests.map((x) => ({ userId: x.user_id, name: x.name, level: x.level })),
     tasks: myRole ? guildTasks(g, guildId) : null,
     vault,
+    taxInfo,
+    buildings,
+    buildingBonuses,
+    availableBuildings: GUILD_BUILDINGS.map((b) => ({
+      id: b.id,
+      name: b.name,
+      icon: b.icon,
+      tagline: b.tagline,
+      description: b.description,
+      maxTier: b.maxTier,
+      currentTier: buildings[b.id] ?? 0,
+      cost: getGuildBuildingCost(b, buildings[b.id] ?? 0),
+      currentPerk: (buildings[b.id] ?? 0) > 0 ? b.getPerkDescription(buildings[b.id] ?? 0) : "Not constructed yet",
+      nextPerk: (buildings[b.id] ?? 0) < b.maxTier ? b.getPerkDescription((buildings[b.id] ?? 0) + 1) : "Max tier achieved",
+    })),
   };
 }
 
@@ -366,16 +401,27 @@ export function donateToGuildVault(g: GameCtx, p: Player, coins: number) {
   const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
   const state = json<GuildState>(r.state, {});
   state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
-  state.vault.balance += amount;
+
+  const taxInfo = computeGovernanceTax(
+    r.level,
+    !!state.hasTaxCharter,
+    p.state.estate?.houseId,
+    Number(p.state.paragon ?? 0),
+    p.title
+  );
+  const taxAmount = Math.max(1, Math.floor((amount * taxInfo.effectiveTaxPct) / 100));
+  const netAmount = amount - taxAmount;
+
+  state.vault.balance += netAmount;
   state.vault.log = state.vault.log ?? [];
   state.vault.log.push({
     id: randomBytes(6).toString("hex"),
     type: "donate",
     userId: p.userId,
     userName: p.name,
-    amount,
+    amount: netAmount,
     timestamp: g.clock.now(),
-    note: `Donated ${amount.toLocaleString()} coins`,
+    note: `Donated ${amount.toLocaleString()} coins (Gov Tax: -${taxAmount.toLocaleString()} [${taxInfo.effectiveTaxPct}%], Net: +${netAmount.toLocaleString()})`,
   });
   if (state.vault.log.length > 50) state.vault.log = state.vault.log.slice(-50);
   g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
@@ -383,8 +429,108 @@ export function donateToGuildVault(g: GameCtx, p: Player, coins: number) {
   const xp = Math.floor(amount / 10);
   addGuildXp(g, p.guildId, xp);
   g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", xp, p.userId);
-  guildBroadcast(g, p.guildId, `${p.name} donated ${amount.toLocaleString()} coins to the Guild Vault (+${xp.toLocaleString()} Guild XP)!`);
-  return { balance: state.vault.balance, contribution: xp, guildXp: xp };
+  guildBroadcast(
+    g,
+    p.guildId,
+    `${p.name} donated ${amount.toLocaleString()} coins to Vault (Gov Tax: -${taxAmount.toLocaleString()} [${taxInfo.effectiveTaxPct}%], Net: +${netAmount.toLocaleString()} coins, +${xp.toLocaleString()} Guild XP)!`
+  );
+  return { balance: state.vault.balance, contribution: xp, guildXp: xp, taxAmount, netAmount, taxPct: taxInfo.effectiveTaxPct };
+}
+
+export function buyGuildTaxCharter(g: GameCtx, p: Player) {
+  if (!p.guildId) throw new GameError("You aren't in a guild.");
+  const role = memberRole(g, p.userId, p.guildId);
+  if (role !== "leader" && role !== "officer") {
+    throw new GameError("Only guild leaders and officers can enact the Imperial Tax Haven Charter.");
+  }
+  const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
+  const state = json<GuildState>(r.state, {});
+  state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
+  if (state.hasTaxCharter) {
+    throw new GameError("Your guild already possesses the Imperial Tax Haven Charter.");
+  }
+  const cost = 250_000;
+  if (state.vault.balance < cost) {
+    throw new GameError(`The vault needs at least ${cost.toLocaleString()} coins (Current: ${state.vault.balance.toLocaleString()}).`);
+  }
+  state.vault.balance -= cost;
+  state.hasTaxCharter = true;
+  state.vault.log = state.vault.log ?? [];
+  state.vault.log.push({
+    id: randomBytes(6).toString("hex"),
+    type: "payout",
+    userId: p.userId,
+    userName: p.name,
+    amount: cost,
+    timestamp: g.clock.now(),
+    note: "Enacted Imperial Tax Haven Charter (-5% donation tax permanent)",
+  });
+  g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
+  guildBroadcast(g, p.guildId, `🏛️ ${p.name} enacted the Imperial Tax Haven Charter! Guild donation tax cut by 5% permanently!`);
+  return { hasCharter: true, balance: state.vault.balance };
+}
+
+export function upgradeGuildBuilding(g: GameCtx, p: Player, buildingId: string) {
+  if (!p.guildId) throw new GameError("You aren't in a guild.");
+  const role = memberRole(g, p.userId, p.guildId);
+  if (role !== "leader" && role !== "officer") {
+    throw new GameError("Only guild leaders and officers can authorize guild construction.");
+  }
+  const def = GUILD_BUILDING_BY_ID[buildingId];
+  if (!def) throw new GameError(`Unknown guild building: ${buildingId}`);
+
+  const r = g.db.get<GuildRow>("SELECT * FROM guilds WHERE id = ?", p.guildId)!;
+  const state = json<GuildState>(r.state, {});
+  state.vault = state.vault ?? { balance: 0, requests: [], log: [] };
+  state.buildings = state.buildings ?? {};
+
+  const currentTier = state.buildings[buildingId] ?? 0;
+  if (currentTier >= def.maxTier) {
+    throw new GameError(`${def.name} has already reached maximum tier (${def.maxTier}).`);
+  }
+
+  const cost = getGuildBuildingCost(def, currentTier);
+  if (state.vault.balance < cost) {
+    throw new GameError(
+      `Guild Vault needs ${cost.toLocaleString()} coins to upgrade ${def.name} to Tier ${currentTier + 1} (Current balance: ${state.vault.balance.toLocaleString()}).`
+    );
+  }
+
+  state.vault.balance -= cost;
+  state.buildings[buildingId] = currentTier + 1;
+  const nextTier = currentTier + 1;
+
+  state.vault.log = state.vault.log ?? [];
+  state.vault.log.push({
+    id: randomBytes(6).toString("hex"),
+    type: "payout",
+    userId: p.userId,
+    userName: p.name,
+    amount: cost,
+    timestamp: g.clock.now(),
+    note: `Constructed ${def.name} Tier ${nextTier} (-${cost.toLocaleString()} coins)`,
+  });
+  if (state.vault.log.length > 50) state.vault.log = state.vault.log.slice(-50);
+
+  g.db.run("UPDATE guilds SET state = ? WHERE id = ?", JSON.stringify(state), p.guildId);
+
+  // Guild XP for construction
+  const xpAward = Math.floor(cost / 50);
+  addGuildXp(g, p.guildId, xpAward);
+
+  guildBroadcast(
+    g,
+    p.guildId,
+    `🏗️ ${p.name} upgraded ${def.name} to Tier ${nextTier}! All members receive: ${def.getPerkDescription(nextTier)}!`
+  );
+
+  return {
+    buildingId,
+    newTier: nextTier,
+    vaultBalance: state.vault.balance,
+    buildings: state.buildings,
+    bonuses: computeGuildBuildingBonuses(state.buildings),
+  };
 }
 
 export function requestGuildVaultWithdrawal(g: GameCtx, p: Player, coins: number, reason: string) {

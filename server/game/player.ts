@@ -6,6 +6,7 @@ import type { LootDrop } from "../../shared/rules/loot.ts";
 import { MAX_LEVEL, applyXp, regenHp, xpToNext } from "../../shared/rules/progression.ts";
 import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower } from "../../shared/rules/stats.ts";
 import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
+import { computeGuildBuildingBonuses } from "../../shared/rules/guildBuildings.ts";
 import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -174,6 +175,18 @@ export function guildPerk(g: GameCtx, p: Player): number {
   return guild ? Math.min(10, guild.level) : 0;
 }
 
+export function guildBuildingBonuses(g: GameCtx, p: Player) {
+  if (!p.guildId) return computeGuildBuildingBonuses({});
+  const r = g.db.get<{ state: string }>("SELECT state FROM guilds WHERE id = ?", p.guildId);
+  if (!r) return computeGuildBuildingBonuses({});
+  try {
+    const parsed = JSON.parse(r.state);
+    return computeGuildBuildingBonuses(parsed.buildings ?? {});
+  } catch {
+    return computeGuildBuildingBonuses({});
+  }
+}
+
 export function heroStats(g: GameCtx, p: Player): HeroStats {
   const now = g.clock.now();
   const stats = computeHeroStats({
@@ -197,6 +210,20 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
   if (estate.skillPower) stats.skillPower += estate.skillPower;
   if (estate.petPowerPct) stats.petPowerPct += estate.petPowerPct;
   if (estate.regenPct) stats.regenPct += estate.regenPct;
+
+  // Guild Infrastructure bonuses
+  const gBonuses = guildBuildingBonuses(g, p);
+  if (gBonuses.atkPct) stats.atk = Math.round(stats.atk * (1 + gBonuses.atkPct / 100));
+  if (gBonuses.defPct) stats.def = Math.round(stats.def * (1 + gBonuses.defPct / 100));
+  if (gBonuses.hpPct) stats.maxHp = Math.round(stats.maxHp * (1 + gBonuses.hpPct / 100));
+  if (gBonuses.flatHp) stats.maxHp += gBonuses.flatHp;
+  if (gBonuses.flatAtk) stats.atk += gBonuses.flatAtk;
+  if (gBonuses.flatDef) stats.def += gBonuses.flatDef;
+  if (gBonuses.critBonus) stats.crit = Math.min(75, stats.crit + gBonuses.critBonus);
+  if (gBonuses.luckBonus) stats.luck += gBonuses.luckBonus;
+  if (gBonuses.petPowerPct) stats.petPowerPct += gBonuses.petPowerPct;
+  if (gBonuses.regenPct) stats.regenPct += gBonuses.regenPct;
+
   const paragon = Number(p.state.paragon ?? 0);
   if (paragon > 0) {
     const mult = 1 + (paragon * PARAGON_STAT_PCT) / 100;

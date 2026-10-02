@@ -94,6 +94,13 @@ export async function registerSocialRoutes(app: FastifyInstance) {
     const { coins } = parse(z.object({ coins: z.number().int().min(1).max(1_000_000_000) }), req);
     return mutate(g, u(req), (p) => social.donateToGuildVault(g, p, coins));
   });
+  app.post("/api/guild/charter/buy", async (req) => {
+    return mutate(g, u(req), (p) => social.buyGuildTaxCharter(g, p));
+  });
+  app.post("/api/guild/building/upgrade", async (req) => {
+    const { buildingId } = parse(z.object({ buildingId: z.string().max(60) }), req);
+    return mutate(g, u(req), (p) => social.upgradeGuildBuilding(g, p, buildingId));
+  });
   app.post("/api/guild/vault/request", async (req) => {
     const { coins, reason } = parse(z.object({ coins: z.number().int().min(1).max(1_000_000_000), reason: z.string().max(120).optional() }), req);
     return mutate(g, u(req), (p) => social.requestGuildVaultWithdrawal(g, p, coins, reason ?? ""));
