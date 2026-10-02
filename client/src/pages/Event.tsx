@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import type { ItemView } from "../../../shared/data/types.ts";
 import { GameCard, ItemCard } from "../components/GameCard.tsx";
 import { ImperialArcade } from "../components/ImperialArcade.tsx";
+import { RealmBossRaids } from "../components/RealmBossRaids.tsx";
 import { Button, Countdown, Empty, Loading, PageHead, Panel, Tabs } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
@@ -25,7 +26,7 @@ const TIER_RARITY = { normal: "uncommon", elite: "epic", boss: "mythic" } as con
 
 export default function EventPage() {
   const { hero, user, activeBattle } = useHero();
-  const [eventTab, setEventTab] = useState<"arcade" | "seasonal">("arcade");
+  const [eventTab, setEventTab] = useState<"raids" | "arcade" | "seasonal">("raids");
   const { data, isPending } = useData<EventView>(["event"], "/api/event", { refetchInterval: 60_000 });
   const fight = useStartBattle("/api/event/fight", [["event"]]);
   const buy = useAction<{ entryId: string }, { kind: string; name: string; qty?: number }>("/api/event/buy", {
@@ -42,12 +43,25 @@ export default function EventPage() {
         value={eventTab}
         onChange={setEventTab}
         options={[
+          { value: "raids", label: "⚔️ Daily Realm Trials (Bosses & Limited Relics)" },
           { value: "arcade", label: "🎪 Imperial Carnival (10 Mini-Games)" },
           { value: "seasonal", label: "🌙 Seasonal Festival" },
         ]}
       />
     </div>
   );
+
+  if (eventTab === "raids") {
+    return (
+      <>
+        <PageHead title="Daily Realm Trials & First Blood Bosses">
+          Challenge 5 level-gated daily raid bosses for massive bounties. Be the first player in the realm to fell a boss today and claim its One-Time Limited Relic!
+        </PageHead>
+        {tabsBar}
+        <RealmBossRaids />
+      </>
+    );
+  }
 
   if (eventTab === "arcade") {
     return (

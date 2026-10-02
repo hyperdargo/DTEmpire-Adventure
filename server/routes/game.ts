@@ -27,6 +27,7 @@ import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, re
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
+import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
 
 const id = z.coerce.number().int().positive();
 const actionSchema: z.ZodType<BattleAction> = z.discriminatedUnion("type", [
@@ -91,8 +92,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.3.0",
-      appVersion: "5.3.0-ultra",
+      version: "5.4.0",
+      appVersion: "5.4.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -515,6 +516,20 @@ export async function registerGameRoutes(app: FastifyInstance) {
       req
     );
     return mutate(g, u(req), (p) => playMiniGame(g, p, gameId, stake, choice));
+  });
+
+  // ── Daily Realm Boss Raids (Level-Gated High-Stakes Trials) ──
+  app.get("/api/raid/daily", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return getRaidOverview(g, p);
+    });
+  });
+
+  app.post("/api/raid/daily/fight", async (req) => {
+    const { tierId } = parse(z.object({ tierId: z.number().int().min(1).max(5) }), req);
+    return mutate(g, u(req), (p) => battleView(startRealmRaidBattle(g, p, tierId)));
   });
 
   // ── Records ──

@@ -352,6 +352,7 @@ export default function BattlePage() {
               : battle.kind === "tower" ? "/tower"
               : battle.kind === "worldboss" ? "/raid"
               : battle.kind === "event" ? "/festival"
+              : battle.kind === "realm_raid" ? "/festival"
               : battle.kind === "guild_war" ? "/guild"
               : battle.kind === "adventure" ? "/"
               : "/arena"
@@ -438,7 +439,7 @@ function Outcome({
   }, []);
   const x = outcome.extra ?? {};
   const chapter = x.chapter as { chapter: number; title: string } | undefined;
-  const kindAgain = { adventure: "Draw again", tower: "Next floor", dungeon: "Back to the run", duel_ai: "Rematch", arena: "Next match", worldboss: "Strike again", event: "Hunt again" }[battle.kind] ?? "Again";
+  const kindAgain = { adventure: "Draw again", tower: "Next floor", dungeon: "Back to the run", duel_ai: "Rematch", arena: "Next match", worldboss: "Strike again", event: "Hunt again", realm_raid: "Challenge again" }[battle.kind] ?? "Again";
   const title = won
     ? battle.kind === "worldboss" ? "Strike landed" : "Victory"
     : outcome.result === "fled" ? "You escaped" : outcome.result === "timeout" ? (battle.kind === "worldboss" ? "Time's up" : "The fight drags on") : "Defeated";
@@ -451,6 +452,12 @@ function Outcome({
         <h2 id="outcome-title">{title}</h2>
         {battle.kind === "worldboss" && typeof x.score === "number" && <p>You added <b className="gold">{fmt(x.score as number)}</b> to the realm's damage.</p>}
         {battle.kind === "event" && typeof x.tokens === "number" && <p className="gold">+{fmt(x.tokens as number)} {String(x.currency)} · {fmt(x.balance as number)} held</p>}
+        {battle.kind === "realm_raid" && typeof x.tokens === "number" && (
+          <p className="gold">
+            +{fmt(x.tokens as number)} {String(x.currency)}
+            {x.firstBlood ? " · 👑 FIRST BLOOD RELIC CLAIMED!" : ""}
+          </p>
+        )}
         {battle.kind === "arena" && typeof x.delta === "number" && <p>Rating {(x.delta as number) >= 0 ? "+" : ""}{x.delta as number} · now {fmt(x.rating as number)}</p>}
         {x.runOver === true && <p>The Dungeon claims you on floor {String(x.reached)}. You kept half your pouch: <Coins value={(x.kept as { coins: number }).coins} compact /> and {fmt((x.kept as { xp: number }).xp)} XP.</p>}
         {chapter && <p className="gold">Chapter {chapter.chapter} complete: {chapter.title}. Rewards are in your mail.</p>}
