@@ -16,7 +16,7 @@ export const NAV: NavGroup[] = [
       { to: "/dungeon", label: "Dungeon", icon: Flame, minLevel: 5 },
       { to: "/arena", label: "Arena", icon: Trophy, minLevel: 5 },
       { to: "/raid", label: "World Boss", icon: Crown, minLevel: 10, badge: "worldBoss" },
-      { to: "/festival", label: "Festival", icon: PartyPopper, badge: "event" },
+      { to: "/festival", label: "Carnival & Events", icon: PartyPopper, badge: "event" },
     ],
   },
   {

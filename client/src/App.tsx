@@ -129,6 +129,9 @@ export function App() {
           <Route path="/arena/live" element={<Page><LiveDuelPage /></Page>} />
           <Route path="/raid" element={<Page><RaidPage /></Page>} />
           <Route path="/festival" element={<Page><EventPage /></Page>} />
+          <Route path="/carnival" element={<Page><EventPage /></Page>} />
+          <Route path="/arcade" element={<Page><EventPage /></Page>} />
+          <Route path="/event" element={<Page><EventPage /></Page>} />
           <Route path="/hero" element={<Page><HeroPage /></Page>} />
           <Route path="/bag" element={<Page><BagPage /></Page>} />
           <Route path="/pets" element={<Page><PetsPage /></Page>} />
