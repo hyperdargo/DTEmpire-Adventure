@@ -81,7 +81,7 @@ export function startEventBattle(g: GameCtx, p: Player) {
   if (p.level < event.minLevel) {
     throw new GameError(`${event.name} is open to heroes of level ${event.minLevel} and above.`, { code: "level_locked", details: { level: event.minLevel } });
   }
-  if (throttle(g, `event:${p.userId}`, EVENT_FIGHT_COOLDOWN_MS)) throw tooFast("The lanterns need a moment to relight.");
+  if (EVENT_FIGHT_COOLDOWN_MS > 0 && throttle(g, `event:${p.userId}`, EVENT_FIGHT_COOLDOWN_MS)) throw tooFast("The lanterns need a moment to relight.");
   assertCanStartBattle(g, p);
   const rng = createRng(freshSeed());
   const boss = rng.chance(event.bossChance * 100);

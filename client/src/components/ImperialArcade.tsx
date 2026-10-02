@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Sparkles, Trophy, Flame } from "lucide-react";
 import { fmt } from "../lib/format.ts";
 import { play } from "../lib/sound.ts";
 import { useAction, useData, useHero } from "../state/game.ts";
@@ -26,6 +25,7 @@ export function ImperialArcade() {
 
   const [selectedGameId, setSelectedGameId] = useState<string>("goblet_of_fates");
   const [stake, setStake] = useState<number>(10_000);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- response shape varies per mini-game
   const [lastResult, setLastResult] = useState<any>(null);
 
   // Game-specific interaction states
@@ -40,7 +40,8 @@ export function ImperialArcade() {
   const [runeSeq, setRuneSeq] = useState<number[]>([1, 2, 3, 4]);
 
   const playGame = useAction<
-    { gameId: string; stake: number; choice: any },
+    { gameId: string; stake: number; choice: Record<string, unknown> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any
   >("/api/arcade/play", {
     invalidate: [["arcade"], ["me"], ["event"]],
@@ -62,7 +63,7 @@ export function ImperialArcade() {
   const isFeatured = rotation.featuredGameId === currentGame.id;
 
   const handlePlay = () => {
-    let choice: any = {};
+    let choice: Record<string, unknown> = {};
     if (currentGame.id === "goblet_of_fates") choice = { cup: selectedCup };
     else if (currentGame.id === "abyssal_dice") choice = { prediction: dicePred };
     else if (currentGame.id === "damned_blackjack") choice = { action: "deal" };
@@ -287,7 +288,7 @@ export function ImperialArcade() {
                       <Button
                         key={opt.id}
                         variant={dicePred === opt.id ? "primary" : "ghost"}
-                        onClick={() => setDicePred(opt.id as any)}
+                        onClick={() => setDicePred(opt.id as "low" | "seven" | "high")}
                         style={{ padding: "0.8rem" }}
                       >
                         <div>

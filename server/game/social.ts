@@ -15,13 +15,12 @@ import { throttle } from "../lib/throttle.ts";
 import type { GameCtx } from "./context.ts";
 import { getOwnedItem } from "./inventory.ts";
 import { type Player, addStack, bump, findPlayer, heroStats, itemFromRow, loadPlayer, playerTitle, savePlayer, sendMail, spendCoins } from "./player.ts";
-import { computeGovernanceTax, type GovernanceTaxInfo } from "../../shared/rules/governance.ts";
+import { computeGovernanceTax } from "../../shared/rules/governance.ts";
 import {
   GUILD_BUILDINGS,
   GUILD_BUILDING_BY_ID,
   computeGuildBuildingBonuses,
   getGuildBuildingCost,
-  type GuildBuildingDef,
 } from "../../shared/rules/guildBuildings.ts";
 
 /** Strips control and invisible formatting characters (incl. bidi overrides), keeping newlines and the emoji joiner. */

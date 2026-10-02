@@ -1,5 +1,5 @@
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
-import { RAID_THEMES, getDailyRaidTheme } from "../../shared/data/realmRaids.ts";
+import { getDailyRaidTheme } from "../../shared/data/realmRaids.ts";
 import { combatantFromMonster } from "../../shared/rules/combat.ts";
 import { rollGear } from "../../shared/rules/items.ts";
 import { monsterStats } from "../../shared/rules/monsters.ts";

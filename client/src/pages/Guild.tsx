@@ -352,7 +352,7 @@ function GuildWarPanel() {
 function GuildBuildingsPanel({ guild, officer }: { guild: GuildDetail; officer: boolean }) {
   const inv = [["guild", guild.id]];
   const balance = guild.vault?.balance ?? 0;
-  const upgrade = useAction<{ buildingId: string }, any>("/api/guild/building/upgrade", {
+  const upgrade = useAction<{ buildingId: string }, Record<string, unknown>>("/api/guild/building/upgrade", {
     invalidate: [...inv, ["me"]],
     success: "Building upgraded! All guild members receive enhanced bonuses.",
     onSuccess: () => play("level"),

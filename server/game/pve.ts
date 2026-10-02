@@ -1,5 +1,6 @@
 import { MASTERY_TIERS, AI_DUELISTS, DUEL_MIN_LEVEL } from "../../shared/data/meta.ts";
-import { REGION_BY_ID, STORY_CHAPTERS, chapterForFloor, isTowerBossFloor, towerEnemyLevel, towerEnemyNames, towerLevelReq, TOWER_FLOORS } from "../../shared/data/regions.ts";
+import { REGION_BY_ID, STORY_CHAPTERS, chapterForFloor, isTowerBossFloor, towerEnemyLevel, towerEnemyNames, towerLevelReq } from "../../shared/data/regions.ts";
+import { TOWER_BY_ID } from "../../shared/data/towers.ts";
 import { SKILL_BY_NAME, SKILLS } from "../../shared/data/skills.ts";
 import { combatantFromMonster } from "../../shared/rules/combat.ts";
 import { rollVictoryLoot, type LootSource } from "../../shared/rules/loot.ts";
@@ -31,7 +32,6 @@ export function payVictory(
   const xp = grantXp(g, p, loot.xp, { applyBonus: true });
   const drops = opts.noDrops ? [] : giveDrops(g, p, loot.drops);
   bump(g, p, "battlesWon");
-  bump(g, p, "coinsEarned", coins);
   bump(g, p, "kills");
   bumpMission(p, "kill");
   if (opts.boss) {
@@ -174,41 +174,95 @@ export function defeat(g: GameCtx, p: Player, b: BattleRow): BattleOutcome {
   return { result: b.state.status };
 }
 
-// ── Tower of Ascension ────────────────────────────────────────────────
+// ── Tower of Ascension & Multi-Tower Spire System ───────────────────
 
-export function startTower(g: GameCtx, p: Player) {
-  const floor = p.towerFloor + 1;
-  if (floor > TOWER_FLOORS) throw new GameError("You have conquered every floor of the Tower.");
-  const req = towerLevelReq(floor);
-  if (p.level < req) throw new GameError(`Floor ${floor} requires level ${req}.`, { code: "level_locked", details: { level: req } });
+export function getPlayerTowerFloor(p: Player, towerId: string): number {
+  if (towerId === "ascension") return p.towerFloor;
+  return p.state.towerFloors?.[towerId] ?? 0;
+}
+
+export function setPlayerTowerFloor(p: Player, towerId: string, floor: number) {
+  if (towerId === "ascension") {
+    p.towerFloor = floor;
+  }
+  if (!p.state.towerFloors) p.state.towerFloors = {};
+  p.state.towerFloors[towerId] = floor;
+}
+
+export function startTower(g: GameCtx, p: Player, towerId: string = "ascension") {
+  const tower = TOWER_BY_ID[towerId] ?? TOWER_BY_ID["ascension"]!;
+  const currentFloor = getPlayerTowerFloor(p, tower.id);
+  const floor = currentFloor + 1;
+  if (floor > tower.maxFloor) throw new GameError(`You have conquered every floor of ${tower.name}.`);
+
+  const req = Math.max(tower.levelReqBase, towerLevelReq(floor));
+  if (p.level < req) throw new GameError(`Floor ${floor} of ${tower.name} requires level ${req}.`, { code: "level_locked", details: { level: req } });
   assertCanStartBattle(g, p);
   const rng = createRng(freshSeed());
   const boss = isTowerBossFloor(floor);
-  const level = towerEnemyLevel(floor);
+  const level = Math.round(towerEnemyLevel(floor) * tower.enemyLevelMult);
   const chapter = chapterForFloor(floor);
   const pick = rng.pick(towerEnemyNames(floor));
-  const m = monsterStats(level, boss ? "boss" : "elite");
+
+  const m = monsterStats(level, boss ? "boss" : "elite", {
+    hp: tower.hpMult,
+    atk: tower.atkMult,
+    def: tower.defMult,
+  });
+
+  const enemyName = boss
+    ? `${chapter.boss.name} [${tower.tagline}]`
+    : `${pick.name} [${tower.name.split(" ")[0]}]`;
+
   const enemy = combatantFromMonster({
-    name: boss ? chapter.boss.name : pick.name, icon: boss ? chapter.boss.emoji : pick.icon, level, ...m, isBoss: boss,
+    name: enemyName,
+    icon: boss ? chapter.boss.emoji : pick.icon,
+    level,
+    ...m,
+    isBoss: boss,
   });
   const { combatant, pet } = heroCombatant(g, p);
-  return insertBattle(g, p.userId, "tower", { floor, boss, level, xp: m.xp, coins: m.coins, chapter: chapter.chapter, bossLine: boss ? chapter.boss.line : null },
-    { player: combatant, enemy, pet, canFlee: false });
+  return insertBattle(
+    g,
+    p.userId,
+    "tower",
+    {
+      towerId: tower.id,
+      towerName: tower.name,
+      floor,
+      boss,
+      level,
+      xp: Math.round(m.xp * (tower.id === "celestial" ? 1.75 : 1.0)),
+      coins: Math.round(m.coins * tower.coinMult),
+      chapter: chapter.chapter,
+      bossLine: boss ? chapter.boss.line : null,
+    },
+    { player: combatant, enemy, pet, canFlee: false }
+  );
 }
 
 registerFinalizer("tower", (g, p, b) => {
-  const c = b.context as { floor: number; boss: boolean; level: number; xp: number; coins: number; chapter: number };
+  const c = b.context as { towerId?: string; towerName?: string; floor: number; boss: boolean; level: number; xp: number; coins: number; chapter: number };
   if (b.state.status !== "won") return defeat(g, p, b);
-  const firstClear = c.floor > p.towerFloor;
+  const towerId = c.towerId ?? "ascension";
+  const currentFloor = getPlayerTowerFloor(p, towerId);
+  const firstClear = c.floor > currentFloor;
   const pay = payVictory(g, p, { level: c.level, coins: c.coins, xp: c.xp, boss: c.boss, elite: !c.boss, source: "tower" });
   bumpMission(p, "tower");
-  const extra: Record<string, unknown> = { floor: c.floor, firstClear };
+  const extra: Record<string, unknown> = { towerId, floor: c.floor, firstClear };
   if (firstClear) {
-    p.towerFloor = c.floor;
-    setMax(g, p, "towerFloor", c.floor);
-    if (c.boss) extra.chapter = completeChapter(g, p, c.chapter);
+    setPlayerTowerFloor(p, towerId, c.floor);
+    if (towerId === "ascension") {
+      setMax(g, p, "towerFloor", c.floor);
+    }
+    if (c.boss && towerId === "ascension") extra.chapter = completeChapter(g, p, c.chapter);
     if (c.floor % 10 === 0) {
-      g.hub.toChannel("world", { type: "feed", icon: "🏰", text: `${p.name} cleared Tower floor ${c.floor}.`, at: g.clock.now() });
+      g.hub.toChannel("world", {
+        type: "feed",
+        icon: "🏰",
+        text: `${p.name} cleared floor ${c.floor} of ${c.towerName ?? "the Tower"}.`,
+        at: g.clock.now(),
+      });
     }
   }
   return { result: "won", ...pay, extra };

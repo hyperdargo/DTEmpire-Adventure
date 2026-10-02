@@ -1,4 +1,5 @@
 import { DUNGEON_BANDS, REGIONS_SOURCE, STORY_CHAPTERS } from "./content.ts";
+import { EXPANDED_REGIONS_SOURCE } from "./expandedContent.ts";
 import type { MonsterShape } from "../rules/monsters.ts";
 
 // Adventure regions from the original, placed along the 1–100 level curve in their original order.
@@ -24,21 +25,23 @@ function shapeOf(m: { hp: number; atk: number; def: number }, avg: { hp: number;
   return { hp: clampShape(m.hp / avg.hp), atk: clampShape(m.atk / avg.atk), def: clampShape(m.def / Math.max(1, avg.def)) };
 }
 
-export const REGIONS: Region[] = REGIONS_SOURCE.map((r, i) => {
+const ALL_REGIONS_SOURCE = [...REGIONS_SOURCE, ...EXPANDED_REGIONS_SOURCE];
+
+export const REGIONS: Region[] = ALL_REGIONS_SOURCE.map((r, i) => {
   const n = r.monsters.length;
   const avg = {
     hp: r.monsters.reduce((s, m) => s + m.hp, 0) / n,
     atk: r.monsters.reduce((s, m) => s + m.atk, 0) / n,
     def: r.monsters.reduce((s, m) => s + m.def, 0) / n,
   };
-  const minLevel = i === 0 ? 1 : Math.round(1 + (i * 96) / (REGIONS_SOURCE.length - 1));
+  const minLevel = i === 0 ? 1 : Math.round(1 + (i * 195) / (ALL_REGIONS_SOURCE.length - 1));
   return {
     id: r.id,
     name: r.name,
     icon: r.icon,
     description: r.description,
     minLevel,
-    maxLevel: Math.min(100, minLevel + 5),
+    maxLevel: Math.min(200, minLevel + 7),
     monsters: r.monsters.map((m) => ({ id: m.id, name: m.name, icon: m.icon, shape: shapeOf(m, avg) })),
     boss: { id: r.boss.id, name: r.boss.name, icon: r.boss.icon, shape: { hp: 1, atk: 1, def: 1 } },
     bossUnlockKills: 10,

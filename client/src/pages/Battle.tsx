@@ -217,12 +217,19 @@ export default function BattlePage() {
       let path = "";
       let body: unknown = {};
       if (kind === "adventure") { path = "/api/adventure/start"; body = { regionId: ctx.regionId ?? rememberedRegion() }; }
-      else if (kind === "tower") path = "/api/tower/start";
+      else if (kind === "tower") {
+        path = "/api/tower/start";
+        body = { towerId: (ctx as { towerId?: string }).towerId ?? "ascension" };
+      }
       else if (kind === "dungeon") { navigate("/dungeon"); return; }
       else if (kind === "duel_ai") { path = "/api/duels/ai"; body = { duelistId: ctx.duelistId }; }
       else if (kind === "arena") path = "/api/arena/ranked";
       else if (kind === "worldboss") path = "/api/worldboss/strike";
       else if (kind === "event") path = "/api/event/fight";
+      else if (kind === "realm_raid") {
+        path = "/api/raid/daily/fight";
+        body = { tierId: (ctx as { tierId?: number }).tierId ?? 1 };
+      }
       else if (kind === "guild_war") {
         path = "/api/guild/war/attack";
         body = { targetUserId: (ctx as { defenderId?: number }).defenderId };
@@ -232,7 +239,8 @@ export default function BattlePage() {
       qc.setQueryData(["battle"], { battle: r.result });
     } catch (err) {
       notify.toast({ tone: "bad", title: (err as Error).message });
-      qc.setQueryData(["battle"], { battle: null });
+      // Don't nuke the current finished battle state if drawing the next encounter fails (e.g. cooldown/gold),
+      // so the victory/defeat outcome screen remains visible to the player!
     }
   };
 

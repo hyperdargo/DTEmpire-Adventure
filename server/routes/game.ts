@@ -6,7 +6,8 @@ import { z } from "zod";
 import { dayKey } from "../lib/time.ts";
 import { ACHIEVEMENTS, AI_DUELISTS, ARENA_DAILY_RANKED, BLESSINGS, JOBS, EXPEDITION_DURATIONS, MASTERY_TIERS, masteryBonus } from "../../shared/data/meta.ts";
 import { CONSUMABLE_BY_ID, RECIPES } from "../../shared/data/items.ts";
-import { REGIONS, STORY_CHAPTERS, isTowerBossFloor, towerLevelReq, TOWER_FLOORS, chapterForFloor } from "../../shared/data/regions.ts";
+import { REGIONS, STORY_CHAPTERS, isTowerBossFloor, towerLevelReq, chapterForFloor } from "../../shared/data/regions.ts";
+import { TOWER_BY_ID, TOWERS } from "../../shared/data/towers.ts";
 import type { BattleAction } from "../../shared/data/types.ts";
 import { upgradeCost } from "../../shared/rules/items.ts";
 import { requireUser } from "../app.ts";
@@ -306,20 +307,51 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/tower", async (req) => {
-    const p = loadPlayer(g, u(req).id);
-    const next = Math.min(TOWER_FLOORS, p.towerFloor + 1);
+    const user = u(req);
+    const p = loadPlayer(g, user.id);
+    const towerId = (req.query as { towerId?: string })?.towerId ?? "ascension";
+    const tower = TOWER_BY_ID[towerId] ?? TOWER_BY_ID["ascension"]!;
+    const cleared = pve.getPlayerTowerFloor(p, tower.id);
+    const next = Math.min(tower.maxFloor, cleared + 1);
+    const nextLevelReq = Math.max(tower.levelReqBase, towerLevelReq(next));
+
     return {
-      cleared: p.towerFloor, next, nextLevelReq: towerLevelReq(next), nextIsBoss: isTowerBossFloor(next), complete: p.towerFloor >= TOWER_FLOORS,
+      tower,
+      towers: TOWERS.map((t) => ({
+        ...t,
+        cleared: pve.getPlayerTowerFloor(p, t.id),
+        unlocked: p.level >= t.levelReqBase,
+      })),
+      cleared,
+      next,
+      nextLevelReq,
+      nextIsBoss: isTowerBossFloor(next),
+      complete: cleared >= tower.maxFloor,
       chapter: chapterForFloor(next).chapter,
       chapters: STORY_CHAPTERS.map((c) => {
-        const unlocked = p.towerFloor >= (c.chapter - 1) * 5 + 1 || c.chapter === 1;
-        const complete = p.towerFloor >= c.chapter * 5;
-        return { chapter: c.chapter, title: c.title, subtitle: c.subtitle, floors: `${(c.chapter - 1) * 5 + 1}-${c.chapter * 5}`, unlocked, complete,
-          text: unlocked ? c.text : null, lore: complete ? c.lore : null, boss: unlocked ? c.boss : null, enemies: unlocked ? c.enemies : null, skills: c.skills };
+        const unlocked = cleared >= (c.chapter - 1) * 5 + 1 || c.chapter === 1;
+        const complete = cleared >= c.chapter * 5;
+        return {
+          chapter: c.chapter,
+          title: c.title,
+          subtitle: c.subtitle,
+          floors: `${(c.chapter - 1) * 5 + 1}-${c.chapter * 5}`,
+          unlocked,
+          complete,
+          text: unlocked ? c.text : null,
+          lore: complete ? c.lore : null,
+          boss: unlocked ? c.boss : null,
+          enemies: unlocked ? c.enemies : null,
+          skills: c.skills,
+        };
       }),
     };
   });
-  app.post("/api/tower/start", async (req) => mutate(g, u(req), (p) => battleView(pve.startTower(g, p))));
+
+  app.post("/api/tower/start", async (req) => {
+    const { towerId } = parse(z.object({ towerId: z.string().optional() }), req);
+    return mutate(g, u(req), (p) => battleView(pve.startTower(g, p, towerId ?? "ascension")));
+  });
 
   // ── Dungeon ──
   app.get("/api/dungeon", async (req) => ({ ...modes.dungeonView(loadPlayer(g, u(req).id)), boons: modes.BOONS }));

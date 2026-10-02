@@ -229,4 +229,4 @@ export function activeEvent(nowMs: number): SeasonalEvent | null {
 }
 
 export const eventEndsAt = (e: SeasonalEvent) => Date.parse(`${e.end}T23:59:59Z`);
-export const EVENT_FIGHT_COOLDOWN_MS = 3_000;
+export const EVENT_FIGHT_COOLDOWN_MS = 5_000;

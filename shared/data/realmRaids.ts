@@ -1,4 +1,3 @@
-import type { Rarity } from "../data/types.ts";
 
 export interface DailyRealmRaidTier {
   tierId: number;

@@ -285,3 +285,23 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
 - Service restarted and all endpoints return 302 (auth redirect — correct for unauthenticated curl).
 
 - By Hermes
+
+## Session: `20261003` — Wealth Milestones, 32-Region Expansion, Themed Towers, Code Quality
+
+### Added
+- **Wealth Milestones & Titles** — 4 new cumulative wealth achievements:
+  - Prosperous (100k lifetime coins)
+  - Tycoon (1M lifetime coins, title "the Wealthy")
+  - Midas (10M lifetime coins, title "Midas Touch")
+  - Dragon's Hoard (1M coins held in purse, title "the Hoarder")
+- **Unified Coin Tracking** — all coin gains through `grantCoins()` now track lifetime `coinsEarned` and record `peakCoins` in player counters.
+- **32-Region Expansion** — integrated six high-tier zones spanning up to the Primordial Creation Gate with unique monster drop tables.
+- **Multi-Tower Themed Ascension** — specialized towers with floor multipliers, entry requirements, and themed bonus loot.
+
+### Fixed
+- Fixed 40 ESLint errors across `ImperialArcade.tsx`, `RealmBossRaids.tsx`, `Guild.tsx`, and minigame backend routines.
+- Fixed `tests/events.test.ts` rate-limiting assertion by restoring `EVENT_FIGHT_COOLDOWN_MS = 5000`.
+- Updated test expectations in `tests/rules.test.ts` to match the expanded 32 regions and 196 total monsters.
+- Restored 100% test pass rate (72/72 tests passing).
+
+- By Hermes

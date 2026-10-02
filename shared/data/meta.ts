@@ -5,7 +5,7 @@ export type Counter =
   | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsUpgraded" | "petsHatched" | "skillsLearned"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
-  | "highRollerWon" | "highRollerLost" | "guildWarWins";
+  | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins";
 
 export interface AchievementDef {
   id: string;
@@ -58,9 +58,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("expedition_20", "Wayfarer", "🧭", "Complete 20 expeditions.", "expeditions", 20, 5_000),
   a("contract_30", "Bounty Hunter", "📜", "Finish 30 hunt contracts.", "contractsDone", 30, 8_000, "Bounty Hunter"),
   a("bestiary_50", "Naturalist", "🔍", "Discover 50 creatures.", "bestiaryDiscovered", 50, 10_000),
-  a("bestiary_all", "Keeper of the Bestiary", "📕", "Discover every creature.", "bestiaryDiscovered", 166, 60_000, "Keeper of Beasts"),
+  a("bestiary_all", "Keeper of the Bestiary", "📕", "Discover every creature.", "bestiaryDiscovered", 196, 60_000, "Keeper of Beasts"),
   a("worldboss_20", "Raider", "🌋", "Strike the world boss 20 times.", "worldBossHits", 20, 6_000),
   a("jackpot_1", "Lucky Devil", "🎰", "Hit a jackpot on the Lucky Roll.", "luckyJackpots", 1, 1_000),
+  a("wealth_100k", "Prosperous", "🪙", "Earn 100,000 lifetime coins.", "coinsEarned", 100_000, 5_000),
+  a("wealth_1m", "Tycoon", "💎", "Earn 1,000,000 lifetime coins.", "coinsEarned", 1_000_000, 25_000, "the Wealthy"),
+  a("wealth_10m", "Midas", "👑", "Earn 10,000,000 lifetime coins.", "coinsEarned", 10_000_000, 100_000, "Midas Touch"),
+  a("hoard_1m", "Dragon's Hoard", "🐉", "Hold 1,000,000 coins in your purse.", "peakCoins", 1_000_000, 50_000, "the Hoarder"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────

@@ -26,7 +26,7 @@ export default function AdventurePage() {
   return (
     <>
       <PageHead title="Adventure">
-        Twenty-six regions stretch from the Dark Forest to Primordial Peak. New lands open as you level; defeat ten foes in a region to draw out its boss.
+        Thirty-two vast regions stretch from the Dark Forest to the Primordial Creation Gate. New lands open as you level; defeat ten foes in a region to draw out its boss.
       </PageHead>
 
       <Panel className="region-focus">

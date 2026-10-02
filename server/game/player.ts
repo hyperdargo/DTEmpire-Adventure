@@ -48,6 +48,7 @@ export interface PlayerState {
   guildWar?: { day: string; attacks: number; defeated: number[] };
   paragon?: number;
   bank?: PlayerBankState;
+  towerFloors?: Record<string, number>;
 }
 
 export interface Player {
@@ -340,6 +341,8 @@ export function grantCoins(g: GameCtx, p: Player, amount: number, opts: { fromBa
     bumpMission(p, "coins", gain);
   }
   p.coins += gain;
+  bump(g, p, "coinsEarned", gain);
+  setMax(g, p, "peakCoins", p.coins);
   return gain;
 }
 

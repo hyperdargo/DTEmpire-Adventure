@@ -1,6 +1,5 @@
-import { Crown, Flame, Shield, Skull, Sparkles, Swords, Trophy, Zap } from "lucide-react";
-import { useState } from "react";
-import { Button, Loading, Panel } from "./ui.tsx";
+import { Crown } from "lucide-react";
+import { Button, Loading } from "./ui.tsx";
 import { fmt } from "../lib/format.ts";
 import { useData } from "../state/game.ts";
 import { useStartBattle } from "../pages/Table.tsx";

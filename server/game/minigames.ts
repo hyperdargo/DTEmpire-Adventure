@@ -4,7 +4,6 @@ import {
   MINI_GAME_BY_ID,
   getDailyFeaturedRotation,
   type DailyEventRotation,
-  type MiniGameDef,
 } from "../../shared/data/minigames.ts";
 import { GameError } from "../lib/errors.ts";
 import type { GameCtx } from "./context.ts";
@@ -21,7 +20,7 @@ export interface MiniGameResult {
   isWin: boolean;
   isFeatured: boolean;
   message: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   coins: number;
   rotation: DailyEventRotation;
 }
@@ -89,6 +88,7 @@ export function getArcadeOverview(g: GameCtx, p: Player) {
   const rotation = getDailyFeaturedRotation(g.clock.now());
 
   // Top high-rollers today or lifetime from arcade
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- player state is untyped
   const stats = (p.state as any).arcade ?? {
     totalWagered: 0,
     totalWon: 0,
@@ -120,7 +120,7 @@ export function playMiniGame(
   p: Player,
   gameId: string,
   stakeInput: number,
-  choice: any
+  choice: Record<string, unknown>
 ): MiniGameResult {
   const def = MINI_GAME_BY_ID[gameId];
   if (!def) throw new GameError(`Unknown mini-game '${gameId}'.`);
@@ -145,7 +145,7 @@ export function playMiniGame(
 
   let rawMultiplier = 0;
   let message = "";
-  let details: Record<string, any> = {};
+  let details: Record<string, unknown> = {};
 
   switch (gameId) {
     // ── 1. Goblet of Fates (Shell game) ──────────────────────
@@ -179,7 +179,6 @@ export function playMiniGame(
         won = true;
         rawMultiplier = 4.5;
       } else {
-        won = false;
         rawMultiplier = 0;
       }
 
@@ -197,8 +196,8 @@ export function playMiniGame(
       let playerTotal = p1 + p2;
       if (playerTotal === 22) playerTotal = 12;
 
-      let d1 = rng.int(2, 11);
-      let d2 = rng.int(2, 11);
+      const d1 = rng.int(2, 11);
+      const d2 = rng.int(2, 11);
       let dealerTotal = d1 + d2;
       if (dealerTotal === 22) dealerTotal = 12;
 
@@ -239,7 +238,7 @@ export function playMiniGame(
     case "celestial_wheel": {
       // Slices: 0x, 0.5x, 1.2x, 1.5x, 2x, 5x, 10x, 50x
       const roll = rng.int(1, 100);
-      let sliceName = "";
+      let sliceName: string;
       if (roll <= 30) {
         rawMultiplier = 0;
         sliceName = "Empty Void (0×)";
@@ -271,7 +270,7 @@ export function playMiniGame(
     // ── 5. Mines of Eldoria (5x5 grid, 3 skulls) ───────────
     case "mines_of_eldoria": {
       const rawPicks = Array.isArray(choice?.picks) ? choice.picks : [0, 1, 2];
-      const picks = Array.from(new Set<number>(rawPicks.map((n: any) => Math.min(24, Math.max(0, Number(n)))))).slice(0, 10);
+      const picks = Array.from(new Set<number>(rawPicks.map((n: unknown) => Math.min(24, Math.max(0, Number(n)))))).slice(0, 10);
       const skullSet = new Set<number>();
       while (skullSet.size < 3) {
         skullSet.add(rng.int(0, 24));
@@ -372,7 +371,6 @@ export function playMiniGame(
       }
       if (stalkScore > highest) {
         winner = "stalker";
-        highest = stalkScore;
       }
 
       const won = winner === target.id;
@@ -403,7 +401,7 @@ export function playMiniGame(
     case "memory_runes": {
       const userSeq = Array.isArray(choice?.sequence) ? choice.sequence : [1, 2, 3];
       const targetSeq = [rng.int(1, 4), rng.int(1, 4), rng.int(1, 4), rng.int(1, 4)];
-      const matches = userSeq.slice(0, 4).every((val: any, idx: number) => Number(val) === targetSeq[idx]);
+      const matches = userSeq.slice(0, 4).every((val: unknown, idx: number) => Number(val) === targetSeq[idx]);
 
       rawMultiplier = matches ? 3.0 : 0;
       message = matches
@@ -431,6 +429,7 @@ export function playMiniGame(
   p.coins += payout;
 
   // Track arcade stats in player state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- player state is untyped
   const playerState = p.state as any;
   playerState.arcade = playerState.arcade ?? {
     totalWagered: 0,
