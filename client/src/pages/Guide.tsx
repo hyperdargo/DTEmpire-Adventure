@@ -291,11 +291,17 @@ function CraftingGuide({ search }: { search: string }) {
           <ArrowRight size={18} style={{ color: "#666" }} />
           <div style={{ textAlign: "center" }}>
             <RarityChip rarity="mythic" />
-            <div style={{ fontSize: "0.75rem", color: "#777", marginTop: "2px" }}>Peak Power (+5 Affixes)</div>
+            <div style={{ fontSize: "0.75rem", color: "#777", marginTop: "2px" }}>Peak Power</div>
+          </div>
+          <ArrowRight size={18} style={{ color: "#ffd700" }} />
+          <div style={{ textAlign: "center" }}>
+            <RarityChip rarity="unique" />
+            <div style={{ fontSize: "0.75rem", color: "#ffd700", marginTop: "2px" }}>5× Mythic Altar</div>
           </div>
         </div>
         <div style={{ marginTop: "10px", fontSize: "0.8rem", color: "#888" }}>
-          • The forged item keeps the <strong>higher item level (ilvl)</strong> and retains the <strong>highest upgrade rank</strong> between the two sacrifices.<br />
+          • The forged item keeps the <strong>higher item level (ilvl)</strong> and retains the <strong>highest upgrade rank</strong> between the sacrifices.<br />
+          • Sacrificing 5 Mythic items of the same slot at the Unique Altar synthesizes a supreme Unique relic (2.8× multiplier, 4 affixes).<br />
           • Items must be unlocked and unequipped before forging.
         </div>
       </Panel>
@@ -399,17 +405,24 @@ function PetsGuide({ search }: { search: string }) {
               1× Egg of the NEXT Higher Rarity Tier
             </span>
           </div>
+          <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", borderTop: "1px solid #222", paddingTop: "8px" }}>
+            <span style={{ fontWeight: 600, color: "#ffd700" }}>👑 10 Legendary Pets (Unique Ascension)</span>
+            <ArrowRight size={16} style={{ color: "#ffd700" }} />
+            <span style={{ background: "linear-gradient(135deg, #ffd700, #b8860b)", borderRadius: "4px", padding: "3px 8px", color: "#000", fontWeight: 700 }}>
+              Summons Unique [Dragon Lord]
+            </span>
+          </div>
           <div style={{ marginTop: "8px", fontSize: "0.8rem", color: "#888" }}>
-            Example: Fusing 3 Uncommon pets awards 1 Dragon Egg (Guaranteed Rare). Fusing 3 Rare pets yields 1 Void Egg (Guaranteed Epic).
+            Fusing 3 Uncommon pets yields 1 Rare Egg. Fusing 3 Rare pets yields 1 Epic Egg. Sacrificing 10 Legendary pets triggers Unique Ascension to summon the supreme Dragon Lord (Max Lv 70).
           </div>
         </div>
 
         <div style={{ marginTop: "14px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
-          {(["common", "uncommon", "rare", "epic", "legendary", "mythic"] as Rarity[]).map((r) => (
+          {(["common", "uncommon", "rare", "epic", "legendary", "mythic", "unique"] as Rarity[]).map((r) => (
             <div key={r} style={{ background: "#161616", border: "1px solid #282828", borderRadius: "6px", padding: "8px 12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <RarityChip rarity={r} />
-                <span style={{ fontSize: "0.8rem", color: "#aaa" }}>Max Lv {PET_MAX_LEVEL[r]}</span>
+                <span style={{ fontSize: "0.8rem", color: r === "unique" ? "#ffd700" : "#aaa", fontWeight: r === "unique" ? 700 : 400 }}>Max Lv {PET_MAX_LEVEL[r]}</span>
               </div>
             </div>
           ))}
