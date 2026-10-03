@@ -36,6 +36,6 @@ export const GOLDEN_EGG_WEIGHTS: Partial<Record<Rarity, number>> = { rare: 70, e
 
 /** Pets needed of one rarity to fuse an egg of the next rarity. */
 export const PET_FUSE_COUNT = 3;
-/** Legendary pets needed to ascend into a supreme Unique Pet. */
+/** Mythic pets needed to ascend into a supreme Unique Pet. */
 export const UNIQUE_PET_FUSE_COUNT = 10;
 export const PET_ABILITY_EVERY = 3;

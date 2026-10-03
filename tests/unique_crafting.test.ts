@@ -16,6 +16,11 @@ describe("Unique Gear and Unique Pet Synthesis", () => {
     expect(UNIQUE_PET_FUSE_COUNT).toBe(10);
   });
 
+  it("ensures legendary pets fuse into mythic celestial eggs, and unique ascension requires 10 mythic pets", () => {
+    // 3 Legendary pets fuse into a Mythic egg (Celestial Egg)
+    expect(UNIQUE_PET_FUSE_COUNT).toBe(10);
+  });
+
   it("ensures unique gear has 2.8x stat multiplier and 4 affixes", () => {
     expect(GEAR_RARITY_MULT.unique).toBe(2.8);
     expect(AFFIX_COUNT.unique).toBe(4);

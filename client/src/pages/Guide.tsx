@@ -406,14 +406,14 @@ function PetsGuide({ search }: { search: string }) {
             </span>
           </div>
           <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", borderTop: "1px solid #222", paddingTop: "8px" }}>
-            <span style={{ fontWeight: 600, color: "#ffd700" }}>👑 10 Legendary Pets (Unique Ascension)</span>
+            <span style={{ fontWeight: 600, color: "#ffd700" }}>👑 10 Mythic Pets (Unique Ascension)</span>
             <ArrowRight size={16} style={{ color: "#ffd700" }} />
             <span style={{ background: "linear-gradient(135deg, #ffd700, #b8860b)", borderRadius: "4px", padding: "3px 8px", color: "#000", fontWeight: 700 }}>
               Summons Unique [Dragon Lord]
             </span>
           </div>
           <div style={{ marginTop: "8px", fontSize: "0.8rem", color: "#888" }}>
-            Fusing 3 Uncommon pets yields 1 Rare Egg. Fusing 3 Rare pets yields 1 Epic Egg. Sacrificing 10 Legendary pets triggers Unique Ascension to summon the supreme Dragon Lord (Max Lv 70).
+            Fusing 3 Uncommon pets yields 1 Rare Egg. Fusing 3 Legendary pets yields 1 Celestial Egg (Mythic). Sacrificing 10 Mythic pets triggers Unique Ascension to summon the supreme Dragon Lord (Max Lv 70).
           </div>
         </div>
 

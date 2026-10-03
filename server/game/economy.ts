@@ -57,11 +57,11 @@ export function renamePet(g: GameCtx, userId: number, petId: number, name: strin
   if (!r.changes) throw notFound("Pet");
 }
 
-/** Fuses PET_FUSE_COUNT inactive pets of one rarity into an egg of the next rarity, OR combines 10 Legendary pets into a Unique Dragon Lord! */
+/** Fuses PET_FUSE_COUNT inactive pets of one rarity into an egg of the next rarity, OR combines 10 Mythic pets into a Unique Dragon Lord! */
 export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
   const ids = [...new Set(petIds)];
   if (ids.length !== PET_FUSE_COUNT && ids.length !== UNIQUE_PET_FUSE_COUNT) {
-    throw new GameError(`Choose exactly ${PET_FUSE_COUNT} pets of the same rarity to fuse, or ${UNIQUE_PET_FUSE_COUNT} Legendary pets for Unique Ascension.`);
+    throw new GameError(`Choose exactly ${PET_FUSE_COUNT} pets of the same rarity to fuse, or ${UNIQUE_PET_FUSE_COUNT} Mythic pets for Unique Ascension.`);
   }
   const rows = ids.map((id) => g.db.get<PetRow>("SELECT * FROM pets WHERE id = ? AND owner_id = ?", id, p.userId));
   if (rows.some((r) => !r)) throw notFound("Pet");
@@ -70,7 +70,7 @@ export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
   if (rows.some((r) => r!.active)) throw new GameError("Your active pet can't be fused.");
 
   if (ids.length === UNIQUE_PET_FUSE_COUNT) {
-    if (rarity !== "legendary") throw new GameError(`Unique Ascension requires exactly ${UNIQUE_PET_FUSE_COUNT} Legendary pets.`);
+    if (rarity !== "mythic") throw new GameError(`Unique Ascension requires exactly ${UNIQUE_PET_FUSE_COUNT} Mythic pets.`);
     for (const id of ids) g.db.run("DELETE FROM pets WHERE id = ?", id);
     const uniqueSpecies = PET_SPECIES.find((s) => s.id === "dragon_lord") || PET_SPECIES.find((s) => s.rarity === "unique")!;
     const hasActive = !!g.db.get("SELECT 1 FROM pets WHERE owner_id = ? AND active = 1", p.userId);
@@ -83,7 +83,7 @@ export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
     g.hub.toChannel("world", {
       type: "feed",
       icon: uniqueSpecies.icon,
-      text: `👑 SUPREME ASCENSION! ${p.name} sacrificed 10 Legendary Pets to summon the mythical [${uniqueSpecies.name}]!`,
+      text: `👑 SUPREME ASCENSION! ${p.name} sacrificed 10 Mythic Pets to summon the mythical [${uniqueSpecies.name}]!`,
       at: g.clock.now(),
     });
     const row = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ?", id)!;
@@ -91,7 +91,7 @@ export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
   }
 
   const nextIdx = RARITY_INDEX[rarity] + 1;
-  if (nextIdx > RARITY_INDEX.mythic) throw new GameError("Mythic pets can't be fused further.");
+  if (nextIdx > RARITY_INDEX.mythic) throw new GameError("Mythic pets can't be fused into eggs. Sacrifice 10 Mythic pets for Unique Ascension.");
   const next = RARITY_ORDER[nextIdx]!;
   const eggId = CONSUMABLES.find((c) => c.kind === "egg" && c.eggRarity === next)?.id;
   if (!eggId) throw new GameError("Nothing can be fused from these.");
