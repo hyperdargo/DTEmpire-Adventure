@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
+import { CONSUMABLE_BY_ID } from "../../../shared/data/items.ts";
 import type { ItemView } from "../../../shared/data/types.ts";
 import { ItemCard, isGear } from "../components/GameCard.tsx";
 import { ItemSheet } from "../components/ItemSheet.tsx";
@@ -23,7 +24,27 @@ export default function BagPage() {
     success: (r) => (r.count ? `Cleared ${r.count} item${r.count > 1 ? "s" : ""}${r.coins ? ` for ${fmt(r.coins)} coins` : ""}.` : "Nothing matched."),
   });
 
+  const openAllAction = useAction<Record<string, never>, { totalOpened: number; totalXp: number; petsHatched: { name: string; rarity: string }[]; skillsUpdated: { skill: string; rank: number }[] }>("/api/inventory/open-all", {
+    invalidate: [["inventory"], ["pets"], ["skills"], ["hero"]],
+    success: (r) => {
+      const parts = [`Opened ${r.totalOpened} item${r.totalOpened > 1 ? "s" : ""}!`];
+      if (r.totalXp) parts.push(`+${fmt(r.totalXp)} XP`);
+      if (r.petsHatched?.length) parts.push(`Hatched ${r.petsHatched.length} pet${r.petsHatched.length > 1 ? "s" : ""}`);
+      if (r.skillsUpdated?.length) parts.push(`Upgraded ${r.skillsUpdated.length} skill${r.skillsUpdated.length > 1 ? "s" : ""}`);
+      return parts.join(" · ");
+    },
+  });
+
   const items = useMemo(() => data?.items ?? [], [data]);
+  const openables = useMemo(() => {
+    return items.filter((i) => {
+      const c = CONSUMABLE_BY_ID[i.templateId];
+      if (!c) return false;
+      return i.templateId === "xp_scroll" || i.templateId === "skill_book" || c.kind === "egg" || (c.kind === "potion" && c.xpPct);
+    });
+  }, [items]);
+  const totalOpenables = openables.reduce((acc, i) => acc + i.qty, 0);
+
   const shown = useMemo(() => {
     const list = items.filter((i) => filter === "all" || (filter === "gear" ? isGear(i) : i.kind === filter || (filter === "potion" && i.kind === "book")));
     return [...list].sort((a, b) =>
@@ -37,7 +58,23 @@ export default function BagPage() {
 
   return (
     <>
-      <PageHead title="Bag" actions={<Button onClick={() => setBulk(true)}>Clear out gear</Button>}>
+      <PageHead
+        title="Bag"
+        actions={
+          <div className="row" style={{ gap: "0.5rem" }}>
+            {totalOpenables > 0 && (
+              <Button
+                variant="primary"
+                loading={openAllAction.isPending}
+                onClick={() => openAllAction.mutate({})}
+              >
+                ⚡ Open All ({totalOpenables})
+              </Button>
+            )}
+            <Button onClick={() => setBulk(true)}>Clear out gear</Button>
+          </div>
+        }
+      >
         {fmt(hero.bag.used)} of {fmt(hero.bag.capacity)} slots used. Bags grow as you level; when full, new gear sells automatically.
       </PageHead>
       <div className="row row--between row--wrap" style={{ marginBottom: "var(--s-5)" }}>

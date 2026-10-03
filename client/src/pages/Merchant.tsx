@@ -10,6 +10,7 @@ interface PawnableStack {
   templateId: string;
   name: string;
   icon: string;
+  kind: string;
   qty: number;
   unitPawnPrice: number;
   totalPawnPrice: number;
@@ -48,6 +49,11 @@ export default function MerchantPage() {
   const sell = useAction<{ kind: "stack" | "gear"; templateId?: string; itemId?: number; qty?: number }, { name: string; qty: number; earned: number }>("/api/merchant/sell", {
     invalidate: [["merchant"], ["inventory"], ["hero"]],
     success: (r) => `Sold ${r.qty > 1 ? `${r.qty}× ` : ""}${r.name} to the Grand Merchant for +${fmt(r.earned)} coins!`,
+  });
+
+  const pawnAll = useAction<{ category: "materials" | "eggs" | "gear" | "all" }, { count: number; earned: number; category: string }>("/api/merchant/pawn-all", {
+    invalidate: [["merchant"], ["inventory"], ["hero"]],
+    success: (r) => `Pawned ${r.count} ${r.category} to the Grand Merchant for +${fmt(r.earned)} coins!`,
   });
 
   if (isPending || !data) return <Loading rows={4} />;
@@ -159,8 +165,68 @@ export default function MerchantPage() {
             })}
           </div>
         </Panel>
-      ) : (
+      ) : (() => {
+        const matStacks = data.pawnableStacks.filter((s) => s.kind === "material");
+        const eggStacks = data.pawnableStacks.filter((s) => s.kind === "egg");
+        const totalMatValue = matStacks.reduce((sum, s) => sum + s.totalPawnPrice, 0);
+        const totalEggValue = eggStacks.reduce((sum, s) => sum + s.totalPawnPrice, 0);
+        const totalGearValue = data.pawnableGear.reduce((sum, g) => sum + g.pawnPrice, 0);
+        const grandTotalValue = totalMatValue + totalEggValue + totalGearValue;
+
+        return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {/* Quick Bulk Pawn Bar */}
+          <div style={{ background: "#141414", border: "1px solid #333", borderRadius: "6px", padding: "1rem" }}>
+            <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.25rem", color: "#eee" }}>
+              ⚡ Bulk Pawn & Quick Liquidation
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: "0.75rem" }}>
+              Quickly sell batches of materials, eggs, or unequipped gear directly to the Grand Merchant at high imperial prices.
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {matStacks.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={pawnAll.isPending && pawnAll.variables?.category === "materials"}
+                  onClick={() => pawnAll.mutate({ category: "materials" })}
+                >
+                  💎 Pawn All Materials (+{fmt(totalMatValue)} coins)
+                </Button>
+              )}
+              {eggStacks.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={pawnAll.isPending && pawnAll.variables?.category === "eggs"}
+                  onClick={() => pawnAll.mutate({ category: "eggs" })}
+                >
+                  🥚 Pawn All Eggs (+{fmt(totalEggValue)} coins)
+                </Button>
+              )}
+              {data.pawnableGear.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={pawnAll.isPending && pawnAll.variables?.category === "gear"}
+                  onClick={() => pawnAll.mutate({ category: "gear" })}
+                >
+                  ⚔️ Pawn All Gear (+{fmt(totalGearValue)} coins)
+                </Button>
+              )}
+              {grandTotalValue > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={pawnAll.isPending && pawnAll.variables?.category === "all"}
+                  onClick={() => pawnAll.mutate({ category: "all" })}
+                >
+                  ⚡ Liquidate Everything (+{fmt(grandTotalValue)} coins)
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Sell Materials & Stacks */}
           <Panel title={<h3>💎 Liquidate Valuable Reagents & Items</h3>} tight>
             <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid #222", background: "#111", fontSize: "0.85rem", color: "#aaa" }}>
@@ -299,7 +365,8 @@ export default function MerchantPage() {
             )}
           </Panel>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }

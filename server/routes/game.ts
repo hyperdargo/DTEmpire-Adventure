@@ -198,16 +198,92 @@ export async function registerGameRoutes(app: FastifyInstance) {
     return mutate(g, u(req), (p) => inv.bulkDispose(g, p, mode, maxRarity));
   });
   app.post("/api/inventory/use", async (req) => {
-    const { itemId } = parse(z.object({ itemId: id }), req);
+    const { itemId, qty } = parse(z.object({ itemId: id, qty: z.number().int().min(1).max(999).default(1) }), req);
     return mutate(g, u(req), (p) => {
       const item = inv.getOwnedItem(g, p.userId, itemId);
       const c = CONSUMABLE_BY_ID[item.templateId];
-      if (c?.kind === "egg") return { kind: "pet" as const, pet: eco.hatchEgg(g, p, item.templateId) };
-      if (item.templateId === "skill_book") {
-        takeStack(g, p.userId, "skill_book", 1, "Skill Book");
-        return { kind: "skill" as const, ...hero.readSkillBook(g, p) };
+      if (c?.kind === "egg") {
+        const count = Math.min(item.qty, qty);
+        const pets = [];
+        for (let i = 0; i < count; i++) {
+          pets.push(eco.hatchEgg(g, p, item.templateId));
+        }
+        return { kind: "pet" as const, count, pets, pet: pets[pets.length - 1] };
       }
-      return { kind: "consumable" as const, ...inv.useConsumable(g, p, itemId) };
+      if (item.templateId === "skill_book") {
+        const count = Math.min(item.qty, qty);
+        takeStack(g, p.userId, "skill_book", count, "Skill Book");
+        const results = [];
+        for (let i = 0; i < count; i++) {
+          results.push(hero.readSkillBook(g, p));
+        }
+        return { kind: "skill" as const, count, results, ...results[results.length - 1] };
+      }
+      return { kind: "consumable" as const, ...inv.useConsumable(g, p, itemId, qty) };
+    });
+  });
+
+  app.post("/api/inventory/open-all", async (req) => {
+    return mutate(g, u(req), (p) => {
+      const rows = g.db.all<{ id: number; template_id: string; qty: number }>(
+        "SELECT id, template_id, qty FROM items WHERE owner_id = ? AND base = '{}' AND escrow IS NULL AND qty > 0",
+        p.userId
+      );
+      let totalOpened = 0;
+      let totalXp = 0;
+      let totalHealed = 0;
+      const petsHatched: { name: string; rarity: string; icon: string }[] = [];
+      const skillsUpdated: { skill: string; rank: number; learned: boolean }[] = [];
+
+      for (const row of rows) {
+        const c = CONSUMABLE_BY_ID[row.template_id];
+        if (!c) continue;
+
+        // 1. Eggs
+        if (c.kind === "egg") {
+          const count = row.qty;
+          for (let i = 0; i < count; i++) {
+            const pet = eco.hatchEgg(g, p, row.template_id);
+            petsHatched.push({ name: pet.name, rarity: pet.rarity, icon: pet.icon });
+          }
+          totalOpened += count;
+          continue;
+        }
+
+        // 2. Skill Books
+        if (row.template_id === "skill_book") {
+          const count = row.qty;
+          takeStack(g, p.userId, "skill_book", count, "Skill Book");
+          for (let i = 0; i < count; i++) {
+            const res = hero.readSkillBook(g, p);
+            if (res.skill) skillsUpdated.push(res);
+          }
+          totalOpened += count;
+          continue;
+        }
+
+        // 3. XP Scrolls & XP Potions
+        if (row.template_id === "xp_scroll" || (c.kind === "potion" && c.xpPct)) {
+          const count = row.qty;
+          const res = inv.useConsumable(g, p, row.id, count);
+          totalOpened += count;
+          totalXp += res.xp;
+          totalHealed += res.healed;
+          continue;
+        }
+      }
+
+      if (totalOpened === 0) {
+        throw new GameError("No unopened scrolls, eggs, or skill books found in your bag.");
+      }
+
+      return {
+        totalOpened,
+        totalXp,
+        totalHealed,
+        petsHatched,
+        skillsUpdated,
+      };
     });
   });
 
@@ -277,6 +353,10 @@ export async function registerGameRoutes(app: FastifyInstance) {
       z.object({ kind: z.literal("gear"), itemId: z.number().int().positive() }),
     ]), req);
     return mutate(g, u(req), (p) => merchant.sellToMerchant(g, p, body));
+  });
+  app.post("/api/merchant/pawn-all", async (req) => {
+    const { category } = parse(z.object({ category: z.enum(["materials", "eggs", "gear", "all"]) }), req);
+    return mutate(g, u(req), (p) => merchant.pawnAllToMerchant(g, p, category));
   });
 
   // ── Estate / Housing ──

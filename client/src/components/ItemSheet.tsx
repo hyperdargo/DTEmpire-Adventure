@@ -20,11 +20,11 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
     invalidate: inv, onSuccess: onClose,
     success: (r) => `Salvaged into ${Object.entries(r.materials).map(([m, q]) => `${q} ${CONSUMABLE_BY_ID[m]?.name ?? m}`).join(", ")}.`,
   });
-  const use = useAction<{ itemId: number }, { kind: string; healed?: number; xp?: number; skill?: string; rank?: number; learned?: boolean; pet?: { name: string; rarity: string } }>("/api/inventory/use", {
+  const use = useAction<{ itemId: number; qty?: number }, { kind: string; count?: number; healed?: number; xp?: number; skill?: string; rank?: number; learned?: boolean; pet?: { name: string; rarity: string } }>("/api/inventory/use", {
     invalidate: [["inventory"], ["pets"], ["skills"]], onSuccess: onClose,
     success: (r) =>
-      r.kind === "pet" ? `Hatched a ${r.pet!.rarity} ${r.pet!.name}!`
-      : r.kind === "skill" ? (r.learned ? `Learned ${r.skill}!` : r.skill ? `${r.skill} rose to rank ${r.rank}.` : "You know everything the book could teach. It sold for 2,500 coins.")
+      r.kind === "pet" ? (r.count && r.count > 1 ? `Hatched ${r.count} pets!` : `Hatched a ${r.pet!.rarity} ${r.pet!.name}!`)
+      : r.kind === "skill" ? (r.count && r.count > 1 ? `Read ${r.count} skill books!` : r.learned ? `Learned ${r.skill}!` : r.skill ? `${r.skill} rose to rank ${r.rank}.` : "You know everything the book could teach. It sold for 2,500 coins.")
       : [r.healed ? `+${fmt(r.healed)} HP` : "", r.xp ? `+${fmt(r.xp)} XP` : ""].filter(Boolean).join(" · ") || "Used.",
   });
 
@@ -65,7 +65,18 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
           <div className="row row--wrap">
             {gear && !item.equipped && <Button variant="primary" icon={<Shirt size={16} />} disabled={tooLow} loading={equip.isPending} onClick={() => equip.mutate({ itemId: item.id })}>Equip</Button>}
             {gear && item.equipped && <Button onClick={() => unequip.mutate({ slot: item.kind })}>Unequip</Button>}
-            {usable && <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id })}>{consumable.kind === "egg" ? "Hatch" : consumable.kind === "book" ? "Read" : "Drink"}</Button>}
+            {usable && (
+              <>
+                <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: 1 })}>
+                  {consumable.kind === "egg" ? "Hatch 1" : consumable.kind === "book" ? "Read 1" : "Drink 1"}
+                </Button>
+                {item.qty > 1 && (
+                  <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: item.qty })}>
+                    ⚡ {consumable.kind === "egg" ? `Hatch All (${item.qty})` : consumable.kind === "book" ? `Read All (${item.qty})` : `Drink All (${item.qty})`}
+                  </Button>
+                )}
+              </>
+            )}
             {gear && <Button icon={<Hammer size={16} />} onClick={() => navigate(`/smithy?item=${item.id}`)}>Upgrade</Button>}
             <Button variant="ghost" icon={item.locked ? <LockOpen size={16} /> : <Lock size={16} />} onClick={() => lock.mutate({ itemId: item.id, locked: !item.locked })}>{item.locked ? "Unlock" : "Lock"}</Button>
           </div>

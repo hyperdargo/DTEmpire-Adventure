@@ -12,6 +12,7 @@ export interface PawnableStack {
   templateId: string;
   name: string;
   icon: string;
+  kind: string;
   qty: number;
   unitPawnPrice: number;
   totalPawnPrice: number;
@@ -54,6 +55,7 @@ export function getMerchantView(g: GameCtx, p: Player): MerchantView {
       templateId: row.template_id,
       name: c.name,
       icon: c.icon,
+      kind: c.kind,
       qty: row.qty,
       unitPawnPrice,
       totalPawnPrice: unitPawnPrice * row.qty,
@@ -165,4 +167,60 @@ export function sellToMerchant(
   bumpMission(p, "sell", 1);
 
   return { name: gDef?.name ?? item.templateId, qty: 1, earned };
+}
+
+export function pawnAllToMerchant(
+  g: GameCtx,
+  p: Player,
+  category: "materials" | "eggs" | "gear" | "all"
+): { count: number; earned: number; category: string } {
+  let count = 0;
+  let earned = 0;
+
+  // 1. Stacks (materials, eggs)
+  if (category === "materials" || category === "eggs" || category === "all") {
+    const stackRows = g.db.all<{ id: number; template_id: string; qty: number }>(
+      "SELECT id, template_id, qty FROM items WHERE owner_id = ? AND base = '{}' AND escrow IS NULL AND qty > 0",
+      p.userId
+    );
+    for (const row of stackRows) {
+      const c = CONSUMABLE_BY_ID[row.template_id];
+      if (!c) continue;
+
+      if (category === "materials" && c.kind !== "material") continue;
+      if (category === "eggs" && c.kind !== "egg") continue;
+      if (category === "all" && c.kind !== "material" && c.kind !== "egg") continue;
+
+      const unitPawnPrice = STACK_PAWN_RATES[row.template_id] ?? Math.max(10, Math.round(c.sellPrice * 2.5));
+      const stackEarned = unitPawnPrice * row.qty;
+      g.db.run("DELETE FROM items WHERE id = ?", row.id);
+      earned += stackEarned;
+      count += row.qty;
+    }
+  }
+
+  // 2. Unequipped, unlocked gear
+  if (category === "gear" || category === "all") {
+    const gearRows = g.db.all(
+      "SELECT * FROM items WHERE owner_id = ? AND base != '{}' AND equipped = 0 AND locked = 0 AND escrow IS NULL",
+      p.userId
+    );
+    for (const r of gearRows) {
+      const item = itemFromRow(r as never);
+      const basePawn = sellPrice(item);
+      const gearEarned = Math.round(basePawn * 1.6);
+      g.db.run("DELETE FROM items WHERE id = ?", item.id);
+      earned += gearEarned;
+      count += 1;
+    }
+  }
+
+  if (count === 0) {
+    throw new GameError(`No eligible ${category} items to pawn.`);
+  }
+
+  p.coins += earned;
+  bumpMission(p, "sell", count);
+
+  return { count, earned, category };
 }

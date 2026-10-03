@@ -484,6 +484,18 @@ export const MERCHANT_OFFER_BY_ID: Record<string, MerchantOfferDef> = Object.fro
 );
 
 /** Lookup pawn (sell-to-merchant) rate for any stackable templateId */
-export const STACK_PAWN_RATES: Record<string, number> = Object.fromEntries(
-  MERCHANT_OFFERS.filter((o) => o.kind === "stack").map((o) => [o.templateId, o.pawnPrice])
-);
+export const STACK_PAWN_RATES: Record<string, number> = {
+  ...Object.fromEntries(MERCHANT_OFFERS.filter((o) => o.kind === "stack").map((o) => [o.templateId, o.pawnPrice])),
+  // Event & special pet eggs
+  lunar_egg: 25_000,
+  soul_egg: 25_000,
+  frost_egg: 25_000,
+  blossom_egg: 25_000,
+  sunfire_egg: 25_000,
+  trench_egg: 25_000,
+  abyss_egg: 35_000,
+  // Scrolls, tomes & catalysts
+  skill_book: 35_000,
+  xp_scroll: 10_000,
+  void_reforger: 150_000,
+};

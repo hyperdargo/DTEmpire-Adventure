@@ -145,24 +145,29 @@ export function bulkDispose(g: GameCtx, p: Player, mode: "sell" | "salvage", max
 }
 
 /** Out-of-combat use: potions, scrolls. Eggs and books route to their own services. */
-export function useConsumable(g: GameCtx, p: Player, itemId: number): { healed: number; xp: number } {
+export function useConsumable(g: GameCtx, p: Player, itemId: number, qty = 1): { healed: number; xp: number } {
   const item = getOwnedItem(g, p.userId, itemId);
   const c = CONSUMABLE_BY_ID[item.templateId];
   if (!c || (c.kind !== "potion" && item.templateId !== "xp_scroll")) throw new GameError("That can't be used like this.");
   if (p.level < c.levelReq) throw new GameError(`${c.name} requires level ${c.levelReq}.`);
+  const n = Math.max(1, Math.min(item.qty, Math.floor(qty)));
   const maxHp = heroStats(g, p).maxHp;
   let healed = 0;
   if (c.healPct) {
     if (p.hp >= maxHp && !c.xpPct) throw new GameError("You're already at full health.");
     const before = p.hp;
-    p.hp = Math.min(maxHp, p.hp + Math.round(maxHp * c.healPct));
+    p.hp = Math.min(maxHp, p.hp + Math.round(maxHp * c.healPct * n));
     p.hpAt = g.clock.now();
     healed = p.hp - before;
   }
   let xp = 0;
-  if (c.xpPct) xp = grantXp(g, p, xpPctOfLevel(p, c.xpPct));
-  removeQty(g, item, 1);
-  bump(g, p, "potionsDrunk");
-  bumpMission(p, "potion");
+  if (c.xpPct) {
+    for (let i = 0; i < n; i++) {
+      xp += grantXp(g, p, xpPctOfLevel(p, c.xpPct));
+    }
+  }
+  removeQty(g, item, n);
+  bump(g, p, "potionsDrunk", n);
+  bumpMission(p, "potion", n);
   return { healed, xp };
 }
