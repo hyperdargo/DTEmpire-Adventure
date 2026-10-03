@@ -1,5 +1,5 @@
 import { CONSUMABLES, CONSUMABLE_BY_ID, GEAR, GEAR_BY_ID, RECIPE_BY_ID } from "../../shared/data/items.ts";
-import { GOLDEN_EGG_WEIGHTS, MYSTERY_EGG_WEIGHTS, PET_FUSE_COUNT, PET_SPECIES } from "../../shared/data/pets.ts";
+import { GOLDEN_EGG_WEIGHTS, MYSTERY_EGG_WEIGHTS, PET_FUSE_COUNT, PET_SPECIES, UNIQUE_PET_FUSE_COUNT } from "../../shared/data/pets.ts";
 import type { EquipSlot, Rarity } from "../../shared/data/types.ts";
 import { forgeResultRarity, rollGear, upgradeCost } from "../../shared/rules/items.ts";
 import { GEAR_RARITY_MULT, MAX_UPGRADE, RARITY_INDEX, RARITY_ORDER } from "../../shared/rules/progression.ts";
@@ -57,15 +57,39 @@ export function renamePet(g: GameCtx, userId: number, petId: number, name: strin
   if (!r.changes) throw notFound("Pet");
 }
 
-/** Fuses PET_FUSE_COUNT inactive pets of one rarity into an egg of the next rarity. */
+/** Fuses PET_FUSE_COUNT inactive pets of one rarity into an egg of the next rarity, OR combines 10 Legendary pets into a Unique Dragon Lord! */
 export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
   const ids = [...new Set(petIds)];
-  if (ids.length !== PET_FUSE_COUNT) throw new GameError(`Choose exactly ${PET_FUSE_COUNT} pets to fuse.`);
+  if (ids.length !== PET_FUSE_COUNT && ids.length !== UNIQUE_PET_FUSE_COUNT) {
+    throw new GameError(`Choose exactly ${PET_FUSE_COUNT} pets of the same rarity to fuse, or ${UNIQUE_PET_FUSE_COUNT} Legendary pets for Unique Ascension.`);
+  }
   const rows = ids.map((id) => g.db.get<PetRow>("SELECT * FROM pets WHERE id = ? AND owner_id = ?", id, p.userId));
   if (rows.some((r) => !r)) throw notFound("Pet");
   const rarity = rows[0]!.rarity as Rarity;
   if (rows.some((r) => r!.rarity !== rarity)) throw new GameError("All pets must share a rarity.");
   if (rows.some((r) => r!.active)) throw new GameError("Your active pet can't be fused.");
+
+  if (ids.length === UNIQUE_PET_FUSE_COUNT) {
+    if (rarity !== "legendary") throw new GameError(`Unique Ascension requires exactly ${UNIQUE_PET_FUSE_COUNT} Legendary pets.`);
+    for (const id of ids) g.db.run("DELETE FROM pets WHERE id = ?", id);
+    const uniqueSpecies = PET_SPECIES.find((s) => s.id === "dragon_lord") || PET_SPECIES.find((s) => s.rarity === "unique")!;
+    const hasActive = !!g.db.get("SELECT 1 FROM pets WHERE owner_id = ? AND active = 1", p.userId);
+    const id = g.db.run(
+      "INSERT INTO pets (owner_id, species_id, rarity, level, xp, active, created_at) VALUES (?, ?, 'unique', 1, 0, ?, ?)",
+      p.userId, uniqueSpecies.id, hasActive ? 0 : 1, g.clock.now()
+    ).lastId;
+    bump(g, p, "petsHatched");
+    bumpMission(p, "hatch");
+    g.hub.toChannel("world", {
+      type: "feed",
+      icon: uniqueSpecies.icon,
+      text: `👑 SUPREME ASCENSION! ${p.name} sacrificed 10 Legendary Pets to summon the mythical [${uniqueSpecies.name}]!`,
+      at: g.clock.now(),
+    });
+    const row = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ?", id)!;
+    return { egg: uniqueSpecies.name, pet: toPetView(petRecord(row)), rarity: "unique", unique: true };
+  }
+
   const nextIdx = RARITY_INDEX[rarity] + 1;
   if (nextIdx > RARITY_INDEX.mythic) throw new GameError("Mythic pets can't be fused further.");
   const next = RARITY_ORDER[nextIdx]!;
@@ -147,6 +171,61 @@ export function forge(g: GameCtx, p: Player, aId: number, bId: number) {
   bump(g, p, "itemsCrafted");
   bumpMission(p, "craft");
   return { item: getOwnedItem(g, p.userId, id), jumped: RARITY_INDEX[rarity] - RARITY_INDEX[a.rarity] > 1, coins };
+}
+
+/** Combines at least 5 Mythic gears of the same slot into a single supreme Unique relic. Keeps highest upgrade and ilvl. */
+export function forgeUnique(g: GameCtx, p: Player, itemIds: number[]) {
+  const ids = [...new Set(itemIds)];
+  if (ids.length < 5) throw new GameError("Unique relic forging requires at least 5 Mythic gear pieces to combine.");
+  const items = ids.map((id) => getOwnedItem(g, p.userId, id));
+  if (items.some((i) => i.locked || i.equipped)) throw new GameError("Unlock and unequip all items before synthesizing.");
+  const gears = items.map((i) => {
+    const gear = GEAR_BY_ID[i.templateId];
+    if (!gear) throw new GameError("Only gear can be synthesized.");
+    return gear;
+  });
+  if (items.some((i) => i.rarity !== "mythic")) throw new GameError("Only Mythic gear can be forged into a Unique relic.");
+  const slot = gears[0]!.slot;
+  if (gears.some((ge) => ge.slot !== slot)) throw new GameError("All items must share the same gear slot (e.g. all weapons or all armors).");
+
+  const bestItem = items.reduce((prev, curr) => (curr.ilvl > prev.ilvl ? curr : prev), items[0]!);
+  const template = GEAR_BY_ID[bestItem.templateId]!;
+  const maxUpgrade = Math.max(...items.map((i) => i.upgrade));
+  const maxIlvl = Math.max(...items.map((i) => i.ilvl));
+
+  const coins = Math.round(150_000 + maxIlvl * 1000);
+  spendCoins(p, coins, "unique forging");
+
+  // Destroy the 5+ sacrificed pieces
+  g.db.run(`DELETE FROM items WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
+
+  const rng = createRng(freshSeed());
+  const rolled = rollGear(rng, template, maxIlvl, "unique");
+  const id = addGear(g, p.userId, {
+    kind: "gear",
+    templateId: template.id,
+    rarity: "unique",
+    ilvl: maxIlvl,
+    base: rolled.base as Record<string, number>,
+    affixes: rolled.affixes,
+  });
+
+  if (maxUpgrade > 0) {
+    g.db.run("UPDATE items SET upgrade = ? WHERE id = ?", maxUpgrade, id);
+  }
+
+  bump(g, p, "itemsForged");
+  bump(g, p, "itemsCrafted");
+  bumpMission(p, "craft");
+
+  g.hub.toChannel("world", {
+    type: "feed",
+    icon: "👑",
+    text: `🔥 UNIQUE RELIC FORGED! ${p.name} sacrificed ${ids.length} Mythic items to forge the supreme Unique relic [${template.name}]!`,
+    at: g.clock.now(),
+  });
+
+  return { item: getOwnedItem(g, p.userId, id), coins };
 }
 
 // ── Market ────────────────────────────────────────────────────────────

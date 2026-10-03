@@ -26,17 +26,22 @@ export default function PetsPage() {
   const setActive = useAction<{ petId: number | null }>("/api/pets/active", { invalidate: [["pets"]], success: "Your companion is ready." });
   const release = useAction<{ petId: number }, { coins: number }>("/api/pets/release", { invalidate: [["pets"]], success: (r) => `Released. The shelter paid ${r.coins.toLocaleString()} coins.`, onSuccess: () => setOpen(null) });
   const rename = useAction<{ petId: number; name: string }>("/api/pets/rename", { invalidate: [["pets"]], success: "Renamed." });
-  const fuse = useAction<{ petIds: number[] }, { egg: string; rarity: string }>("/api/pets/fuse", { invalidate: [["pets"], ["inventory"]], success: (r) => `Fused into a ${r.egg}!`, onSuccess: () => setFusing(null) });
+  const fuse = useAction<{ petIds: number[] }, { egg: string; rarity: string; unique?: boolean; pet?: PetView }>("/api/pets/fuse", {
+    invalidate: [["pets"], ["inventory"]],
+    success: (r) => (r.unique ? `🌟 UNIQUE ASCENSION! Summoned the supreme ${r.pet?.name || "Dragon Lord"}!` : `Fused into a ${r.egg}!`),
+    onSuccess: () => setFusing(null),
+  });
 
   if (isPending) return <Loading rows={3} />;
   const pets = data?.pets ?? [];
   const pet = pets.find((p) => p.id === open);
   const fuseRarity = fusing?.length ? pets.find((p) => p.id === fusing[0])?.rarity : null;
+  const targetCount = fuseRarity === "legendary" ? 10 : 3;
 
   return (
     <>
       <PageHead title="Pets" actions={pets.length >= 3 && <Button onClick={() => setFusing(fusing ? null : [])}>{fusing ? "Cancel fusing" : "Fuse pets"}</Button>}>
-        One pet fights at your side: it adds stats and acts every third turn. Pets grow with your battles. Fuse three of the same rarity into an egg of the next.
+        One pet fights at your side: it adds stats and acts every third turn. Pets grow with your battles. Fuse 3 pets into a rarer egg, or sacrifice 10 Legendary pets to summon the supreme Unique Dragon Lord.
       </PageHead>
 
       {eggs.length > 0 && (
@@ -55,8 +60,14 @@ export default function PetsPage() {
 
       {fusing && (
         <div className="banner banner--info" role="status">
-          Choose three inactive pets of the same rarity. Selected {fusing.length}/3{fuseRarity ? ` (${fuseRarity})` : ""}.
-          <Button size="sm" variant="primary" disabled={fusing.length !== 3} loading={fuse.isPending} onClick={() => fuse.mutate({ petIds: fusing })}>Fuse</Button>
+          {fuseRarity === "legendary" ? (
+            <>👑 <b>Unique Ascension:</b> Select 10 inactive Legendary pets to summon the supreme <b>Dragon Lord</b>. Selected {fusing.length}/10.</>
+          ) : (
+            <>Choose 3 inactive pets of the same rarity (or 10 Legendary pets for Unique Ascension). Selected {fusing.length}/{targetCount}{fuseRarity ? ` (${fuseRarity})` : ""}.</>
+          )}
+          <Button size="sm" variant="primary" disabled={fusing.length !== targetCount} loading={fuse.isPending} onClick={() => fuse.mutate({ petIds: fusing })}>
+            {fuseRarity === "legendary" ? "Ascend Unique Pet" : "Fuse"}
+          </Button>
         </div>
       )}
 
@@ -68,7 +79,7 @@ export default function PetsPage() {
             const selectable = fusing && !p.active && (!fuseRarity || p.rarity === fuseRarity);
             return (
               <PetCard key={p.id} pet={p} selected={fusing ? fusing.includes(p.id) : undefined}
-                onClick={fusing ? (selectable ? () => setFusing(fusing.includes(p.id) ? fusing.filter((x) => x !== p.id) : fusing.length < 3 ? [...fusing, p.id] : fusing) : undefined) : () => setOpen(p.id)} />
+                onClick={fusing ? (selectable ? () => setFusing(fusing.includes(p.id) ? fusing.filter((x) => x !== p.id) : fusing.length < targetCount ? [...fusing, p.id] : fusing) : undefined) : () => setOpen(p.id)} />
             );
           })}
         </div>

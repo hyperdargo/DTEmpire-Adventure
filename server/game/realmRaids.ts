@@ -186,10 +186,10 @@ registerFinalizer("realm_raid", (g, p, b) => {
       wonFirstBlood = true;
       const gearTpl = GEAR_BY_ID[c.firstBloodGearId];
       if (gearTpl) {
-        const rolled = rollGear(rng, gearTpl, Math.max(c.levelReq, p.level), "unique");
+        const rolled = rollGear(rng, gearTpl, Math.max(c.levelReq, p.level), "mythic");
         g.db.run(
           `INSERT INTO items (owner_id, template_id, rarity, ilvl, upgrade, qty, base, affixes, equipped, created_at)
-           VALUES (?, ?, 'unique', ?, 0, 1, ?, ?, 0, ?)`,
+           VALUES (?, ?, 'mythic', ?, 0, 1, ?, ?, 0, ?)`,
           p.userId,
           gearTpl.id,
           Math.max(c.levelReq, p.level),
@@ -229,7 +229,7 @@ registerFinalizer("realm_raid", (g, p, b) => {
     result: "won",
     coins: victoryPay.coins,
     xp: victoryPay.xp,
-    drops: firstBloodGearObtained ? [{ name: firstBloodGearObtained, rarity: "unique" }] : [],
+    drops: firstBloodGearObtained ? [{ name: firstBloodGearObtained, rarity: "mythic" }] : [],
     lines,
     extra: {
       tokens: tokenGain,

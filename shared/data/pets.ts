@@ -20,6 +20,9 @@ export const PET_SPECIES: PetSpecies[] = [
   { id: "celestial", name: "Celestial", icon: "⭐", rarity: "mythic", focus: "hp", ability: "mend" },
   { id: "void_drake", name: "Void Drake", icon: "🌑", rarity: "mythic", focus: "atk", ability: "strike" },
   { id: "god_beast", name: "God Beast", icon: "🌟", rarity: "mythic", focus: "balanced", ability: "ward" },
+  { id: "dragon_lord", name: "Dragon Lord", icon: "👑🐲", rarity: "unique", focus: "atk", ability: "strike" },
+  { id: "celestial_sovereign", name: "Celestial Sovereign", icon: "👑⭐", rarity: "unique", focus: "balanced", ability: "ward" },
+  { id: "phoenix_emperor", name: "Phoenix Emperor", icon: "👑🔥", rarity: "unique", focus: "hp", ability: "mend" },
 ];
 
 export const PET_BY_ID: Record<string, PetSpecies> = Object.fromEntries(PET_SPECIES.map((p) => [p.id, p]));
@@ -33,4 +36,6 @@ export const GOLDEN_EGG_WEIGHTS: Partial<Record<Rarity, number>> = { rare: 70, e
 
 /** Pets needed of one rarity to fuse an egg of the next rarity. */
 export const PET_FUSE_COUNT = 3;
+/** Legendary pets needed to ascend into a supreme Unique Pet. */
+export const UNIQUE_PET_FUSE_COUNT = 10;
 export const PET_ABILITY_EVERY = 3;

@@ -300,7 +300,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
     return mutate(g, u(req), (p) => eco.renamePet(g, p.userId, petId, name));
   });
   app.post("/api/pets/fuse", async (req) => {
-    const { petIds } = parse(z.object({ petIds: z.array(id).max(5) }), req);
+    const { petIds } = parse(z.object({ petIds: z.array(id).min(3).max(10) }), req);
     return mutate(g, u(req), (p) => eco.fusePets(g, p, petIds));
   });
   app.post("/api/pets/release", async (req) => {
@@ -325,6 +325,10 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/smithy/forge", async (req) => {
     const { aId, bId } = parse(z.object({ aId: id, bId: id }), req);
     return mutate(g, u(req), (p) => eco.forge(g, p, aId, bId));
+  });
+  app.post("/api/smithy/forge-unique", async (req) => {
+    const { itemIds } = parse(z.object({ itemIds: z.array(id).min(5).max(20) }), req);
+    return mutate(g, u(req), (p) => eco.forgeUnique(g, p, itemIds));
   });
 
   // ── Market ──

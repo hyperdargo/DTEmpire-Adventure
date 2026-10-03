@@ -22,19 +22,24 @@ function MaterialList({ materials, have }: { materials: Record<string, number>; 
 
 export default function SmithyPage() {
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<"upgrade" | "forge" | "craft">(params.get("item") ? "upgrade" : "craft");
+  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique">(params.get("item") ? "upgrade" : "craft");
   const { hero } = useHero();
   const inv = useData<{ items: ItemView[] }>(["inventory"], "/api/inventory");
   const smithy = useData<{ recipes: Recipe[]; upgradeCosts: Record<string, Cost> }>(["smithy"], "/api/smithy");
   const [picked, setPicked] = useState<number | null>(params.get("item") ? Number(params.get("item")) : null);
   const [forgeA, setForgeA] = useState<number | null>(null);
   const [forgeB, setForgeB] = useState<number | null>(null);
+  const [uniquePicked, setUniquePicked] = useState<number[]>([]);
   const invalidate = [["inventory"], ["smithy"]];
   const upgrade = useAction<{ itemId: number }>("/api/smithy/upgrade", { invalidate, success: "The metal takes the heat. Upgrade complete." });
   const craft = useAction<{ recipeId: string }>("/api/smithy/craft", { invalidate, success: "Crafted! It's in your bag." });
   const forge = useAction<{ aId: number; bId: number }, { item: { rarity: string }; jumped: boolean }>("/api/smithy/forge", {
     invalidate, onSuccess: () => { setForgeA(null); setForgeB(null); },
     success: (r) => (r.jumped ? `The forge roars! A ${r.item.rarity} piece, two tiers up!` : `Forged into a ${r.item.rarity} piece.`),
+  });
+  const forgeUnique = useAction<{ itemIds: number[] }, { item: ItemView; coins: number }>("/api/smithy/forge-unique", {
+    invalidate, onSuccess: () => setUniquePicked([]),
+    success: (r) => `🔥 UNIQUE RELIC FORGED! Crafted ${r.item.name} (${r.item.rarity})!`,
   });
 
   if (inv.isPending || smithy.isPending || !smithy.data) return <Loading rows={3} />;
@@ -46,15 +51,27 @@ export default function SmithyPage() {
   const a = gear.find((i) => i.id === forgeA);
   const forgeCandidates = a ? gear.filter((i) => i.id !== a.id && i.kind === a.kind && i.rarity === a.rarity && !i.equipped && !i.locked) : gear.filter((i) => !i.equipped && !i.locked && i.rarity !== "mythic" && i.rarity !== "unique");
 
+  const mythicGear = gear.filter((i) => i.rarity === "mythic" && !i.equipped && !i.locked);
+  const firstUniqueItem = uniquePicked.length ? gear.find((i) => i.id === uniquePicked[0]) : null;
+  const uniqueAllowedSlot = firstUniqueItem ? firstUniqueItem.kind : null;
+  const uniqueCandidates = mythicGear.filter((i) => !uniqueAllowedSlot || i.kind === uniqueAllowedSlot);
+  const uniqueMaxIlvl = uniquePicked.length ? Math.max(...uniquePicked.map((id) => gear.find((g) => g.id === id)?.ilvl || 50)) : 50;
+  const uniqueCost = 150_000 + uniqueMaxIlvl * 1000;
+
   return (
     <>
-      <PageHead title="Blacksmith">Upgrade gear to +10, forge two matching pieces into a rarer one, or craft from materials. Salvaging gear in your bag yields materials.</PageHead>
+      <PageHead title="Blacksmith">Upgrade gear to +10, forge two matching pieces into a rarer one, craft from materials, or sacrifice 5 Mythic pieces to synthesize supreme Unique relics.</PageHead>
       <div className="row row--wrap" style={{ marginBottom: "var(--s-4)" }}>
         {["iron_ore", "undead_bones", "silk_cloth", "dragon_scales", "mystic_gem", "star_essence"].map((m) => (
           <span key={m} className="chip"><span className="art">{CONSUMABLE_BY_ID[m]?.icon}</span>{CONSUMABLE_BY_ID[m]?.name} <b className="num">{have[m] ?? 0}</b></span>
         ))}
       </div>
-      <Tabs label="Blacksmith" value={tab} onChange={setTab} options={[{ value: "craft", label: "Craft" }, { value: "upgrade", label: "Upgrade" }, { value: "forge", label: "Forge" }]} />
+      <Tabs label="Blacksmith" value={tab} onChange={setTab} options={[
+        { value: "craft", label: "Craft" },
+        { value: "upgrade", label: "Upgrade" },
+        { value: "forge", label: "Forge" },
+        { value: "unique", label: "👑 Unique Altar (5 Mythic)" },
+      ]} />
       <div style={{ marginTop: "var(--s-5)" }}>
         {tab === "upgrade" && (
           <div className="smithy-split">
@@ -123,6 +140,81 @@ export default function SmithyPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+        {tab === "unique" && (
+          <div className="smithy-split">
+            <Panel title={`Choose Mythic items to sacrifice (${uniquePicked.length}/5)`}>
+              <p className="muted" style={{ marginBottom: "var(--s-3)" }}>
+                Combine at least 5 Mythic pieces of the same slot to synthesize an ultra-rare Unique relic. The relic inherits the highest item level and highest upgrade (+N).
+              </p>
+              {uniqueCandidates.length === 0 ? (
+                <p className="faint">
+                  {uniqueAllowedSlot
+                    ? `No more unlocked, unequipped Mythic ${uniqueAllowedSlot} pieces in your bag.`
+                    : "No unlocked, unequipped Mythic gear available to sacrifice."}
+                </p>
+              ) : (
+                <div className="grid-cards" style={{ "--card-min": "124px" } as React.CSSProperties}>
+                  {uniqueCandidates.map((i) => {
+                    const isSelected = uniquePicked.includes(i.id);
+                    return (
+                      <ItemCard
+                        key={i.id}
+                        item={i}
+                        size="sm"
+                        selected={isSelected}
+                        onClick={() =>
+                          setUniquePicked((prev) =>
+                            prev.includes(i.id) ? prev.filter((x) => x !== i.id) : [...prev, i.id]
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </Panel>
+            <Panel title="The Unique Altar">
+              <div className="stack" style={{ justifyItems: "center", gap: "var(--s-4)" }}>
+                <div className="row row--wrap" style={{ justifyContent: "center", gap: "var(--s-2)" }}>
+                  {uniquePicked.map((id) => {
+                    const it = gear.find((g) => g.id === id);
+                    return it ? (
+                      <ItemCard
+                        key={it.id}
+                        item={it}
+                        size="sm"
+                        onClick={() => setUniquePicked((prev) => prev.filter((x) => x !== it.id))}
+                      />
+                    ) : null;
+                  })}
+                  {Array.from({ length: Math.max(0, 5 - uniquePicked.length) }).map((_, idx) => (
+                    <GameCard key={idx} size="sm" rarity="mythic" art="✨" name={`Sacrifice ${uniquePicked.length + idx + 1}`} disabled />
+                  ))}
+                </div>
+
+                <div style={{ textAlign: "center" }}>
+                  <p>
+                    <b>Sacrificing {uniquePicked.length} Mythic {uniqueAllowedSlot ? `${uniqueAllowedSlot}s` : "items"}</b>
+                  </p>
+                  <p className="faint">
+                    Unique gear possesses 2.8× base stat multiplier and 4 powerful enchantment affixes.
+                  </p>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  disabled={uniquePicked.length < 5 || hero.coins < uniqueCost}
+                  loading={forgeUnique.isPending}
+                  onClick={() => forgeUnique.mutate({ itemIds: uniquePicked })}
+                >
+                  ⚡ Synthesize Unique Relic · <Coins value={uniqueCost} compact />
+                </Button>
+              </div>
+            </Panel>
           </div>
         )}
       </div>
