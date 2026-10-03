@@ -20,12 +20,12 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
     invalidate: inv, onSuccess: onClose,
     success: (r) => `Salvaged into ${Object.entries(r.materials).map(([m, q]) => `${q} ${CONSUMABLE_BY_ID[m]?.name ?? m}`).join(", ")}.`,
   });
-  const use = useAction<{ itemId: number; qty?: number }, { kind: string; count?: number; healed?: number; xp?: number; skill?: string; rank?: number; learned?: boolean; pet?: { name: string; rarity: string } }>("/api/inventory/use", {
-    invalidate: [["inventory"], ["pets"], ["skills"]], onSuccess: onClose,
+  const use = useAction<{ itemId: number; qty?: number }, { kind: string; count?: number; used?: number; healed?: number; xp?: number; skill?: string; rank?: number; learned?: boolean; pet?: { name: string; rarity: string } }>("/api/inventory/use", {
+    invalidate: [["inventory"], ["pets"], ["skills"], ["hero"]], onSuccess: onClose,
     success: (r) =>
       r.kind === "pet" ? (r.count && r.count > 1 ? `Hatched ${r.count} pets!` : `Hatched a ${r.pet!.rarity} ${r.pet!.name}!`)
       : r.kind === "skill" ? (r.count && r.count > 1 ? `Read ${r.count} skill books!` : r.learned ? `Learned ${r.skill}!` : r.skill ? `${r.skill} rose to rank ${r.rank}.` : "You know everything the book could teach. It sold for 2,500 coins.")
-      : [r.healed ? `+${fmt(r.healed)} HP` : "", r.xp ? `+${fmt(r.xp)} XP` : ""].filter(Boolean).join(" · ") || "Used.",
+      : [r.used && r.used > 1 ? `Used ${r.used} items` : "", r.healed ? `+${fmt(r.healed)} HP` : "", r.xp ? `+${fmt(r.xp)} XP` : ""].filter(Boolean).join(" · ") || "Used.",
   });
 
   if (!item) return <Sheet open={false} onClose={onClose} title="">{null}</Sheet>;
@@ -35,6 +35,8 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
   const tooLow = hero.level < item.levelReq;
   const consumable = CONSUMABLE_BY_ID[item.templateId];
   const usable = consumable && (consumable.kind === "potion" || consumable.kind === "egg" || consumable.kind === "book");
+  const isXpScroll = item.templateId === "xp_scroll" || Boolean(consumable?.xpPct && !consumable?.healPct);
+  const atMaxLevel = hero.level >= 200;
 
   return (
     <Sheet open onClose={onClose} title={item.name} wide>
@@ -60,6 +62,7 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
           {gear && worn && <p className="faint">Compared with your equipped {worn.name}.</p>}
           {item.affixes.length > 0 && <p className="faint">{item.affixes.length} enchantment{item.affixes.length > 1 ? "s" : ""} included above.</p>}
           {tooLow && <p className="field-error">Requires level {item.levelReq}.</p>}
+          {isXpScroll && atMaxLevel && <p className="field-error">You have already reached the maximum realm level (200).</p>}
           <p className="faint">Sells for <Coins value={item.sellPrice} compact />{item.qty > 1 ? " each" : ""}.</p>
 
           <div className="row row--wrap">
@@ -67,12 +70,12 @@ export function ItemSheet({ item, items, onClose }: { item: ItemView | null; ite
             {gear && item.equipped && <Button onClick={() => unequip.mutate({ slot: item.kind })}>Unequip</Button>}
             {usable && (
               <>
-                <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: 1 })}>
-                  {consumable.kind === "egg" ? "Hatch 1" : consumable.kind === "book" ? "Read 1" : "Drink 1"}
+                <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow || (isXpScroll && atMaxLevel)} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: 1 })}>
+                  {consumable.kind === "egg" ? "Hatch 1" : consumable.kind === "book" ? (isXpScroll ? "Use 1" : "Read 1") : "Drink 1"}
                 </Button>
                 {item.qty > 1 && (
-                  <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: item.qty })}>
-                    ⚡ {consumable.kind === "egg" ? `Hatch All (${item.qty})` : consumable.kind === "book" ? `Read All (${item.qty})` : `Drink All (${item.qty})`}
+                  <Button variant="primary" icon={<Sparkles size={16} />} disabled={tooLow || (isXpScroll && atMaxLevel)} loading={use.isPending} onClick={() => use.mutate({ itemId: item.id, qty: item.qty })}>
+                    ⚡ {consumable.kind === "egg" ? `Hatch All (${item.qty})` : isXpScroll ? `Use to Max Level (${item.qty})` : consumable.kind === "book" ? `Read All (${item.qty})` : `Drink All (${item.qty})`}
                   </Button>
                 )}
               </>

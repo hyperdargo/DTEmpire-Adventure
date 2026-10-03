@@ -2,7 +2,7 @@ import { CONSUMABLE_BY_ID, GEAR_BY_ID } from "../../shared/data/items.ts";
 import type { EquipSlot, ItemView, Rarity } from "../../shared/data/types.ts";
 import { type ItemRecord, salvageYield, sellPrice } from "../../shared/rules/items.ts";
 import type { LootDrop } from "../../shared/rules/loot.ts";
-import { INVENTORY_BASE_SLOTS, RARITY_INDEX } from "../../shared/rules/progression.ts";
+import { INVENTORY_BASE_SLOTS, MAX_LEVEL, RARITY_INDEX } from "../../shared/rules/progression.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { toItemView } from "../../shared/rules/views.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -145,29 +145,51 @@ export function bulkDispose(g: GameCtx, p: Player, mode: "sell" | "salvage", max
 }
 
 /** Out-of-combat use: potions, scrolls. Eggs and books route to their own services. */
-export function useConsumable(g: GameCtx, p: Player, itemId: number, qty = 1): { healed: number; xp: number } {
+export function useConsumable(g: GameCtx, p: Player, itemId: number, qty = 1): { healed: number; xp: number; used: number } {
   const item = getOwnedItem(g, p.userId, itemId);
   const c = CONSUMABLE_BY_ID[item.templateId];
   if (!c || (c.kind !== "potion" && item.templateId !== "xp_scroll")) throw new GameError("That can't be used like this.");
   if (p.level < c.levelReq) throw new GameError(`${c.name} requires level ${c.levelReq}.`);
   const n = Math.max(1, Math.min(item.qty, Math.floor(qty)));
+
+  // If item only grants XP (like XP scrolls) and player is already at max level:
+  if (c.xpPct && !c.healPct && p.level >= MAX_LEVEL) {
+    throw new GameError(`You have already reached the maximum level (${MAX_LEVEL}).`);
+  }
+
   const maxHp = heroStats(g, p).maxHp;
   let healed = 0;
-  if (c.healPct) {
-    if (p.hp >= maxHp && !c.xpPct) throw new GameError("You're already at full health.");
-    const before = p.hp;
-    p.hp = Math.min(maxHp, p.hp + Math.round(maxHp * c.healPct * n));
-    p.hpAt = g.clock.now();
-    healed = p.hp - before;
-  }
   let xp = 0;
-  if (c.xpPct) {
-    for (let i = 0; i < n; i++) {
+  let used = 0;
+
+  for (let i = 0; i < n; i++) {
+    // If item grants XP and player reaches MAX_LEVEL, stop immediately to save remaining scrolls
+    if (c.xpPct && !c.healPct && p.level >= MAX_LEVEL) {
+      break;
+    }
+
+    if (c.healPct) {
+      if (p.hp >= maxHp && !c.xpPct && used > 0) break;
+      if (p.hp >= maxHp && !c.xpPct && used === 0) throw new GameError("You're already at full health.");
+      const before = p.hp;
+      p.hp = Math.min(maxHp, p.hp + Math.round(maxHp * c.healPct));
+      p.hpAt = g.clock.now();
+      healed += p.hp - before;
+    }
+
+    if (c.xpPct) {
       xp += grantXp(g, p, xpPctOfLevel(p, c.xpPct));
     }
+
+    used++;
   }
-  removeQty(g, item, n);
-  bump(g, p, "potionsDrunk", n);
-  bumpMission(p, "potion", n);
-  return { healed, xp };
+
+  if (used === 0) {
+    throw new GameError("No items were used.");
+  }
+
+  removeQty(g, item, used);
+  bump(g, p, "potionsDrunk", used);
+  bumpMission(p, "potion", used);
+  return { healed, xp, used };
 }

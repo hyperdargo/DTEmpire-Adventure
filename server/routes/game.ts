@@ -12,6 +12,7 @@ import { REGIONS, STORY_CHAPTERS, isTowerBossFloor, towerLevelReq, chapterForFlo
 import { TOWER_BY_ID, TOWERS } from "../../shared/data/towers.ts";
 import type { BattleAction } from "../../shared/data/types.ts";
 import { upgradeCost } from "../../shared/rules/items.ts";
+import { MAX_LEVEL } from "../../shared/rules/progression.ts";
 import { requireUser } from "../app.ts";
 import type { SessionUser } from "../auth.ts";
 import { GameError } from "../lib/errors.ts";
@@ -264,9 +265,10 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
         // 3. XP Scrolls & XP Potions
         if (row.template_id === "xp_scroll" || (c.kind === "potion" && c.xpPct)) {
+          if (p.level >= MAX_LEVEL) continue; // Already at maximum level; preserve remaining scrolls!
           const count = row.qty;
           const res = inv.useConsumable(g, p, row.id, count);
-          totalOpened += count;
+          totalOpened += res.used ?? count;
           totalXp += res.xp;
           totalHealed += res.healed;
           continue;
