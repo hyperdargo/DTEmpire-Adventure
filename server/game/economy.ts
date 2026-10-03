@@ -1,9 +1,10 @@
 import { CONSUMABLES, CONSUMABLE_BY_ID, GEAR, GEAR_BY_ID, RECIPE_BY_ID } from "../../shared/data/items.ts";
-import { GOLDEN_EGG_WEIGHTS, MYSTERY_EGG_WEIGHTS, PET_FUSE_COUNT, PET_SPECIES, UNIQUE_PET_FUSE_COUNT } from "../../shared/data/pets.ts";
+import { GOLDEN_EGG_WEIGHTS, MYSTERY_EGG_WEIGHTS, PET_FUSE_COUNT, PET_MAX_LEVEL, PET_SPECIES, UNIQUE_PET_FUSE_COUNT } from "../../shared/data/pets.ts";
 import type { EquipSlot, Rarity } from "../../shared/data/types.ts";
 import { forgeResultRarity, rollGear, upgradeCost } from "../../shared/rules/items.ts";
 import { GEAR_RARITY_MULT, MAX_UPGRADE, RARITY_INDEX, RARITY_ORDER } from "../../shared/rules/progression.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
+import { petXpToNext } from "../../shared/rules/stats.ts";
 import { toPetView } from "../../shared/rules/views.ts";
 import { dayKey } from "../lib/time.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -108,6 +109,93 @@ export function releasePet(g: GameCtx, p: Player, petId: number) {
   const coins = Math.round((60 + row.level * 25) * Math.pow(2, RARITY_INDEX[row.rarity as Rarity]));
   grantCoins(g, p, coins);
   return coins;
+}
+
+export function trainPet(
+  g: GameCtx,
+  p: Player,
+  petId: number,
+  method: "scroll" | "coins",
+  mode: "single" | "max" = "single"
+) {
+  const row = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ? AND owner_id = ?", petId, p.userId);
+  if (!row) throw notFound("Pet");
+  const rarity = row.rarity as Rarity;
+  const max = PET_MAX_LEVEL[rarity];
+  if (row.level >= max) throw new GameError(`This pet is already at maximum level (${max}).`);
+
+  let level = row.level;
+  let petXp = row.xp;
+  let used = 0;
+  let coinsSpent = 0;
+
+  if (method === "scroll") {
+    const scrollStack = g.db.get<{ id: number; qty: number }>(
+      "SELECT id, qty FROM inventory WHERE owner_id = ? AND template_id = 'xp_scroll'",
+      p.userId
+    );
+    const available = scrollStack ? scrollStack.qty : 0;
+    if (available <= 0) throw new GameError("You do not have any XP Scrolls in your bag.");
+
+    const limit = mode === "max" ? available : 1;
+    while (used < limit && level < max) {
+      // 20% of pet level requirement per scroll
+      const grant = Math.max(30, Math.round(petXpToNext(level) * 0.20));
+      petXp += grant;
+      while (level < max && petXp >= petXpToNext(level)) {
+        petXp -= petXpToNext(level);
+        level++;
+      }
+      used++;
+    }
+    if (level >= max) petXp = 0;
+
+    takeStack(g, p.userId, "xp_scroll", used);
+    g.db.run("UPDATE pets SET level = ?, xp = ? WHERE id = ?", level, petXp, row.id);
+    const updated = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ?", row.id)!;
+    return {
+      pet: toPetView(petRecord(updated)),
+      levelsGained: level - row.level,
+      usedScrolls: used,
+      coinsSpent: 0,
+      newLevel: level,
+    };
+  }
+
+  if (method === "coins") {
+    const costForOneLevel = (lv: number) => Math.round(1_000 * lv * (1 + RARITY_INDEX[rarity] * 0.4));
+    const targetLevels = mode === "max" ? (max - level) : 1;
+    let levelsToBuy = 0;
+    let totalCost = 0;
+
+    for (let i = 0; i < targetLevels; i++) {
+      const stepCost = costForOneLevel(level + i);
+      if (p.coins < totalCost + stepCost) break;
+      totalCost += stepCost;
+      levelsToBuy++;
+    }
+
+    if (levelsToBuy === 0) {
+      throw new GameError(`Not enough coins. Training requires ${costForOneLevel(level).toLocaleString()} coins.`);
+    }
+
+    spendCoins(p, totalCost, "Pet Training");
+    level += levelsToBuy;
+    if (level >= max) petXp = 0;
+    coinsSpent = totalCost;
+
+    g.db.run("UPDATE pets SET level = ?, xp = ? WHERE id = ?", level, petXp, row.id);
+    const updated = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ?", row.id)!;
+    return {
+      pet: toPetView(petRecord(updated)),
+      levelsGained: levelsToBuy,
+      usedScrolls: 0,
+      coinsSpent,
+      newLevel: level,
+    };
+  }
+
+  throw new GameError("Invalid training method.");
 }
 
 // ── Blacksmith ────────────────────────────────────────────────────────

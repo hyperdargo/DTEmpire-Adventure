@@ -307,6 +307,17 @@ export async function registerGameRoutes(app: FastifyInstance) {
     const { petId } = parse(z.object({ petId: id }), req);
     return mutate(g, u(req), (p) => ({ coins: eco.releasePet(g, p, petId) }));
   });
+  app.post("/api/pets/train", async (req) => {
+    const { petId, method, mode } = parse(
+      z.object({
+        petId: id,
+        method: z.enum(["scroll", "coins"]),
+        mode: z.enum(["single", "max"]).optional(),
+      }),
+      req
+    );
+    return mutate(g, u(req), (p) => eco.trainPet(g, p, petId, method, mode ?? "single"));
+  });
 
   // ── Blacksmith ──
   app.get("/api/smithy", async (req) => {

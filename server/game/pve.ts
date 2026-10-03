@@ -29,6 +29,7 @@ export function payVictory(
     level: opts.level, baseCoins: opts.coins, baseXp: opts.xp, boss: opts.boss, elite: opts.elite, luck: stats.luck, source: opts.source,
   });
   const coins = grantCoins(g, p, loot.coins, { fromBattle: true });
+  const companionXp = Math.floor(loot.xp * (1 + stats.xpBonus / 100));
   const xp = grantXp(g, p, loot.xp, { applyBonus: true });
   const drops = opts.noDrops ? [] : giveDrops(g, p, loot.drops);
   bump(g, p, "battlesWon");
@@ -39,7 +40,7 @@ export function payVictory(
     bumpMission(p, "boss");
   }
   if (opts.elite) bump(g, p, "eliteKills");
-  growCompanions(g, p, xp);
+  growCompanions(g, p, companionXp);
   return { coins, xp, drops };
 }
 

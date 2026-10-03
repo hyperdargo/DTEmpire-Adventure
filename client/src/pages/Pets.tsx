@@ -4,12 +4,14 @@ import { CardBack, Flip, PetCard } from "../components/GameCard.tsx";
 import { Bar, Button, Coins, Empty, Loading, PageHead, Panel, Sheet } from "../components/ui.tsx";
 import { STAT_LABEL } from "../lib/format.ts";
 import { play } from "../lib/sound.ts";
-import { useAction, useData } from "../state/game.ts";
+import { useAction, useData, useHero } from "../state/game.ts";
 
 export default function PetsPage() {
+  const { hero } = useHero();
   const { data, isPending } = useData<{ pets: PetView[] }>(["pets"], "/api/pets");
   const inv = useData<{ items: ItemView[] }>(["inventory"], "/api/inventory");
   const eggs = (inv.data?.items ?? []).filter((i) => i.kind === "egg");
+  const xpScrolls = (inv.data?.items ?? []).find((i) => i.templateId === "xp_scroll")?.qty ?? 0;
   const [open, setOpen] = useState<number | null>(null);
   const [fusing, setFusing] = useState<number[] | null>(null);
   const [hatched, setHatched] = useState<PetView | null>(null);
@@ -30,6 +32,16 @@ export default function PetsPage() {
     invalidate: [["pets"], ["inventory"]],
     success: (r) => (r.unique ? `🌟 UNIQUE ASCENSION! Summoned the supreme ${r.pet?.name || "Dragon Lord"}!` : `Fused into a ${r.egg}!`),
     onSuccess: () => setFusing(null),
+  });
+  const train = useAction<
+    { petId: number; method: "scroll" | "coins"; mode?: "single" | "max" },
+    { pet: PetView; levelsGained: number; usedScrolls: number; coinsSpent: number; newLevel: number }
+  >("/api/pets/train", {
+    invalidate: [["pets"], ["inventory"], ["hero"]],
+    success: (r) =>
+      r.levelsGained > 0
+        ? `🐾 ${r.pet.name} gained ${r.levelsGained} level${r.levelsGained > 1 ? "s" : ""}! Now Lv ${r.newLevel}.`
+        : `🐾 Training finished.`,
   });
 
   if (isPending) return <Loading rows={3} />;
@@ -91,6 +103,44 @@ export default function PetsPage() {
             <PetCard pet={pet} size="lg" />
             <div className="stack">
               <Bar value={pet.xp} max={pet.xpToNext || 1} kind="xp" label={pet.xpToNext ? `Level ${pet.level} of ${pet.maxLevel}` : "Max level"} showNumbers={!!pet.xpToNext} />
+
+              {pet.level < pet.maxLevel ? (
+                <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <b style={{ fontSize: "0.85rem", color: "#ddd" }}>🐾 Companion Training</b>
+                    <span style={{ fontSize: "0.8rem", color: "#888" }}>Bag: <b style={{ color: "#fff" }}>{xpScrolls}</b> scrolls</span>
+                  </div>
+                  <div className="row row--wrap" style={{ gap: "6px" }}>
+                    <Button
+                      size="sm"
+                      disabled={xpScrolls <= 0 || train.isPending}
+                      onClick={() => train.mutate({ petId: pet.id, method: "scroll", mode: "single" })}
+                    >
+                      📜 Train (1 Scroll)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={xpScrolls <= 0 || train.isPending}
+                      onClick={() => train.mutate({ petId: pet.id, method: "scroll", mode: "max" })}
+                    >
+                      ⚡ Train to Max ({xpScrolls} Scrolls)
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={hero.coins < Math.round(1000 * pet.level * 1.4) || train.isPending}
+                      onClick={() => train.mutate({ petId: pet.id, method: "coins", mode: "single" })}
+                    >
+                      🪙 Train Lv ({Math.round(1000 * pet.level * 1.4).toLocaleString()}c)
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: "#1c1808", border: "1px solid #ffd70044", borderRadius: "6px", padding: "8px 12px", textAlign: "center", color: "#ffd700", fontWeight: 600, fontSize: "0.85rem" }}>
+                  👑 Maximum Companion Level Reached (Lv {pet.maxLevel})
+                </div>
+              )}
+
               <dl className="stats">
                 {Object.entries(pet.bonus).map(([k, v]) => <div className="stat" key={k}><dt>{STAT_LABEL[k]}</dt><dd>+{v}</dd></div>)}
                 <div className="stat"><dt>Power</dt><dd>{pet.power}</dd></div>
