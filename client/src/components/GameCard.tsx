@@ -48,6 +48,7 @@ export function GameCard(p: GameCardProps) {
       p.onClick!();
     }
   };
+  const isUnique = p.rarity === "unique";
   return (
     <article
       className={cls}
@@ -61,6 +62,7 @@ export function GameCard(p: GameCardProps) {
       aria-label={p.label}
     >
       <div className="card__face">
+        {isUnique && <span className="card__unique-crest" aria-hidden title="Unique Relic">👑</span>}
         <div className="card__name">
           <span>{p.name}</span>
           {p.cost != null && <span className="card__cost">{p.cost}</span>}
