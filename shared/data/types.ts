@@ -67,7 +67,8 @@ export type SkillEffect =
   | { kind: "shield"; pct: number }
   | { kind: "buff"; stat: "atk" | "def" | "dodge"; pct: number; turns: number; selfDefPenalty?: number; guard?: boolean }
   | { kind: "burn"; mult: number; dotPct: number; turns: number }
-  | { kind: "stun"; mult: number; chance: number };
+  | { kind: "stun"; mult: number; chance: number }
+  | { kind: "combo"; effects: SkillEffect[] };
 
 export interface SkillDef {
   id: string;
@@ -78,6 +79,8 @@ export interface SkillDef {
   effect: SkillEffect;
   levelReq: number;
   price: number;
+  isFused?: boolean;
+  fusionRecipe?: { parents: [string, string]; minRank: number; cost: number };
 }
 
 // ── Items ────────────────────────────────────────────────────────────
@@ -184,7 +187,7 @@ export interface Combatant {
   rage: number;
   cooldownReduction: number;
   effects: StatusEffect[];
-  skills: { id: string; rank: number; cd: number }[];
+  skills: { id: string; rank: number; cd: number; rune?: string }[];
   isBoss?: boolean;
   /** Boss pattern: every N turns the boss telegraphs, then unleashes. */
   heavyEvery?: number;

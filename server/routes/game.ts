@@ -6,6 +6,8 @@ import { z } from "zod";
 import { dayKey } from "../lib/time.ts";
 import { ACHIEVEMENTS, AI_DUELISTS, ARENA_DAILY_RANKED, BLESSINGS, JOBS, EXPEDITION_DURATIONS, MASTERY_TIERS, masteryBonus } from "../../shared/data/meta.ts";
 import { CONSUMABLE_BY_ID, RECIPES } from "../../shared/data/items.ts";
+import { SKILL_FUSIONS } from "../../shared/data/skillFusions.ts";
+import { SKILL_RUNES } from "../../shared/data/skillRunes.ts";
 import { REGIONS, STORY_CHAPTERS, isTowerBossFloor, towerLevelReq, chapterForFloor } from "../../shared/data/regions.ts";
 import { TOWER_BY_ID, TOWERS } from "../../shared/data/towers.ts";
 import type { BattleAction } from "../../shared/data/types.ts";
@@ -93,8 +95,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.4.0",
-      appVersion: "5.4.0-ultra",
+      version: "5.6.0",
+      appVersion: "5.6.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -138,7 +140,11 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/hero/paragon", async (req) => mutate(g, u(req), (p) => hero.ascendParagon(g, p)));
 
   // ── Skills ──
-  app.get("/api/skills", async (req) => ({ skills: hero.listSkills(g, u(req).id) }));
+  app.get("/api/skills", async (req) => ({
+    skills: hero.listSkills(g, u(req).id),
+    fusions: SKILL_FUSIONS,
+    runes: SKILL_RUNES,
+  }));
   app.post("/api/skills/learn", async (req) => {
     const { skillId } = parse(z.object({ skillId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => hero.learnSkill(g, p, skillId));
@@ -147,8 +153,20 @@ export async function registerGameRoutes(app: FastifyInstance) {
     const { skillId } = parse(z.object({ skillId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => hero.rankUpSkill(g, p, skillId));
   });
+  app.post("/api/skills/fuse", async (req) => {
+    const { fusionId } = parse(z.object({ fusionId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => hero.fuseSkills(g, p, fusionId));
+  });
+  app.post("/api/skills/infuse", async (req) => {
+    const { skillId, runeId } = parse(z.object({ skillId: z.string().max(40), runeId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => hero.infuseSkill(g, p, skillId, runeId));
+  });
+  app.post("/api/skills/clear-rune", async (req) => {
+    const { skillId } = parse(z.object({ skillId: z.string().max(40) }), req);
+    return mutate(g, u(req), (p) => hero.clearSkillRune(g, p, skillId));
+  });
   app.post("/api/skills/loadout", async (req) => {
-    const { skillIds } = parse(z.object({ skillIds: z.array(z.string().max(40)).max(4) }), req);
+    const { skillIds } = parse(z.object({ skillIds: z.array(z.string().max(40)).max(6) }), req);
     return mutate(g, u(req), (p) => hero.setLoadout(g, p, skillIds));
   });
 

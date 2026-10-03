@@ -1,7 +1,9 @@
 import { ASCENSION_COST, CLASS_BY_ID, CLASSES, DUAL_CLASS_COST, DUAL_CLASS_LEVEL, REROLL_COST, REROLL_WEIGHTS, STARTER_WEIGHTS, dualXpToNext } from "../../shared/data/classes.ts";
 import { PARAGON_COST, PARAGON_MAX, PARAGON_TITLES } from "../../shared/data/meta.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
-import { SKILL_BY_ID, SKILL_MAX_RANK, loadoutSlots, skillUpgradeCost } from "../../shared/data/skills.ts";
+import { SKILL_BY_ID, SKILL_MAX_RANK, BASE_SKILLS, loadoutSlots, skillUpgradeCost } from "../../shared/data/skills.ts";
+import { SKILL_RUNES, SKILL_RUNE_BY_ID } from "../../shared/data/skillRunes.ts";
+import { SKILL_FUSIONS, FUSION_RECIPE_BY_ID } from "../../shared/data/skillFusions.ts";
 import type { ClassDef, Rarity } from "../../shared/data/types.ts";
 import { rollGear } from "../../shared/rules/items.ts";
 import { RARITY_ORDER } from "../../shared/rules/progression.ts";
@@ -139,8 +141,20 @@ export function ascendParagon(g: GameCtx, p: Player) {
 
 // ── Skills ────────────────────────────────────────────────────────────
 
+function ensureSkillColumns(g: GameCtx) {
+  try {
+    g.db.run("ALTER TABLE skills ADD COLUMN rune TEXT");
+  } catch {
+    // Column already exists
+  }
+}
+
 export function listSkills(g: GameCtx, userId: number) {
-  return g.db.all<{ skill_id: string; rank: number; slot: number | null }>("SELECT skill_id, rank, slot FROM skills WHERE user_id = ?", userId);
+  ensureSkillColumns(g);
+  return g.db.all<{ skill_id: string; rank: number; slot: number | null; rune: string | null }>(
+    "SELECT skill_id, rank, slot, rune FROM skills WHERE user_id = ?",
+    userId
+  );
 }
 
 export function learnSkill(g: GameCtx, p: Player, skillId: string) {
@@ -158,9 +172,75 @@ export function rankUpSkill(g: GameCtx, p: Player, skillId: string) {
   const s = SKILL_BY_ID[skillId];
   const row = g.db.get<{ rank: number }>("SELECT rank FROM skills WHERE user_id = ? AND skill_id = ?", p.userId, skillId);
   if (!s || !row) throw notFound("Skill");
-  if (row.rank >= SKILL_MAX_RANK) throw new GameError(`${s.name} is already at max rank.`);
+  if (row.rank >= SKILL_MAX_RANK) throw new GameError(`${s.name} is already at max rank (${SKILL_MAX_RANK}).`);
   spendCoins(p, skillUpgradeCost(s, row.rank), `${s.name} rank ${row.rank + 1}`);
   g.db.run("UPDATE skills SET rank = rank + 1 WHERE user_id = ? AND skill_id = ?", p.userId, skillId);
+}
+
+export function fuseSkills(g: GameCtx, p: Player, fusionId: string) {
+  ensureSkillColumns(g);
+  const recipe = FUSION_RECIPE_BY_ID[fusionId];
+  if (!recipe) throw notFound("Fusion recipe");
+  const known = new Map(listSkills(g, p.userId).map((s) => [s.skill_id, s.rank]));
+  if (known.has(recipe.id)) throw new GameError(`You have already fused ${recipe.name}.`);
+
+  const [p1, p2] = recipe.parents;
+  const rank1 = known.get(p1) ?? 0;
+  const rank2 = known.get(p2) ?? 0;
+  const name1 = SKILL_BY_ID[p1]?.name ?? p1;
+  const name2 = SKILL_BY_ID[p2]?.name ?? p2;
+
+  if (rank1 < recipe.minRank || rank2 < recipe.minRank) {
+    throw new GameError(`Fusion requires ${name1} and ${name2} at Rank ${recipe.minRank} or higher.`);
+  }
+
+  requireLevel(p, recipe.skill.levelReq, recipe.name);
+  spendCoins(p, recipe.cost, `Skill Fusion: ${recipe.name}`);
+
+  g.db.run("INSERT INTO skills (user_id, skill_id, rank) VALUES (?, ?, 1)", p.userId, recipe.id);
+  autoSlot(g, p, recipe.id);
+  bump(g, p, "skillsFused");
+
+  g.hub.toChannel("world", {
+    type: "feed",
+    icon: "🔮",
+    text: `${p.name} synthesized the legendary fused skill [${recipe.name}] at the Fusion Altar!`,
+    at: g.clock.now(),
+  });
+
+  return recipe.skill;
+}
+
+export function infuseSkill(g: GameCtx, p: Player, skillId: string, runeId: string) {
+  ensureSkillColumns(g);
+  const rune = SKILL_RUNE_BY_ID[runeId];
+  if (!rune) throw notFound("Rune");
+  const s = SKILL_BY_ID[skillId];
+  const row = g.db.get<{ rank: number; rune: string | null }>(
+    "SELECT rank, rune FROM skills WHERE user_id = ? AND skill_id = ?",
+    p.userId,
+    skillId
+  );
+  if (!s || !row) throw notFound("Skill");
+  if (row.rune === runeId) throw new GameError(`${s.name} is already infused with ${rune.name}.`);
+
+  spendCoins(p, rune.cost, `Infuse ${s.name} with ${rune.name}`);
+  g.db.run("UPDATE skills SET rune = ? WHERE user_id = ? AND skill_id = ?", runeId, p.userId, skillId);
+  return { skillId, runeId, runeName: rune.name };
+}
+
+export function clearSkillRune(g: GameCtx, p: Player, skillId: string) {
+  ensureSkillColumns(g);
+  const s = SKILL_BY_ID[skillId];
+  const row = g.db.get<{ rune: string | null }>(
+    "SELECT rune FROM skills WHERE user_id = ? AND skill_id = ?",
+    p.userId,
+    skillId
+  );
+  if (!s || !row) throw notFound("Skill");
+  if (!row.rune) throw new GameError(`${s.name} has no infused rune.`);
+  g.db.run("UPDATE skills SET rune = NULL WHERE user_id = ? AND skill_id = ?", p.userId, skillId);
+  return { skillId };
 }
 
 function autoSlot(g: GameCtx, p: Player, skillId: string) {
@@ -176,7 +256,7 @@ function autoSlot(g: GameCtx, p: Player, skillId: string) {
 export function setLoadout(g: GameCtx, p: Player, skillIds: string[]) {
   const slots = loadoutSlots(p.level);
   const unique = [...new Set(skillIds)];
-  if (unique.length > slots) throw new GameError(`You can equip ${slots} skills.`);
+  if (unique.length > slots) throw new GameError(`You can equip up to ${slots} skills.`);
   const owned = new Set(listSkills(g, p.userId).map((s) => s.skill_id));
   for (const id of unique) if (!owned.has(id)) throw new GameError("You don't know that skill.");
   if (g.db.get("SELECT 1 FROM battles WHERE user_id = ? AND status = 'active'", p.userId)) throw new GameError("Finish your current battle first.");
@@ -188,7 +268,7 @@ export function setLoadout(g: GameCtx, p: Player, skillIds: string[]) {
 export function readSkillBook(g: GameCtx, p: Player): { skill: string; rank: number; learned: boolean } {
   const known = new Map(listSkills(g, p.userId).map((s) => [s.skill_id, s.rank]));
   const rng = createRng(freshSeed());
-  const learnable = Object.values(SKILL_BY_ID).filter((s) => !known.has(s.id) && s.levelReq <= p.level);
+  const learnable = BASE_SKILLS.filter((s) => !known.has(s.id) && s.levelReq <= p.level);
   if (learnable.length) {
     const s = rng.pick(learnable);
     g.db.run("INSERT INTO skills (user_id, skill_id, rank) VALUES (?, ?, 1)", p.userId, s.id);

@@ -1,6 +1,6 @@
 {
   "name": "dtempire-adventure",
-  "version": "5.5.0",
+  "version": "5.6.0",
   "private": true,
   "type": "module",
   "description": "DTEmpire Adventure: a persistent multiplayer browser RPG, installable as a PWA.",

@@ -2,7 +2,7 @@
 
 export type Counter =
   | "kills" | "bossKills" | "eliteKills" | "deaths" | "battlesWon" | "towerFloor" | "dungeonBest" | "level"
-  | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsUpgraded" | "petsHatched" | "skillsLearned"
+  | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsUpgraded" | "petsHatched" | "skillsLearned" | "skillsFused"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins";
@@ -48,7 +48,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("pet_1", "Pet Owner", "🐾", "Hatch your first pet.", "petsHatched", 1, 300),
   a("pet_25", "Beastmaster", "🦁", "Hatch 25 pets.", "petsHatched", 25, 10_000, "Beastmaster"),
   a("skills_5", "Scholar", "📚", "Learn 5 skills.", "skillsLearned", 5, 1_500),
-  a("skills_14", "Sage", "📖", "Learn every skill.", "skillsLearned", 14, 60_000, "the Sage"),
+  a("skills_14", "Sage", "📖", "Learn every base skill.", "skillsLearned", 14, 60_000, "the Sage"),
+  a("fuse_1", "Alchemist of War", "🔮", "Synthesize your first fused skill.", "skillsFused", 1, 10_000, "the Transmuter"),
+  a("fuse_5", "Grand Magister", "✨", "Synthesize 5 fused skills.", "skillsFused", 5, 50_000, "Grand Magister"),
   a("duel_10", "Duelist", "🤺", "Win 10 duels.", "duelsWon", 10, 2_000),
   a("arena_50", "Arena Champion", "🏟️", "Win 50 arena matches.", "arenaWins", 50, 20_000, "Arena Champion"),
   a("trade_10", "Merchant Prince", "🤝", "Complete 10 trades.", "tradesCompleted", 10, 3_000),

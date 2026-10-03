@@ -1,5 +1,5 @@
 import { SKILL_BY_ID, skillRankMult } from "../data/skills.ts";
-import type { BattleAction, BattleActor, BattleEvent, BattleState, Combatant, EffectKind, PetCombatant, StatusEffect } from "../data/types.ts";
+import type { BattleAction, BattleActor, BattleEvent, BattleState, Combatant, EffectKind, PetCombatant, SkillDef, SkillEffect, StatusEffect } from "../data/types.ts";
 import { baseDamage, clamp } from "./progression.ts";
 import { type Rng, createRng } from "./rng.ts";
 import type { HeroStats } from "./stats.ts";
@@ -37,7 +37,7 @@ export function createBattle(input: CreateBattleInput): BattleState {
 
 export function combatantFromHero(
   stats: HeroStats,
-  meta: { name: string; icon: string; level: number; classId: string; skills: { id: string; rank: number }[] },
+  meta: { name: string; icon: string; level: number; classId: string; skills: { id: string; rank: number; rune?: string }[] },
   currentHp: number,
 ): Combatant {
   return {
@@ -47,7 +47,7 @@ export function combatantFromHero(
     dodge: stats.dodge, lifesteal: stats.lifesteal, skillPower: stats.skillPower, pierce: stats.pierce,
     regenPct: stats.regenPct, bossDamage: stats.bossDamage, rage: stats.rage, cooldownReduction: stats.cooldownReduction,
     effects: [],
-    skills: meta.skills.filter((s) => SKILL_BY_ID[s.id]).map((s) => ({ id: s.id, rank: s.rank, cd: 0 })),
+    skills: meta.skills.filter((s) => SKILL_BY_ID[s.id]).map((s) => ({ id: s.id, rank: s.rank, cd: 0, rune: s.rune })),
   };
 }
 
@@ -128,6 +128,7 @@ function skillScore(effect: (typeof SKILL_BY_ID)[string]["effect"]): number {
     case "burn": return effect.mult + (effect.dotPct * effect.turns) / 100;
     case "stun": return effect.mult + effect.chance / 100;
     case "buff": return 1.5;
+    case "combo": return effect.effects.reduce((acc, sub) => acc + skillScore(sub), 0);
     default: return 0;
   }
 }
@@ -251,57 +252,117 @@ function performAction(ctx: RoundCtx, side: Side, action: BattleAction, potionHe
         dealDamage(ctx, side, foeSide, 1);
         return;
       }
-      slot.cd = Math.max(1, def.cooldown - me.cooldownReduction);
-      const rank = skillRankMult(slot.rank);
+      const cdReduction = me.cooldownReduction + (slot.rune === "swiftcast" ? 1 : 0);
+      slot.cd = Math.max(1, def.cooldown - cdReduction);
+      let rank = skillRankMult(slot.rank);
+      if (slot.rune === "overpower") rank *= 1.25;
+      const extraCrit = slot.rune === "true_strike" ? 20 : 0;
+      const extraDrain = slot.rune === "vampiric" ? 25 : 0;
+
       events.push({ t: "action", by: side, label: def.name, icon: def.icon });
-      const e = def.effect;
-      switch (e.kind) {
-        case "damage":
-          for (let i = 0; i < (e.hits ?? 1); i++) {
-            dealDamage(ctx, side, foeSide, e.mult * rank, { critBonus: e.critBonus, pierce: e.pierce, isSkill: true });
-            if (state[foeSide].hp <= 0) break;
-          }
-          break;
-        case "drain": {
-          const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { isSkill: true });
-          heal(ctx, side, (dealt * e.healPct) / 100, def.name);
-          break;
+
+      if (slot.rune === "ironbark") {
+        const shieldVal = Math.round((me.maxHp * 15) / 100);
+        addEffect(me, { kind: "shield", turns: 3, value: shieldVal });
+        events.push({ t: "effect", target: side, kind: "shield", turns: 3 });
+      }
+      if (slot.rune === "hellfire") {
+        const burnVal = Math.max(1, Math.round((me.atk * 20) / 100));
+        addEffect(state[foeSide], { kind: "burn", turns: 2, value: burnVal });
+        events.push({ t: "effect", target: foeSide, kind: "burn", turns: 2 });
+      }
+
+      applySkillEffect(ctx, side, foeSide, def, def.effect, rank, extraCrit, extraDrain);
+      return;
+    }
+  }
+}
+
+function applySkillEffect(
+  ctx: RoundCtx,
+  side: Side,
+  foeSide: Side,
+  def: SkillDef,
+  e: SkillEffect,
+  rank: number,
+  extraCrit: number = 0,
+  extraDrain: number = 0,
+) {
+  const { state, rng, events } = ctx;
+  const me = state[side];
+  switch (e.kind) {
+    case "damage":
+      for (let i = 0; i < (e.hits ?? 1); i++) {
+        const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, {
+          critBonus: (e.critBonus ?? 0) + extraCrit,
+          pierce: e.pierce,
+          isSkill: true,
+        });
+        if (extraDrain > 0 && dealt > 0) {
+          heal(ctx, side, (dealt * extraDrain) / 100, def.name);
         }
-        case "heal":
-          heal(ctx, side, (me.maxHp * e.pct * rank) / 100, def.name);
-          break;
-        case "shield": {
-          const value = Math.round((me.maxHp * e.pct * rank) / 100);
-          addEffect(me, { kind: "shield", turns: 4, value });
-          events.push({ t: "effect", target: side, kind: "shield", turns: 4 });
-          break;
-        }
-        case "buff": {
-          const kind: EffectKind = e.stat === "atk" ? "atk_up" : e.stat === "def" ? "def_up" : "dodge_up";
-          addEffect(me, { kind, turns: e.turns + 1, value: Math.round(e.pct * rank) });
-          events.push({ t: "effect", target: side, kind, turns: e.turns });
-          if (e.selfDefPenalty) addEffect(me, { kind: "def_down", turns: e.turns + 1, value: e.selfDefPenalty });
-          break;
-        }
-        case "burn": {
-          const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { isSkill: true });
-          if (dealt > 0 && state[foeSide].hp > 0) {
-            addEffect(state[foeSide], { kind: "burn", turns: e.turns, value: Math.max(1, Math.round((me.atk * e.dotPct * rank) / 100)) });
-            events.push({ t: "effect", target: foeSide, kind: "burn", turns: e.turns });
-          }
-          break;
-        }
-        case "stun": {
-          const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { isSkill: true });
-          const resist = state[foeSide].isBoss ? 0.5 : 1;
-          if (dealt > 0 && state[foeSide].hp > 0 && rng.chance(e.chance * resist)) {
-            addEffect(state[foeSide], { kind: "stun", turns: 1, value: 0 });
-            events.push({ t: "effect", target: foeSide, kind: "stun", turns: 1 });
-          }
-          break;
+        if (state[foeSide].hp <= 0) break;
+      }
+      break;
+    case "drain": {
+      const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { critBonus: extraCrit, isSkill: true });
+      const totalDrain = e.healPct + extraDrain;
+      heal(ctx, side, (dealt * totalDrain) / 100, def.name);
+      break;
+    }
+    case "heal":
+      heal(ctx, side, (me.maxHp * e.pct * rank) / 100, def.name);
+      break;
+    case "shield": {
+      const value = Math.round((me.maxHp * e.pct * rank) / 100);
+      addEffect(me, { kind: "shield", turns: 4, value });
+      events.push({ t: "effect", target: side, kind: "shield", turns: 4 });
+      break;
+    }
+    case "buff": {
+      const kind: EffectKind = e.stat === "atk" ? "atk_up" : e.stat === "def" ? "def_up" : "dodge_up";
+      addEffect(me, { kind, turns: e.turns + 1, value: Math.round(e.pct * rank) });
+      events.push({ t: "effect", target: side, kind, turns: e.turns });
+      if (e.selfDefPenalty) addEffect(me, { kind: "def_down", turns: e.turns + 1, value: e.selfDefPenalty });
+      break;
+    }
+    case "burn": {
+      if (e.mult > 0) {
+        const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { critBonus: extraCrit, isSkill: true });
+        if (extraDrain > 0 && dealt > 0) {
+          heal(ctx, side, (dealt * extraDrain) / 100, def.name);
         }
       }
-      return;
+      if (state[foeSide].hp > 0) {
+        addEffect(state[foeSide], {
+          kind: "burn",
+          turns: e.turns,
+          value: Math.max(1, Math.round((me.atk * e.dotPct * rank) / 100)),
+        });
+        events.push({ t: "effect", target: foeSide, kind: "burn", turns: e.turns });
+      }
+      break;
+    }
+    case "stun": {
+      if (e.mult > 0) {
+        const dealt = dealDamage(ctx, side, foeSide, e.mult * rank, { critBonus: extraCrit, isSkill: true });
+        if (extraDrain > 0 && dealt > 0) {
+          heal(ctx, side, (dealt * extraDrain) / 100, def.name);
+        }
+      }
+      const resist = state[foeSide].isBoss ? 0.5 : 1;
+      if (state[foeSide].hp > 0 && rng.chance(e.chance * resist)) {
+        addEffect(state[foeSide], { kind: "stun", turns: 1, value: 0 });
+        events.push({ t: "effect", target: foeSide, kind: "stun", turns: 1 });
+      }
+      break;
+    }
+    case "combo": {
+      for (const sub of e.effects) {
+        applySkillEffect(ctx, side, foeSide, def, sub, rank, extraCrit, extraDrain);
+        if (state.status === "fled" || state.player.hp <= 0 || state.enemy.hp <= 0) break;
+      }
+      break;
     }
   }
 }

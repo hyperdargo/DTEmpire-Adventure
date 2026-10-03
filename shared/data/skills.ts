@@ -1,7 +1,8 @@
 import type { SkillDef } from "./types.ts";
+import { SKILL_FUSIONS } from "./skillFusions.ts";
 
 // The original's 14 skill names, reworked from passive stat bonuses into active combat abilities.
-export const SKILLS: SkillDef[] = [
+export const BASE_SKILLS: SkillDef[] = [
   { id: "power_strike", name: "Power Strike", icon: "⚡", cooldown: 2, levelReq: 1, price: 150,
     desc: "A heavy blow for 160% damage.", effect: { kind: "damage", mult: 1.6 } },
   { id: "iron_wall", name: "Iron Wall", icon: "🛡️", cooldown: 4, levelReq: 3, price: 300,
@@ -32,12 +33,22 @@ export const SKILLS: SkillDef[] = [
     desc: "260% damage that ignores half of defense.", effect: { kind: "damage", mult: 2.6, pierce: 50 } },
 ];
 
+export const SKILLS: SkillDef[] = [
+  ...BASE_SKILLS,
+  ...SKILL_FUSIONS.map((f) => f.skill),
+];
+
 export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(SKILLS.map((s) => [s.id, s]));
 export const SKILL_BY_NAME: Record<string, SkillDef> = Object.fromEntries(SKILLS.map((s) => [s.name, s]));
 
-export const SKILL_MAX_RANK = 5;
+export const SKILL_MAX_RANK = 10;
 /** Each rank beyond 1 adds 12% to the skill's power. */
 export const skillRankMult = (rank: number) => 1 + (Math.max(1, rank) - 1) * 0.12;
-export const skillUpgradeCost = (skill: SkillDef, rank: number) => Math.round(skill.price * 0.8 * rank);
-/** Loadout slots unlock as you level. */
-export const loadoutSlots = (level: number) => (level >= 40 ? 4 : 3);
+export const skillUpgradeCost = (skill: SkillDef, rank: number) => Math.round(skill.price * 0.75 * Math.pow(rank, 1.25));
+/** Loadout slots unlock as you level up through endgame. */
+export const loadoutSlots = (level: number) => {
+  if (level >= 120) return 6;
+  if (level >= 75) return 5;
+  if (level >= 40) return 4;
+  return 3;
+};

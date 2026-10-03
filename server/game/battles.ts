@@ -40,11 +40,24 @@ export const registerFinalizer = (kind: BattleKind, fn: Finalizer) => finalizers
 const MIN_START_HP_PCT = 0.15;
 const ACTION_GAP_MS = 250;
 
-export function loadoutSkills(g: GameCtx, userId: number): { id: string; rank: number }[] {
-  return g.db
-    .all<{ skill_id: string; rank: number }>("SELECT skill_id, rank FROM skills WHERE user_id = ? AND slot IS NOT NULL ORDER BY slot", userId)
-    .filter((s) => SKILL_BY_ID[s.skill_id])
-    .map((s) => ({ id: s.skill_id, rank: s.rank }));
+export function loadoutSkills(g: GameCtx, userId: number): { id: string; rank: number; rune?: string }[] {
+  try {
+    return g.db
+      .all<{ skill_id: string; rank: number; rune: string | null }>(
+        "SELECT skill_id, rank, rune FROM skills WHERE user_id = ? AND slot IS NOT NULL ORDER BY slot",
+        userId
+      )
+      .filter((s) => SKILL_BY_ID[s.skill_id])
+      .map((s) => ({ id: s.skill_id, rank: s.rank, rune: s.rune || undefined }));
+  } catch {
+    return g.db
+      .all<{ skill_id: string; rank: number }>(
+        "SELECT skill_id, rank FROM skills WHERE user_id = ? AND slot IS NOT NULL ORDER BY slot",
+        userId
+      )
+      .filter((s) => SKILL_BY_ID[s.skill_id])
+      .map((s) => ({ id: s.skill_id, rank: s.rank }));
+  }
 }
 
 export function petCombatant(g: GameCtx, userId: number, petPowerPct: number): PetCombatant | undefined {

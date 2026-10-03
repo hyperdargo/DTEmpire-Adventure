@@ -174,7 +174,7 @@ export default function BattlePage() {
       const k = e.key.toLowerCase();
       const skills = battle.state.player.skills;
       if (k === "1") act({ type: "attack" });
-      else if (["2", "3", "4", "5"].includes(k)) {
+      else if (["2", "3", "4", "5", "6", "7"].includes(k)) {
         const s = skills[Number(k) - 2];
         if (s && s.cd === 0) act({ type: "skill", skillId: s.id });
       } else if (k === "g") act({ type: "guard" });
