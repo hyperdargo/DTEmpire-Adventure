@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID } from "../../../shared/data/items.ts";
 import type { Rarity } from "../../../shared/data/types.ts";
 import { GameCard } from "../components/GameCard.tsx";
@@ -28,6 +29,17 @@ export default function MarketPage() {
   return (
     <>
       <PageHead title="Market">Gear on the racks changes every day at midnight UTC and matches your level. Potions, eggs and supplies are always in stock.</PageHead>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#141414", border: "1px solid #333", borderRadius: "6px", padding: "0.75rem 1rem", marginBottom: "1rem", gap: "1rem" }}>
+        <div>
+          <div style={{ fontWeight: 600, color: "#eee" }}>Looking for Rare World Items & High Catalysts?</div>
+          <div style={{ fontSize: "0.8rem", color: "#888" }}>The Wandering Grand Merchant deals in Mystic Gems, Star Essences, Pet Eggs, and High Relics, plus buys your valuables for fortunes.</div>
+        </div>
+        <Link to="/merchant" className="btn btn--primary btn--sm" style={{ whiteSpace: "nowrap" }}>
+          Grand Merchant →
+        </Link>
+      </div>
+
       <Tabs label="Market sections" value={tab} onChange={setTab} options={[{ value: "gear", label: "Today's gear" }, { value: "potion", label: "Potions" }, { value: "egg", label: "Eggs" }, { value: "other", label: "Supplies" }]} />
       <Panel className="market" tight>
         <div className="grid-cards" style={{ "--card-min": "170px" } as React.CSSProperties}>

@@ -29,6 +29,7 @@ import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/rea
 import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
+import * as merchant from "../game/merchant.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
 
@@ -260,6 +261,22 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/market/buy", async (req) => {
     const { offerId, qty } = parse(z.object({ offerId: z.string().max(200), qty: z.number().int().min(1).max(99).default(1) }), req);
     return mutate(g, u(req), (p) => eco.buyOffer(g, p, offerId, qty));
+  });
+
+  // ── Wandering Grand Merchant ──
+  app.get("/api/merchant", async (req) => {
+    return g.db.tx(() => merchant.getMerchantView(g, loadPlayer(g, u(req).id)));
+  });
+  app.post("/api/merchant/buy", async (req) => {
+    const { offerId, qty } = parse(z.object({ offerId: z.string().max(100), qty: z.number().int().min(1).max(999).default(1) }), req);
+    return mutate(g, u(req), (p) => merchant.buyMerchantOffer(g, p, offerId, qty));
+  });
+  app.post("/api/merchant/sell", async (req) => {
+    const body = parse(z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("stack"), templateId: z.string().max(100), qty: z.number().int().min(1).max(999).default(1) }),
+      z.object({ kind: z.literal("gear"), itemId: z.number().int().positive() }),
+    ]), req);
+    return mutate(g, u(req), (p) => merchant.sellToMerchant(g, p, body));
   });
 
   // ── Estate / Housing ──

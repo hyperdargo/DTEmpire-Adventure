@@ -28,6 +28,7 @@ const SmithyPage = lazy(() => import("./pages/Smithy.tsx"));
 const QuestsPage = lazy(() => import("./pages/Quests.tsx"));
 const TownPage = lazy(() => import("./pages/Town.tsx"));
 const MarketPage = lazy(() => import("./pages/Market.tsx"));
+const MerchantPage = lazy(() => import("./pages/Merchant.tsx"));
 const AuctionPage = lazy(() => import("./pages/Auction.tsx"));
 const LuckyPage = lazy(() => import("./pages/Lucky.tsx"));
 const EstatePage = lazy(() => import("./pages/Estate.tsx"));
@@ -52,7 +53,7 @@ const ProfilePage = lazy(() => import("./pages/Profile.tsx"));
 const TITLES: Record<string, string> = {
   "/": "The Table", "/adventure": "Adventure", "/tower": "Tower of Ascension", "/dungeon": "Dungeon", "/arena": "Arena",
   "/raid": "World Boss", "/festival": "Festival", "/hero": "Hero", "/bag": "Bag", "/pets": "Pets", "/smithy": "Blacksmith", "/quests": "Quests",
-  "/town": "Town", "/estate": "Estate & Housing", "/bank": "Royal Bank", "/guide": "Guide Book", "/market": "Market", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
+  "/town": "Town", "/estate": "Estate & Housing", "/bank": "Royal Bank", "/guide": "Guide Book", "/market": "Market", "/merchant": "Grand Merchant", "/blackmarket": "Grand Merchant", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
   "/friends": "Friends", "/trade": "Trades", "/ranks": "Leaderboards", "/records": "Records", "/mail": "Mail",
   "/apps": "Native Apps & Downloads",
   "/settings": "Settings", "/battle": "Battle", "/login": "Sign in", "/register": "Create account",
@@ -142,6 +143,8 @@ export function App() {
           <Route path="/bank" element={<Page><BankPage /></Page>} />
           <Route path="/guide" element={<Page><GuidePage /></Page>} />
           <Route path="/market" element={<Page><MarketPage /></Page>} />
+          <Route path="/merchant" element={<Page><MerchantPage /></Page>} />
+          <Route path="/blackmarket" element={<Page><MerchantPage /></Page>} />
           <Route path="/auction" element={<Page><AuctionPage /></Page>} />
           <Route path="/lucky" element={<Page><LuckyPage /></Page>} />
           <Route path="/chat" element={<Page><ChatPage /></Page>} />
