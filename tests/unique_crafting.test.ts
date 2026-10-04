@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PET_SPECIES, UNIQUE_PET_FUSE_COUNT } from "../shared/data/pets.ts";
-import { GEAR, GEAR_BY_ID } from "../shared/data/items.ts";
+import { GEAR } from "../shared/data/items.ts";
 import { AFFIX_COUNT, rollGear } from "../shared/rules/items.ts";
 import { GEAR_RARITY_MULT } from "../shared/rules/progression.ts";
 import { createRng } from "../shared/rules/rng.ts";

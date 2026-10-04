@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { MAX_LEVEL, applyXp, xpToNext } from "../shared/rules/progression.ts";
-import { xpPctOfLevel } from "../server/game/player.ts";
 
 describe("XP Scroll Capping at Level 200", () => {
   it("stops granting XP and increments when player hits MAX_LEVEL", () => {
