@@ -225,10 +225,10 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
 3. **Auction House** — `/auction` template exists but needs backend
 4. **Blacksmith** — `/blacksmith` page missing, no crafting
 5. **Tower Loot** — better loot variety per floor range
-6. **Pet Party** — 1 pet per 10 floors, stat contribution, equipping works (route exists)
+6. ~~**Pet Party**~~ — ✅ completed 20261005 (1 pet slot per 10 floors, max 5, +50% passive stat resonance & shared battle XP)
 7. ~~**Sell Items**~~ — done, `/api/sell` route restored 20260729
 8. **Classes (18)** — rarity-weighted starter roll
-9. **Mail rewards** — tower floor clear should send mail with rewards
+9. ~~**Mail rewards**~~ — ✅ completed 20261005 (tower milestone floors 10, 20, 30, 40, 50+ send automated mail rewards)
 10. **Nav fixes** — badge, mail count JS, Tower link first
 11. ~~**Skills page**~~ — ✅ completed 20260729 (14 skills, buy/upgrade Lv5 via API)
 
@@ -303,5 +303,26 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
 - Fixed `tests/events.test.ts` rate-limiting assertion by restoring `EVENT_FIGHT_COOLDOWN_MS = 5000`.
 - Updated test expectations in `tests/rules.test.ts` to match the expanded 32 regions and 196 total monsters.
 - Restored 100% test pass rate (72/72 tests passing).
+
+- By Hermes
+
+## Session: `20261005` — Pet Party Squad, Tower Milestone Mail Rewards, Container Recreate Automation
+
+### Added & Expanded
+- **Pet Party & Companion Squad (`/pets`)**:
+  - Unlocks up to 5 squad slots scaling with Tower progression (1 slot per 10 floors conquered, max 5).
+  - Passive +50% stat resonance (HP, ATK, DEF) from non-active squad companions directly enhancing hero stats in all encounters.
+  - Battle XP sharing: non-active squad companions gain 25% of encounter XP each battle, leveling up alongside the hero.
+  - Squad management UI in `client/src/pages/Pets.tsx` with one-click Add/Remove controls and active squad roster display.
+  - Safety protection: companions currently deployed in the Pet Party cannot be accidentally fused or released.
+- **Tower Milestone Mail Spoils**:
+  - Conquering milestone floors (every 10th floor: 10, 20, 30, 40, 50+) across all tower spires now automatically dispatches reward mail from "The Tower Overseer".
+  - Generous rewards scaling with conquered floor: milestone coins (`floor * floor * 50`), XP scroll bundles, mystery pet eggs (floor 20+), golden pet eggs & skill books (floor 50+).
+
+### Fixed & Operational
+- Fixed ESLint unused imports across `Hero.tsx`, `hero.ts`, `tests/unique_crafting.test.ts`, and `tests/xp_scroll_cap.test.ts`.
+- Preserved strict black/white theme (`#0a0a0a` / `#111111` / `#333333`) across Pet Party UI.
+- Upgraded `nightly_adventure_expansion.sh` container restart routine to `docker compose up -d` so newly built Docker images are actively recreated and deployed on the live server.
+- All 97 vitest tests passing cleanly.
 
 - By Hermes

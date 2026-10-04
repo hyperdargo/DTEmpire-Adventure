@@ -4,7 +4,7 @@ import type { Rarity } from "../../shared/data/types.ts";
 import type { ItemRecord } from "../../shared/rules/items.ts";
 import type { LootDrop } from "../../shared/rules/loot.ts";
 import { MAX_LEVEL, applyXp, regenHp, xpToNext } from "../../shared/rules/progression.ts";
-import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower } from "../../shared/rules/stats.ts";
+import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower, petBonus } from "../../shared/rules/stats.ts";
 import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
 import { computeGuildBuildingBonuses } from "../../shared/rules/guildBuildings.ts";
 import type { PlayerBankState } from "./bank.ts";
@@ -49,6 +49,7 @@ export interface PlayerState {
   paragon?: number;
   bank?: PlayerBankState;
   towerFloors?: Record<string, number>;
+  petParty?: number[];
 }
 
 export interface Player {
@@ -170,6 +171,10 @@ export function activePet(g: GameCtx, userId: number): PetRecord | null {
   return r ? { id: r.id, speciesId: r.species_id, rarity: r.rarity as Rarity, level: r.level, xp: r.xp, active: true, name: r.name } : null;
 }
 
+export function maxPetPartySlots(towerFloor: number): number {
+  return Math.min(5, Math.max(1, 1 + Math.floor(towerFloor / 10)));
+}
+
 export function guildPerk(g: GameCtx, p: Player): number {
   if (!p.guildId) return 0;
   const guild = g.db.get<{ level: number }>("SELECT level FROM guilds WHERE id = ?", p.guildId);
@@ -200,6 +205,25 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
     buffs: combinedBuffs(p, now),
     guildPerkPct: guildPerk(g, p),
   });
+
+  // Pet Party (Companion Squad) resonance: non-active squad pets contribute +50% stat resonance
+  const activePetId = activePet(g, p.userId)?.id;
+  const party = (p.state.petParty ?? []).filter((id) => id !== activePetId);
+  if (party.length > 0) {
+    const placeholders = party.map(() => "?").join(",");
+    const squadRows = g.db.all<{ id: number; species_id: string; rarity: string; level: number }>(
+      `SELECT id, species_id, rarity, level FROM pets WHERE id IN (${placeholders}) AND owner_id = ?`,
+      ...party,
+      p.userId
+    );
+    for (const r of squadRows) {
+      const { bonus } = petBonus({ speciesId: r.species_id, rarity: r.rarity as Rarity, level: r.level });
+      if (bonus.atk) stats.atk += Math.round(bonus.atk * 0.5);
+      if (bonus.def) stats.def += Math.round(bonus.def * 0.5);
+      if (bonus.hp) stats.maxHp += Math.round(bonus.hp * 0.5);
+    }
+  }
+
   const estate = computeEstateStats(p.state.estate);
   if (estate.hpPct) stats.maxHp = Math.round(stats.maxHp * (1 + estate.hpPct / 100));
   if (estate.flatHp) stats.maxHp += estate.flatHp;

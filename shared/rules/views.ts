@@ -31,7 +31,7 @@ export function toItemView(rec: ItemRecord): ItemView {
   };
 }
 
-export function toPetView(p: PetRecord): PetView {
+export function toPetView(p: PetRecord, inParty: boolean = false): PetView {
   const s = PET_BY_ID[p.speciesId];
   const { bonus, power } = petBonus(p);
   const maxLevel = PET_MAX_LEVEL[p.rarity];
@@ -49,5 +49,6 @@ export function toPetView(p: PetRecord): PetView {
     power,
     ability: s?.ability ?? "strike",
     active: p.active,
+    inParty,
   };
 }

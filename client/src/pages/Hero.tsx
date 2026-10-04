@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ASCENSION_COST, CLASS_BY_ID, DUAL_CLASS_COST, DUAL_CLASS_LEVEL, REROLL_COST } from "../../../shared/data/classes.ts";
 import { PARAGON_COST, PARAGON_MAX } from "../../../shared/data/meta.ts";
-import { SKILLS, BASE_SKILLS, SKILL_MAX_RANK, loadoutSlots, skillRankMult, skillUpgradeCost } from "../../../shared/data/skills.ts";
+import { SKILLS, SKILL_MAX_RANK, loadoutSlots, skillRankMult, skillUpgradeCost } from "../../../shared/data/skills.ts";
 import { SKILL_RUNES, SKILL_RUNE_BY_ID } from "../../../shared/data/skillRunes.ts";
 import { SKILL_FUSIONS, type SkillFusionRecipe } from "../../../shared/data/skillFusions.ts";
 import type { EquipSlot, ItemView } from "../../../shared/data/types.ts";

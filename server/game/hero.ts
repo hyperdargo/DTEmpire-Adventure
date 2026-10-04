@@ -2,8 +2,8 @@ import { ASCENSION_COST, CLASS_BY_ID, CLASSES, DUAL_CLASS_COST, DUAL_CLASS_LEVEL
 import { PARAGON_COST, PARAGON_MAX, PARAGON_TITLES } from "../../shared/data/meta.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
 import { SKILL_BY_ID, SKILL_MAX_RANK, BASE_SKILLS, loadoutSlots, skillUpgradeCost } from "../../shared/data/skills.ts";
-import { SKILL_RUNES, SKILL_RUNE_BY_ID } from "../../shared/data/skillRunes.ts";
-import { SKILL_FUSIONS, FUSION_RECIPE_BY_ID } from "../../shared/data/skillFusions.ts";
+import { SKILL_RUNE_BY_ID } from "../../shared/data/skillRunes.ts";
+import { FUSION_RECIPE_BY_ID } from "../../shared/data/skillFusions.ts";
 import type { ClassDef, Rarity } from "../../shared/data/types.ts";
 import { rollGear } from "../../shared/rules/items.ts";
 import { RARITY_ORDER } from "../../shared/rules/progression.ts";

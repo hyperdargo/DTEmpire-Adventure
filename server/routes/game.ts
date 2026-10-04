@@ -295,6 +295,10 @@ export async function registerGameRoutes(app: FastifyInstance) {
     const { petId } = parse(z.object({ petId: id.nullable() }), req);
     return mutate(g, u(req), (p) => eco.setActivePet(g, p, petId));
   });
+  app.post("/api/pets/party/toggle", async (req) => {
+    const { petId } = parse(z.object({ petId: id }), req);
+    return mutate(g, u(req), (p) => eco.togglePetParty(g, p, petId));
+  });
   app.post("/api/pets/rename", async (req) => {
     const { petId, name } = parse(z.object({ petId: id, name: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => eco.renamePet(g, p.userId, petId, name));

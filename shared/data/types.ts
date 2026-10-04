@@ -161,6 +161,7 @@ export interface PetView {
   power: number;
   ability: PetSpecies["ability"];
   active: boolean;
+  inParty?: boolean;
 }
 
 // ── Combat ───────────────────────────────────────────────────────────

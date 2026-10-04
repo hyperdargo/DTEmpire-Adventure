@@ -18,7 +18,38 @@ interface PetRow { id: number; species_id: string; rarity: string; level: number
 const petRecord = (r: PetRow) => ({ id: r.id, speciesId: r.species_id, rarity: r.rarity as Rarity, level: r.level, xp: r.xp, active: !!r.active, name: r.name });
 
 export function listPets(g: GameCtx, userId: number) {
-  return g.db.all<PetRow>("SELECT * FROM pets WHERE owner_id = ? ORDER BY active DESC, level DESC, id DESC", userId).map((r) => toPetView(petRecord(r)));
+  const pRow = g.db.get<{ state: string }>("SELECT state FROM players WHERE user_id = ?", userId);
+  let partyIds: number[] = [];
+  try {
+    if (pRow?.state) {
+      const parsed = JSON.parse(pRow.state);
+      if (Array.isArray(parsed.petParty)) partyIds = parsed.petParty;
+    }
+  } catch {
+    partyIds = [];
+  }
+  const partySet = new Set(partyIds);
+  return g.db.all<PetRow>("SELECT * FROM pets WHERE owner_id = ? ORDER BY active DESC, level DESC, id DESC", userId).map((r) => toPetView(petRecord(r), partySet.has(r.id)));
+}
+
+export function togglePetParty(g: GameCtx, p: Player, petId: number) {
+  const pet = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ? AND owner_id = ?", petId, p.userId);
+  if (!pet) throw notFound("Pet");
+
+  const party = (p.state.petParty ??= []);
+  const idx = party.indexOf(petId);
+  if (idx >= 0) {
+    party.splice(idx, 1);
+    return { inParty: false, partyCount: party.length, pet: toPetView(petRecord(pet), false) };
+  }
+
+  const maxSlots = Math.min(5, Math.max(1, 1 + Math.floor(p.towerFloor / 10)));
+  if (party.length >= maxSlots) {
+    throw new GameError(`Your Pet Party is full (${maxSlots}/${maxSlots} slots). Clear higher Tower of Ascension floors to unlock more slots (1 slot per 10 floors, max 5).`);
+  }
+
+  party.push(petId);
+  return { inParty: true, partyCount: party.length, pet: toPetView(petRecord(pet), true) };
 }
 
 export function hatchEgg(g: GameCtx, p: Player, templateId: string) {
@@ -69,6 +100,8 @@ export function fusePets(g: GameCtx, p: Player, petIds: number[]) {
   const rarity = rows[0]!.rarity as Rarity;
   if (rows.some((r) => r!.rarity !== rarity)) throw new GameError("All pets must share a rarity.");
   if (rows.some((r) => r!.active)) throw new GameError("Your active pet can't be fused.");
+  const partySet = new Set(p.state.petParty ?? []);
+  if (rows.some((r) => partySet.has(r!.id))) throw new GameError("Pets in your Pet Party cannot be fused. Remove them from your party first.");
 
   if (ids.length === UNIQUE_PET_FUSE_COUNT) {
     if (rarity !== "mythic") throw new GameError(`Unique Ascension requires exactly ${UNIQUE_PET_FUSE_COUNT} Mythic pets.`);
@@ -105,6 +138,8 @@ export function releasePet(g: GameCtx, p: Player, petId: number) {
   const row = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ? AND owner_id = ?", petId, p.userId);
   if (!row) throw notFound("Pet");
   if (row.active) throw new GameError("Set another pet active before releasing this one.");
+  const partySet = new Set(p.state.petParty ?? []);
+  if (partySet.has(petId)) throw new GameError("Pets in your Pet Party cannot be released. Remove them from your party first.");
   g.db.run("DELETE FROM pets WHERE id = ?", petId);
   const coins = Math.round((60 + row.level * 25) * Math.pow(2, RARITY_INDEX[row.rarity as Rarity]));
   grantCoins(g, p, coins);
@@ -127,7 +162,6 @@ export function trainPet(
   let level = row.level;
   let petXp = row.xp;
   let used = 0;
-  let coinsSpent = 0;
 
   if (method === "scroll") {
     const scrollStack = g.db.get<{ id: number; qty: number }>(
@@ -182,7 +216,6 @@ export function trainPet(
     spendCoins(p, totalCost, "Pet Training");
     level += levelsToBuy;
     if (level >= max) petXp = 0;
-    coinsSpent = totalCost;
 
     g.db.run("UPDATE pets SET level = ?, xp = ? WHERE id = ?", level, petXp, row.id);
     const updated = g.db.get<PetRow>("SELECT * FROM pets WHERE id = ?", row.id)!;
@@ -190,7 +223,7 @@ export function trainPet(
       pet: toPetView(petRecord(updated)),
       levelsGained: levelsToBuy,
       usedScrolls: 0,
-      coinsSpent,
+      coinsSpent: totalCost,
       newLevel: level,
     };
   }

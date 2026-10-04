@@ -60,6 +60,24 @@ function growCompanions(g: GameCtx, p: Player, xp: number) {
     if (level >= max) petXp = 0;
     g.db.run("UPDATE pets SET level = ?, xp = ? WHERE id = ?", level, petXp, pet.id);
   }
+  const activePetId = pet?.id;
+  const partyIds = (p.state.petParty ?? []).filter((id) => id !== activePetId);
+  for (const pid of partyIds) {
+    const row = g.db.get<{ id: number; level: number; xp: number; rarity: string; name: string | null }>(
+      "SELECT id, level, xp, rarity, name FROM pets WHERE id = ? AND owner_id = ?", pid, p.userId
+    );
+    if (!row) continue;
+    const max = PET_MAX_LEVEL[row.rarity as Rarity];
+    let level = row.level;
+    let petXp = row.xp + Math.ceil(xp * 0.25);
+    while (level < max && petXp >= petXpToNext(level)) {
+      petXp -= petXpToNext(level);
+      level++;
+      p.notices.push({ kind: "toast", tone: "good", icon: "🐾", text: `Party companion ${row.name ?? "Pet"} reached level ${level}!` });
+    }
+    if (level >= max) petXp = 0;
+    g.db.run("UPDATE pets SET level = ?, xp = ? WHERE id = ?", level, petXp, row.id);
+  }
   const dual = p.state.dual;
   if (dual && dual.level < DUAL_CLASS_MAX_LEVEL) {
     dual.xp += Math.ceil(xp * 0.5);
@@ -263,6 +281,23 @@ registerFinalizer("tower", (g, p, b) => {
         icon: "🏰",
         text: `${p.name} cleared floor ${c.floor} of ${c.towerName ?? "the Tower"}.`,
         at: g.clock.now(),
+      });
+      const milestoneCoins = Math.round(c.floor * c.floor * 50);
+      const stacks: Record<string, number> = {
+        xp_scroll: Math.min(10, Math.max(2, Math.floor(c.floor / 5))),
+      };
+      if (c.floor >= 20) {
+        stacks.mystery_egg = 1;
+      }
+      if (c.floor >= 50) {
+        stacks.golden_egg = 1;
+        stacks.skill_book = Math.floor(c.floor / 25);
+      }
+      sendMail(g, p.userId, {
+        sender: "The Tower Overseer",
+        subject: `🏰 Milestone Triumph: Floor ${c.floor} Conquered!`,
+        body: `Salutations, champion ${p.name}!\n\nYou have conquered Floor ${c.floor} in ${c.towerName ?? "the Tower"}.\nThe Imperial Spire commends your fortitude and awards these conquest spoils.\n\n- By Hermes`,
+        attachments: { coins: milestoneCoins, stacks },
       });
     }
   }

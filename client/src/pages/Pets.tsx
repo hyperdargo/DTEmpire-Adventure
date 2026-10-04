@@ -28,6 +28,13 @@ export default function PetsPage() {
   const setActive = useAction<{ petId: number | null }>("/api/pets/active", { invalidate: [["pets"]], success: "Your companion is ready." });
   const release = useAction<{ petId: number }, { coins: number }>("/api/pets/release", { invalidate: [["pets"]], success: (r) => `Released. The shelter paid ${r.coins.toLocaleString()} coins.`, onSuccess: () => setOpen(null) });
   const rename = useAction<{ petId: number; name: string }>("/api/pets/rename", { invalidate: [["pets"]], success: "Renamed." });
+  const toggleParty = useAction<{ petId: number }, { inParty: boolean; partyCount: number }>(
+    "/api/pets/party/toggle",
+    {
+      invalidate: [["pets"], ["hero"]],
+      success: (r) => (r.inParty ? `🐾 Companion added to your Pet Party squad!` : `🐾 Companion removed from party squad.`),
+    }
+  );
   const fuse = useAction<{ petIds: number[] }, { egg: string; rarity: string; unique?: boolean; pet?: PetView }>("/api/pets/fuse", {
     invalidate: [["pets"], ["inventory"]],
     success: (r) => (r.unique ? `🌟 UNIQUE ASCENSION! Summoned the supreme ${r.pet?.name || "Dragon Lord"}!` : `Fused into a ${r.egg}!`),
@@ -47,14 +54,52 @@ export default function PetsPage() {
   if (isPending) return <Loading rows={3} />;
   const pets = data?.pets ?? [];
   const pet = pets.find((p) => p.id === open);
+  const partyPets = pets.filter((p) => p.inParty);
+  const maxPartySlots = Math.min(5, Math.max(1, 1 + Math.floor((hero?.towerFloor ?? 0) / 10)));
   const fuseRarity = fusing?.length ? pets.find((p) => p.id === fusing[0])?.rarity : null;
   const targetCount = fuseRarity === "mythic" ? 10 : 3;
 
   return (
     <>
       <PageHead title="Pets" actions={pets.length >= 3 && <Button onClick={() => setFusing(fusing ? null : [])}>{fusing ? "Cancel fusing" : "Fuse pets"}</Button>}>
-        One pet fights at your side: it adds stats and acts every third turn. Pets grow with your battles. Fuse 3 pets into a rarer egg, or sacrifice 10 Mythic pets to summon the supreme Unique Dragon Lord.
+        One pet fights at your side: it adds stats and acts every third turn. Form a Pet Party Squad for +50% stat resonance and shared battle XP. Fuse 3 pets into a rarer egg, or sacrifice 10 Mythic pets to summon the supreme Unique Dragon Lord.
       </PageHead>
+
+      <Panel title={`🐾 Pet Party Squad (${partyPets.length}/${maxPartySlots} Slots Unlocked)`}>
+        <p className="faint" style={{ fontSize: "0.85rem", marginBottom: "10px" }}>
+          Squad companions grant +50% passive stat resonance (HP, ATK, DEF) and earn shared battle XP. Unlocks +1 slot per 10 floors in Tower of Ascension (max 5).
+        </p>
+        {partyPets.length > 0 ? (
+          <div className="row row--wrap" style={{ gap: "8px" }}>
+            {partyPets.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  background: "#111111",
+                  border: "1px solid #333333",
+                  borderRadius: "6px",
+                  padding: "6px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>{p.icon}</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#ffffff" }}>
+                  {p.name} <span className="faint">(Lv {p.level})</span>
+                </span>
+                <Button size="sm" variant="ghost" onClick={() => toggleParty.mutate({ petId: p.id })}>
+                  ✕
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="faint" style={{ fontSize: "0.85rem" }}>
+            No squad companions in your party. Select any companion below to add them to your squad.
+          </p>
+        )}
+      </Panel>
 
       {eggs.length > 0 && (
         <Panel title="Eggs to hatch">
@@ -149,9 +194,32 @@ export default function PetsPage() {
                 <input className="input" name="name" defaultValue={pet.name} maxLength={20} aria-label="Pet name" />
                 <Button type="submit">Rename</Button>
               </form>
-              <div className="row row--wrap">
-                {pet.active ? <Button onClick={() => setActive.mutate({ petId: null })}>Rest this pet</Button> : <Button variant="primary" onClick={() => setActive.mutate({ petId: pet.id })}>Make active</Button>}
-                {!pet.active && <Button variant="danger" onClick={() => release.mutate({ petId: pet.id })}>Release for coins</Button>}
+              <div className="row row--wrap" style={{ gap: "6px" }}>
+                {pet.active ? (
+                  <Button onClick={() => setActive.mutate({ petId: null })}>Rest this pet</Button>
+                ) : (
+                  <Button variant="primary" onClick={() => setActive.mutate({ petId: pet.id })}>
+                    Make active
+                  </Button>
+                )}
+                {pet.inParty ? (
+                  <Button size="sm" onClick={() => toggleParty.mutate({ petId: pet.id })}>
+                    🛡️ Remove from Party
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={partyPets.length >= maxPartySlots && !pet.inParty}
+                    onClick={() => toggleParty.mutate({ petId: pet.id })}
+                  >
+                    🛡️ Add to Party ({partyPets.length}/{maxPartySlots})
+                  </Button>
+                )}
+                {!pet.active && !pet.inParty && (
+                  <Button variant="danger" onClick={() => release.mutate({ petId: pet.id })}>
+                    Release for coins
+                  </Button>
+                )}
               </div>
             </div>
           </div>
