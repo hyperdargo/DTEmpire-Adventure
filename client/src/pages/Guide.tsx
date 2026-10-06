@@ -5,11 +5,12 @@ import { CONSUMABLE_BY_ID, GEAR_BY_ID, RECIPES } from "../../../shared/data/item
 import { PET_SPECIES, PET_MAX_LEVEL } from "../../../shared/data/pets.ts";
 import { CLASSES } from "../../../shared/data/classes.ts";
 import { ESTATE_HOUSES, ESTATE_OBJECTS, ESTATE_PET_HOUSES } from "../../../shared/data/estate.ts";
+import { ABYSS_BOONS, ABYSS_SHOP } from "../../../shared/data/abyss.ts";
 import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
@@ -53,6 +54,7 @@ export default function GuidePage() {
           { value: "pets", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><PawPrint size={16} /> Pets & Breeding</span> },
           { value: "estate", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Home size={16} /> Estate & Housing</span> },
           { value: "classes", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Shield size={16} /> Classes & Skills</span> },
+          { value: "abyss", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Endless Abyss</span> },
         ]}
       />
 
@@ -62,6 +64,7 @@ export default function GuidePage() {
         {tab === "pets" && <PetsGuide search={search} />}
         {tab === "estate" && <EstateGuide search={search} />}
         {tab === "classes" && <ClassesGuide search={search} />}
+        {tab === "abyss" && <AbyssGuide search={search} />}
       </div>
     </div>
   );
@@ -651,6 +654,103 @@ function ClassesGuide({ search }: { search: string }) {
                 <span>DEF: {c.base.def}</span>
                 <span>SPD: {c.base.spd}</span>
               </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+// ── Tab 6: Endless Abyss & Void Relics ────────────────────────────────
+function AbyssGuide({ search }: { search: string }) {
+  const q = search.toLowerCase();
+
+  const boons = useMemo(() => {
+    return ABYSS_BOONS.filter((b) => !q || b.name.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q));
+  }, [q]);
+
+  const shop = useMemo(() => {
+    return ABYSS_SHOP.filter((s) => !q || s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q));
+  }, [q]);
+
+  return (
+    <div style={{ display: "grid", gap: "var(--s-4)" }}>
+      <Panel title="The Endless Abyss Mechanics">
+        <p style={{ color: "#aaa", fontSize: "0.9rem", lineHeight: 1.6, margin: "0 0 16px 0" }}>
+          The Endless Abyss is a roguelike dungeon dive unlocking at <b>Level 15</b>. Unlike normal zones, the descent never terminates—foes scale infinitely deeper into the void.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px", marginBottom: "16px" }}>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+            <div style={{ fontWeight: 600, color: "#fff", marginBottom: "4px" }}>🩸 Persistent Vitality</div>
+            <div style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.4 }}>
+              Natural health recovery is silenced. Only a surge of +15% Max HP is restored upon victorious wave completion.
+            </div>
+          </div>
+
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+            <div style={{ fontWeight: 600, color: "#fff", marginBottom: "4px" }}>☣️ Stacking Corruption</div>
+            <div style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.4 }}>
+              Every 3 waves, void corruption increases by 1 tier. Each tier grants foes +5% bonus Attack, Defense, and Max HP.
+            </div>
+          </div>
+
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+            <div style={{ fontWeight: 600, color: "#fff", marginBottom: "4px" }}>🔮 Abyssal Infusions</div>
+            <div style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.4 }}>
+              Every 5 waves, choose 1 of 3 permanent run boons to amplify your build with lifesteal, void barriers, and execute strikes.
+            </div>
+          </div>
+
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+            <div style={{ fontWeight: 600, color: "#fff", marginBottom: "4px" }}>🌌 Shard Preservation</div>
+            <div style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.4 }}>
+              Surface manually to keep 100% of gathered Abyssal Shards. If fallen in battle, 50% are salvaged and preserved.
+            </div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel title="Abyssal Infusions (Boons)">
+        <p style={{ color: "#888", fontSize: "0.85rem", margin: "0 0 14px 0" }}>
+          Offered at waves 5, 10, 15, 20... Each infusion alters your combat capabilities for the duration of the dive.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "10px" }}>
+          {boons.map((b) => (
+            <div key={b.id} style={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "1.4rem" }}>{b.icon}</span>
+                <span style={{ fontWeight: 600, color: "#ffd700", fontSize: "0.9rem" }}>{b.name}</span>
+              </div>
+              <div style={{ color: "#bbb", fontSize: "0.82rem", lineHeight: 1.4 }}>{b.desc}</div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel title="Void Relics & Reforging">
+        <p style={{ color: "#888", fontSize: "0.85rem", margin: "0 0 14px 0" }}>
+          Abyssal Shards gathered during dives can be spent at the Void Relic Altar.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
+          {shop.map((s) => (
+            <div key={s.id} style={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "12px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "1.4rem" }}>{s.icon}</span>
+                    <span style={{ fontWeight: 600, color: "#fff", fontSize: "0.9rem" }}>{s.name}</span>
+                  </div>
+                  <Chip tone="gold">🌌 {s.price} Shards</Chip>
+                </div>
+                <div style={{ color: "#999", fontSize: "0.82rem", lineHeight: 1.4, marginBottom: "8px" }}>{s.desc}</div>
+              </div>
+              {s.minWave > 0 && (
+                <div style={{ borderTop: "1px solid #222", paddingTop: "6px", color: "#666", fontSize: "0.75rem" }}>
+                  Unlock gate: Wave {s.minWave}+
+                </div>
+              )}
             </div>
           ))}
         </div>

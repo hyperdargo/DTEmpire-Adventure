@@ -67,6 +67,14 @@ export function TablePage() {
       onClick: () => navigate("/town"),
     },
     hero.level >= 10 && { key: "raid", art: "🌋", name: "World Boss", rarity: b.worldBossAttempts > 0 ? "mythic" : "common", text: b.worldBossAttempts > 0 ? `${b.worldBossAttempts} strikes left today` : "Back tomorrow", onClick: () => navigate("/raid") },
+    hero.level >= 15 && {
+      key: "abyss",
+      art: "🌌",
+      name: "Endless Abyss",
+      rarity: "mythic",
+      text: hero.abyssBest > 0 ? `Deepest dive: Wave ${hero.abyssBest}` : "Plunge into the void",
+      onClick: () => navigate("/abyss"),
+    },
     b.event && { key: "festival", art: b.event.icon, name: b.event.name, rarity: "mythic", text: <>Ends in <Countdown to={b.event.endsAt} /></>, onClick: () => navigate("/festival") },
     b.mail > 0 && { key: "mail", art: "✉️", name: "Mail", rarity: "uncommon", text: `${b.mail} unread`, onClick: () => navigate("/mail") },
   ].filter(Boolean) as { key: string; art: string; name: string; rarity: string; text: React.ReactNode; onClick: () => void }[];

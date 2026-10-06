@@ -153,6 +153,7 @@ export default function BattlePage() {
         void qc.invalidateQueries({ queryKey: ["adventure"] });
         void qc.invalidateQueries({ queryKey: ["tower"] });
         void qc.invalidateQueries({ queryKey: ["dungeon"] });
+        void qc.invalidateQueries({ queryKey: ["abyss"] });
         void qc.invalidateQueries({ queryKey: ["raid"] });
         void qc.invalidateQueries({ queryKey: ["daily"] });
       }
@@ -222,6 +223,7 @@ export default function BattlePage() {
         body = { towerId: (ctx as { towerId?: string }).towerId ?? "ascension" };
       }
       else if (kind === "dungeon") { navigate("/dungeon"); return; }
+      else if (kind === "abyss") { navigate("/abyss"); return; }
       else if (kind === "duel_ai") { path = "/api/duels/ai"; body = { duelistId: ctx.duelistId }; }
       else if (kind === "arena") path = "/api/arena/ranked";
       else if (kind === "worldboss") path = "/api/worldboss/strike";
@@ -357,6 +359,7 @@ export default function BattlePage() {
             qc.setQueryData(["battle"], { battle: null });
             navigate(
               battle.kind === "dungeon" ? "/dungeon"
+              : battle.kind === "abyss" ? "/abyss"
               : battle.kind === "tower" ? "/tower"
               : battle.kind === "worldboss" ? "/raid"
               : battle.kind === "event" ? "/festival"
@@ -375,10 +378,11 @@ export default function BattlePage() {
 }
 
 function battleTitle(b: ClientBattle) {
-  const c = b.context as { floor?: number };
+  const c = b.context as { floor?: number; wave?: number };
   switch (b.kind) {
     case "tower": return `Tower · Floor ${c.floor}`;
     case "dungeon": return `Dungeon · Floor ${c.floor}`;
+    case "abyss": return `The Abyss · Wave ${c.wave ?? ""}`;
     case "duel_ai": return "Exhibition duel";
     case "arena": return "Ranked arena";
     case "worldboss": return "World boss";
@@ -447,7 +451,7 @@ function Outcome({
   }, []);
   const x = outcome.extra ?? {};
   const chapter = x.chapter as { chapter: number; title: string } | undefined;
-  const kindAgain = { adventure: "Draw again", tower: "Next floor", dungeon: "Back to the run", duel_ai: "Rematch", arena: "Next match", worldboss: "Strike again", event: "Hunt again", realm_raid: "Challenge again" }[battle.kind] ?? "Again";
+  const kindAgain = { adventure: "Draw again", tower: "Next floor", dungeon: "Back to the run", abyss: "Continue Abyss", duel_ai: "Rematch", arena: "Next match", worldboss: "Strike again", event: "Hunt again", realm_raid: "Challenge again" }[battle.kind] ?? "Again";
   const title = won
     ? battle.kind === "worldboss" ? "Strike landed" : "Victory"
     : outcome.result === "fled" ? "You escaped" : outcome.result === "timeout" ? (battle.kind === "worldboss" ? "Time's up" : "The fight drags on") : "Defeated";
@@ -467,9 +471,13 @@ function Outcome({
           </p>
         )}
         {battle.kind === "arena" && typeof x.delta === "number" && <p>Rating {(x.delta as number) >= 0 ? "+" : ""}{x.delta as number} · now {fmt(x.rating as number)}</p>}
-        {x.runOver === true && <p>The Dungeon claims you on floor {String(x.reached)}. You kept half your pouch: <Coins value={(x.kept as { coins: number }).coins} compact /> and {fmt((x.kept as { xp: number }).xp)} XP.</p>}
+        {x.runOver === true && (x.shardsKept !== undefined ? (
+          <p>The Abyss claims you on wave {String(x.reached)}. You kept half your gathered shards: <b className="gold">{String(x.shardsKept)}× Abyssal Shards</b>.</p>
+        ) : (
+          <p>The Dungeon claims you on floor {String(x.reached)}. You kept half your pouch: <Coins value={(x.kept as { coins: number }).coins} compact /> and {fmt((x.kept as { xp: number }).xp)} XP.</p>
+        ))}
         {chapter && <p className="gold">Chapter {chapter.chapter} complete: {chapter.title}. Rewards are in your mail.</p>}
-        {!won && outcome.result === "lost" && battle.kind !== "dungeon" && <p className="muted">You limp back to the table with a sliver of health. Upgrade your gear at the Blacksmith, learn skills, or guard when a boss winds up.</p>}
+        {!won && outcome.result === "lost" && battle.kind !== "dungeon" && battle.kind !== "abyss" && <p className="muted">You limp back to the table with a sliver of health. Upgrade your gear at the Blacksmith, learn skills, or guard when a boss winds up.</p>}
         {(outcome.coins || outcome.xp) ? (
           <div className="row outcome__gains">
             {!!outcome.coins && <Coins value={outcome.coins} compact />}

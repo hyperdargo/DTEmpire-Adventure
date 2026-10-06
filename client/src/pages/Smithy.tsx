@@ -22,7 +22,7 @@ function MaterialList({ materials, have }: { materials: Record<string, number>; 
 
 export default function SmithyPage() {
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique">(params.get("item") ? "upgrade" : "craft");
+  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique" | "reforge">(params.get("item") ? "upgrade" : "craft");
   const { hero } = useHero();
   const inv = useData<{ items: ItemView[] }>(["inventory"], "/api/inventory");
   const smithy = useData<{ recipes: Recipe[]; upgradeCosts: Record<string, Cost> }>(["smithy"], "/api/smithy");
@@ -30,6 +30,7 @@ export default function SmithyPage() {
   const [forgeA, setForgeA] = useState<number | null>(null);
   const [forgeB, setForgeB] = useState<number | null>(null);
   const [uniquePicked, setUniquePicked] = useState<number[]>([]);
+  const [reforgePicked, setReforgePicked] = useState<number | null>(null);
   const invalidate = [["inventory"], ["smithy"]];
   const upgrade = useAction<{ itemId: number }>("/api/smithy/upgrade", { invalidate, success: "The metal takes the heat. Upgrade complete." });
   const craft = useAction<{ recipeId: string }>("/api/smithy/craft", { invalidate, success: "Crafted! It's in your bag." });
@@ -40,6 +41,10 @@ export default function SmithyPage() {
   const forgeUnique = useAction<{ itemIds: number[] }, { item: ItemView; coins: number }>("/api/smithy/forge-unique", {
     invalidate, onSuccess: () => setUniquePicked([]),
     success: (r) => `🔥 UNIQUE RELIC FORGED! Crafted ${r.item.name} (${r.item.rarity})!`,
+  });
+  const reforge = useAction<{ itemId: number }, { item: ItemView; reforgersRemaining: number }>("/api/smithy/reforge", {
+    invalidate,
+    success: (r) => `🧿 Void Reforged ${r.item.name}! New magical affixes infused.`,
   });
 
   if (inv.isPending || smithy.isPending || !smithy.data) return <Loading rows={3} />;
@@ -58,6 +63,10 @@ export default function SmithyPage() {
   const uniqueMaxIlvl = uniquePicked.length ? Math.max(...uniquePicked.map((id) => gear.find((g) => g.id === id)?.ilvl || 50)) : 50;
   const uniqueCost = 150_000 + uniqueMaxIlvl * 1000;
 
+  const voidReforgers = items.find((i) => i.templateId === "void_reforger")?.qty ?? 0;
+  const reforgeEligible = gear.filter((i) => i.rarity === "rare" || i.rarity === "epic" || i.rarity === "legendary" || i.rarity === "mythic" || i.rarity === "unique");
+  const reforgeTarget = gear.find((i) => i.id === reforgePicked);
+
   return (
     <>
       <PageHead title="Blacksmith">Upgrade gear to +10, forge two matching pieces into a rarer one, craft from materials, or sacrifice 5 Mythic pieces to synthesize supreme Unique relics.</PageHead>
@@ -71,6 +80,7 @@ export default function SmithyPage() {
         { value: "upgrade", label: "Upgrade" },
         { value: "forge", label: "Forge" },
         { value: "unique", label: "👑 Unique Altar (5 Mythic)" },
+        { value: "reforge", label: `🧿 Void Reforge (${voidReforgers})` },
       ]} />
       <div style={{ marginTop: "var(--s-5)" }}>
         {tab === "upgrade" && (
@@ -214,6 +224,85 @@ export default function SmithyPage() {
                   ⚡ Synthesize Unique Relic · <Coins value={uniqueCost} compact />
                 </Button>
               </div>
+            </Panel>
+          </div>
+        )}
+
+        {tab === "reforge" && (
+          <div className="smithy__reforge" style={{ display: "grid", gap: "var(--s-4)" }}>
+            <Panel title="Void Reforging Altar">
+              <p className="muted" style={{ margin: "0 0 var(--s-3) 0" }}>
+                Channel void essence through a <b>Void Reforger</b> to completely reroll the magical enchantment affixes on any Rare, Epic, Legendary, Mythic, or Unique gear piece. Base stats, upgrade level, and item level are preserved.
+              </p>
+              <div className="row row--wrap" style={{ gap: "var(--s-2)", marginBottom: "var(--s-4)" }}>
+                <span className="chip chip--gold">
+                  🧿 {voidReforgers} Void Reforgers in Bag
+                </span>
+                <span className="chip">
+                  ⚔️ {reforgeEligible.length} Eligible Gear Pieces
+                </span>
+              </div>
+
+              {reforgeEligible.length === 0 ? (
+                <p className="faint">You have no Rare or higher gear to reforge.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "var(--s-4)" }}>
+                  <div>
+                    <h4 style={{ margin: "0 0 var(--s-2) 0" }}>1. Select Gear to Reforge</h4>
+                    <div className="row row--wrap" style={{ gap: "var(--s-2)" }}>
+                      {reforgeEligible.map((i) => (
+                        <ItemCard
+                          key={i.id}
+                          item={i}
+                          size="sm"
+                          selected={i.id === reforgePicked}
+                          onClick={() => setReforgePicked(i.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {reforgeTarget && (
+                    <div className="card" style={{ padding: "var(--s-4)", background: "var(--surface, #181818)", border: "1px solid var(--border, #333)" }}>
+                      <h4 style={{ margin: "0 0 var(--s-3) 0" }}>2. Preview & Reforge</h4>
+                      <div className="row row--wrap" style={{ gap: "var(--s-4)", alignItems: "flex-start" }}>
+                        <ItemCard item={reforgeTarget} size="md" />
+                        <div style={{ flex: 1, minWidth: 240, display: "grid", gap: "var(--s-3)" }}>
+                          <div>
+                            <p style={{ margin: "0 0 var(--s-1) 0" }}><b>{reforgeTarget.name}</b> (+{reforgeTarget.upgrade})</p>
+                            <span className="chip chip--gold">Item Level {reforgeTarget.ilvl}</span>
+                          </div>
+                          <div>
+                            <p className="faint" style={{ margin: "0 0 var(--s-1) 0", fontSize: "0.85rem" }}>Current Enchantment Affixes:</p>
+                            {reforgeTarget.affixes && reforgeTarget.affixes.length > 0 ? (
+                              <div className="row row--wrap" style={{ gap: "var(--s-1)" }}>
+                                {reforgeTarget.affixes.map((af, idx) => (
+                                  <span key={idx} className="chip">
+                                    +{af.value} {af.stat}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="faint">No affixes currently rolled.</p>
+                            )}
+                          </div>
+                          <div style={{ marginTop: "var(--s-2)" }}>
+                            <Button
+                              variant="primary"
+                              size="lg"
+                              disabled={voidReforgers < 1 || reforge.isPending}
+                              loading={reforge.isPending}
+                              onClick={() => reforge.mutate({ itemId: reforgeTarget.id })}
+                            >
+                              {voidReforgers < 1 ? "Need 1× Void Reforger" : "🧿 Reforge Affixes (1× Void Reforger)"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </Panel>
           </div>
         )}

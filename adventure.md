@@ -8,6 +8,30 @@
 
 ---
 
+## Session: `20261007` — Endless Abyss Mode, Void Relics & Reforging System
+
+### Added & Expanded
+- **Endless Abyss Mode (`/abyss`)**:
+  - Roguelike dungeon dive unlocking at Level 15. Foes scale infinitely into the void with persistent vitality (+15% max HP recovered per wave clear; natural regen silenced).
+  - Stacking corruption (+5% enemy ATK, DEF, and Max HP every 3 waves).
+  - Run Infusions / Boons: choose 1 of 3 permanent run boons every 5 waves (Void Siphon, Null Barrier, Oblivion Strike, Aether Flow, Dark Pact, Abyssal Greed, Trench Swiftness, Forbidden Insight).
+  - Shard Preservation: manual surface keeps 100% gathered Abyssal Shards; wipe in combat salvages 50% shards.
+  - Void Relics Altar: spend Abyssal Shards on exclusive gear (`Void Edge`, `Null Aegis`, `Abyssal Cowl`), `Voidbound Pet Egg`, `Void Reforger`, and prestige titles (`🌀 Abyss Walker`, `👑 Void Sovereign`).
+  - Deepest Divers Leaderboard and quick-action card on The Table (`/`).
+- **Void Reforging Altar (`/smithy`)**:
+  - Consumable `Void Reforger` rerolls all magical enchantment affixes on Rare, Epic, Legendary, Mythic, and Unique gear pieces.
+  - Preserves base item stats, upgrade rank, and item level.
+  - Achievement `reforge_1` ("Void Alchemist", reward: 5,000 coins + title `Void Shaper`).
+- **Adventurer's Codex Integration (`/guide`)**:
+  - Added dedicated Abyss tab documenting void rules, corruption mechanics, boons, and relic gear.
+- **ESLint & Quality Cleanup**:
+  - Cleaned up unused Lucide icon imports on `Abyss.tsx`.
+  - Added `counters` and `achievements` to `meSnapshot` view model.
+  - All 15 test suites and 99 tests passing green.
+- Update log entries signed `- By Hermes`.
+
+---
+
 ## Session: `20260928` — Imperial Bank System, Guild Vault, Code Quality & Linting Overhaul
 
 ### Added & Expanded

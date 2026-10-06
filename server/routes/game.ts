@@ -345,6 +345,10 @@ export async function registerGameRoutes(app: FastifyInstance) {
     const { itemIds } = parse(z.object({ itemIds: z.array(id).min(5).max(20) }), req);
     return mutate(g, u(req), (p) => eco.forgeUnique(g, p, itemIds));
   });
+  app.post("/api/smithy/reforge", async (req) => {
+    const { itemId } = parse(z.object({ itemId: id }), req);
+    return mutate(g, u(req), (p) => eco.reforgeGear(g, p, itemId));
+  });
 
   // ── Market ──
   app.get("/api/market", async (req) => {

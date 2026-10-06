@@ -1,7 +1,7 @@
 import { CONSUMABLES, CONSUMABLE_BY_ID, GEAR, GEAR_BY_ID, RECIPE_BY_ID } from "../../shared/data/items.ts";
 import { GOLDEN_EGG_WEIGHTS, MYSTERY_EGG_WEIGHTS, PET_FUSE_COUNT, PET_MAX_LEVEL, PET_SPECIES, UNIQUE_PET_FUSE_COUNT } from "../../shared/data/pets.ts";
 import type { EquipSlot, Rarity } from "../../shared/data/types.ts";
-import { forgeResultRarity, rollGear, upgradeCost } from "../../shared/rules/items.ts";
+import { AFFIX_COUNT, forgeResultRarity, rollAffixes, rollGear, upgradeCost } from "../../shared/rules/items.ts";
 import { GEAR_RARITY_MULT, MAX_UPGRADE, RARITY_INDEX, RARITY_ORDER } from "../../shared/rules/progression.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { petXpToNext } from "../../shared/rules/stats.ts";
@@ -347,6 +347,35 @@ export function forgeUnique(g: GameCtx, p: Player, itemIds: number[]) {
   });
 
   return { item: getOwnedItem(g, p.userId, id), coins };
+}
+
+/** Reforge an item's magical affixes using a Void Reforger consumable. */
+export function reforgeGear(g: GameCtx, p: Player, itemId: number) {
+  const item = getOwnedItem(g, p.userId, itemId);
+  const template = GEAR_BY_ID[item.templateId];
+  if (!template) throw new GameError("Only equippable gear can be reforged.");
+  if (AFFIX_COUNT[item.rarity] === 0) {
+    throw new GameError(`${item.rarity} gear has no magical affixes to reforge. Rare or higher is required.`);
+  }
+  if (countStack(g, p.userId, "void_reforger") < 1) {
+    throw new GameError("You need 1× Void Reforger to reforge magical affixes.");
+  }
+  takeStack(g, p.userId, "void_reforger", 1, "Void Reforger");
+
+  const rng = createRng(freshSeed());
+  const newAffixes = rollAffixes(rng, template.slot, item.rarity, item.ilvl);
+  g.db.run("UPDATE items SET affixes = ? WHERE id = ?", JSON.stringify(newAffixes), item.id);
+
+  bump(g, p, "itemsReforged");
+
+  p.notices.push({
+    kind: "toast",
+    tone: "good",
+    icon: "🧿",
+    text: `Void Reforged ${template.name}! Replaced with ${newAffixes.length} new enchantment affixes.`,
+  });
+
+  return { item: getOwnedItem(g, p.userId, item.id), reforgersRemaining: countStack(g, p.userId, "void_reforger") };
 }
 
 // ── Market ────────────────────────────────────────────────────────────

@@ -53,11 +53,11 @@ export interface AbyssShopEntry {
 }
 
 export const ABYSS_SHOP: AbyssShopEntry[] = [
-  { id: "void_blade", ref: "void_blade", name: "Void Edge", icon: "🌌", kind: "gear", price: 250, minWave: 15, desc: "Forged from condensed void matter. Level 15+ weapon." },
+  { id: "void_edge", ref: "void_blade", name: "Void Edge", icon: "🌌", kind: "gear", price: 250, minWave: 10, desc: "Forged from condensed void matter. Level 15+ weapon." },
   { id: "null_aegis", ref: "null_aegis", name: "Null Aegis", icon: "🛡️", kind: "gear", price: 250, minWave: 15, desc: "Absorbs blows into nothingness. Level 15+ armor." },
   { id: "abyssal_cowl", ref: "abyssal_cowl", name: "Abyssal Cowl", icon: "👁️", kind: "gear", price: 200, minWave: 15, desc: "Gaze into oblivion unharmed. Level 15+ helmet." },
   { id: "abyss_egg", ref: "abyss_egg", name: "Voidbound Pet Egg", icon: "🌌", kind: "stack", price: 120, minWave: 10, desc: "Hatches an epic void creature." },
-  { id: "void_reforger", ref: "void_reforger", name: "Void Reforger", icon: "🧿", kind: "stack", price: 80, minWave: 5, desc: "Rerolls the magical affixes on an equipped item." },
+  { id: "void_reforger", ref: "void_reforger", name: "Void Reforger", icon: "🧿", kind: "stack", price: 25, minWave: 5, desc: "Rerolls the magical affixes on an equipped item." },
   { id: "title_abyss_walker", ref: "🌀 Abyss Walker", name: "Abyss Walker", icon: "📜", kind: "title", price: 150, minWave: 20, desc: "Wear the title of those who braved wave 20+." },
   { id: "title_void_sovereign", ref: "👑 Void Sovereign", name: "Void Sovereign", icon: "📜", kind: "title", price: 450, minWave: 50, desc: "Wear the title of the true master of the Abyss (wave 50+)." },
 ];

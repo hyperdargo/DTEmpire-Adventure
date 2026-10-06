@@ -220,7 +220,7 @@ export function leaveAbyss(g: GameCtx, p: Player) {
     icon: "🌌",
     text: `Surfaced from the Abyss at Wave ${cleared}. Banked ${shards} Abyssal Shards!`,
   });
-  return abyssView(g, p);
+  return { ...abyssView(g, p), shards, cleared };
 }
 
 export function buyAbyssShop(g: GameCtx, p: Player, entryId: string) {
@@ -289,10 +289,15 @@ registerFinalizer("abyss", (g, p, b) => {
       icon: "💀",
       text: `Defeated in the Abyss at Wave ${run.wave}. Preserved ${kept} Abyssal Shards.`,
     });
-    return { result: b.state.status };
+    return { result: b.state.status, extra: { runOver: true, reached: run.wave, shardsKept: kept } };
   }
 
   // Hero won
+  bump(g, p, "battlesWon");
+  bump(g, p, "kills");
+  if (run.wave % 10 === 0) bump(g, p, "bossKills");
+  else if (run.wave % 5 === 0) bump(g, p, "eliteKills");
+
   const baseShards = Math.max(3, Math.round(run.wave * 1.5 + run.corruption * 2));
   const greedMult = run.boons.includes("void_greed") ? 1.4 : 1;
   const shardsWon = Math.round(baseShards * greedMult);
@@ -335,5 +340,5 @@ registerFinalizer("abyss", (g, p, b) => {
     text: `Cleared Wave ${c.wave}! +${shardsWon} Abyssal Shards.`,
   });
 
-  return { result: "won" };
+  return { result: "won", extra: { waveCleared: c.wave, shardsWon } };
 });

@@ -2,7 +2,7 @@
 
 export type Counter =
   | "kills" | "bossKills" | "eliteKills" | "deaths" | "battlesWon" | "towerFloor" | "dungeonBest" | "level"
-  | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsUpgraded" | "petsHatched" | "skillsLearned" | "skillsFused"
+  | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsReforged" | "itemsUpgraded" | "petsHatched" | "skillsLearned" | "skillsFused"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins";
@@ -44,6 +44,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("dungeon_100", "Lord of the Deep", "🌑", "Clear Dungeon floor 100.", "dungeonBest", 100, 150_000, "Lord of the Deep"),
   a("craft_1", "Apprentice Smith", "🔨", "Craft an item.", "itemsCrafted", 1, 200),
   a("forge_10", "Master Forger", "⚒️", "Forge 10 items into higher rarities.", "itemsForged", 10, 6_000),
+  a("reforge_1", "Void Alchemist", "🧿", "Reforge magical affixes with a Void Reforger.", "itemsReforged", 1, 5_000, "Void Shaper"),
   a("upgrade_25", "Tempered", "🔥", "Upgrade gear 25 times.", "itemsUpgraded", 25, 4_000),
   a("pet_1", "Pet Owner", "🐾", "Hatch your first pet.", "petsHatched", 1, 300),
   a("pet_25", "Beastmaster", "🦁", "Hatch 25 pets.", "petsHatched", 25, 10_000, "Beastmaster"),

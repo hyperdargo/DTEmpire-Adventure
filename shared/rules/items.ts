@@ -59,6 +59,19 @@ export function templateOf(templateId: string): { name: string; icon: string; ki
   return { name: "Unknown relic", icon: "❔", kind: "material", levelReq: 1, desc: "Its purpose is lost." };
 }
 
+/** Rolls the random magical affixes for an item based on its slot and rarity. */
+export function rollAffixes(rng: Rng, slot: EquipSlot, rarity: Rarity, ilvl: number): Affix[] {
+  const level = clamp(Math.round(ilvl), 1, 100);
+  const affixes: Affix[] = [];
+  const pool = [...AFFIX_POOL[slot]];
+  for (let i = 0; i < AFFIX_COUNT[rarity] && pool.length > 0; i++) {
+    const idx = Math.floor(rng.next() * pool.length);
+    const stat = pool.splice(idx, 1)[0]!;
+    affixes.push({ stat, value: affixValue(rng, stat, rarity, level) });
+  }
+  return affixes;
+}
+
 /** Rolls a gear piece's base stats and affixes. */
 export function rollGear(rng: Rng, template: GearTemplate, ilvl: number, rarity: Rarity): Pick<ItemRecord, "base" | "affixes" | "ilvl" | "rarity"> {
   const level = clamp(Math.round(ilvl), 1, 100);
@@ -77,13 +90,7 @@ export function rollGear(rng: Rng, template: GearTemplate, ilvl: number, rarity:
     if (value > 0) base[k] = value;
   }
   if (template.focus?.luck) base.luck = Math.round((5 + level * 0.15) * mult);
-  const affixes: Affix[] = [];
-  const pool = [...AFFIX_POOL[template.slot]];
-  for (let i = 0; i < AFFIX_COUNT[rarity] && pool.length > 0; i++) {
-    const idx = Math.floor(rng.next() * pool.length);
-    const stat = pool.splice(idx, 1)[0]!;
-    affixes.push({ stat, value: affixValue(rng, stat, rarity, level) });
-  }
+  const affixes = rollAffixes(rng, template.slot, rarity, level);
   return { base, affixes, ilvl: level, rarity };
 }
 

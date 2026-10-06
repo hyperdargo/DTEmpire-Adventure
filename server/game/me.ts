@@ -71,6 +71,8 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       bag: { used: bagUsed(g, p.userId), capacity: bagCapacity(p) },
       inDungeon: !!(p.state as { dungeon?: unknown }).dungeon,
       createdAt: p.createdAt,
+      counters: p.counters,
+      achievements: p.state.achievements ?? [],
     },
     activeBattle: battle ? { id: battle.id, kind: battle.kind } : null,
     badges: {
