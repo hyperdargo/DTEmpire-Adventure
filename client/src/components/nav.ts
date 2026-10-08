@@ -1,5 +1,5 @@
 import {
-  Award, Backpack, BookOpen, Castle, Compass, Contact, PartyPopper, Crown, Dices, Download, Flame, Gavel, Hammer, Handshake, Home, LayoutGrid, Mail, MessageCircle,
+  Award, Backpack, BookOpen, Castle, Compass, Contact, PartyPopper, Crown, Dices, Download, Flag, Flame, Gavel, Hammer, Handshake, Home, LayoutGrid, Mail, MessageCircle,
   PawPrint, ScrollText, Settings, Shield, Sparkles, Store, Swords, Trophy, Users, Landmark, Vault, type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +34,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: "/quests", label: "Quests", icon: ScrollText, badge: "quests" },
       { to: "/town", label: "Town", icon: Landmark, badge: "town" },
+      { to: "/factions", label: "Factions", icon: Flag, minLevel: 10 },
       { to: "/estate", label: "Estate", icon: Home, minLevel: 5 },
       { to: "/bank", label: "Bank", icon: Vault, minLevel: 3 },
       { to: "/market", label: "Market", icon: Store },

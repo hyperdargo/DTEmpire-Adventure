@@ -1,4 +1,4 @@
-import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2 } from "lucide-react";
+import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2, Flag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { REGIONS, type Region } from "../../../shared/data/regions.ts";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID, RECIPES } from "../../../shared/data/items.ts";
@@ -10,7 +10,7 @@ import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
@@ -55,6 +55,7 @@ export default function GuidePage() {
           { value: "estate", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Home size={16} /> Estate & Housing</span> },
           { value: "classes", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Shield size={16} /> Classes & Skills</span> },
           { value: "abyss", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Endless Abyss</span> },
+          { value: "factions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flag size={16} /> Factions & Spire</span> },
         ]}
       />
 
@@ -65,6 +66,7 @@ export default function GuidePage() {
         {tab === "estate" && <EstateGuide search={search} />}
         {tab === "classes" && <ClassesGuide search={search} />}
         {tab === "abyss" && <AbyssGuide search={search} />}
+        {tab === "factions" && <FactionsGuide search={search} />}
       </div>
     </div>
   );
@@ -754,6 +756,101 @@ function AbyssGuide({ search }: { search: string }) {
             </div>
           ))}
         </div>
+      </Panel>
+    </div>
+  );
+}
+
+// ── Tab 7: Imperial Factions & Spire Guide ────────────────────────────────
+function FactionsGuide({ search }: { search: string }) {
+  const query = search.trim().toLowerCase();
+  const showVanguard = !query || "the iron vanguard defense hp tank".includes(query);
+  const showSyndicate = !query || "the shadow syndicate crit gold rogue assassin".includes(query);
+  const showArcanum = !query || "the celestial arcanum attack xp magic sorcerer".includes(query);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <Panel title="Imperial Factions System">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 14px 0" }}>
+          Upon reaching Level 10, heroes may swear allegiance to one of three imperial factions. Raising reputation unlocks multiplier scaling on faction blessings and prestige insignia titles.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
+          {showVanguard && (
+            <div style={{ background: "#161616", border: "1px solid #333", borderRadius: "6px", padding: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "1.5rem" }}>🛡️</span>
+                <b style={{ color: "#fff" }}>The Iron Vanguard</b>
+              </div>
+              <div style={{ color: "#ccc", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <b>Passive:</b> +10% Defense, +10% Max HP (scales with Rank)
+              </div>
+              <p style={{ color: "#888", fontSize: "0.8rem", margin: 0 }}>
+                Order of knights and bastion defenders. Favored by Warriors and Paladins for immovable resilience.
+              </p>
+            </div>
+          )}
+
+          {showSyndicate && (
+            <div style={{ background: "#161616", border: "1px solid #333", borderRadius: "6px", padding: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "1.5rem" }}>🗡️</span>
+                <b style={{ color: "#fff" }}>The Shadow Syndicate</b>
+              </div>
+              <div style={{ color: "#ccc", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <b>Passive:</b> +10% Critical Strike Chance, +15% Battle Gold (scales with Rank)
+              </div>
+              <p style={{ color: "#888", fontSize: "0.8rem", margin: 0 }}>
+                Guild of rogues and assassins. Favored by Thieves and Rangers for rapid gold generation and lethal critical hits.
+              </p>
+            </div>
+          )}
+
+          {showArcanum && (
+            <div style={{ background: "#161616", border: "1px solid #333", borderRadius: "6px", padding: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "1.5rem" }}>🔮</span>
+                <b style={{ color: "#fff" }}>The Celestial Arcanum</b>
+              </div>
+              <div style={{ color: "#ccc", fontSize: "0.85rem", marginBottom: "6px" }}>
+                <b>Passive:</b> +10% Attack, +20% Battle XP (scales with Rank)
+              </div>
+              <p style={{ color: "#888", fontSize: "0.8rem", margin: 0 }}>
+                Conclave of astral sages and sorcerers. Favored by Mages and fast-leveling heroes seeking max raw attack.
+              </p>
+            </div>
+          )}
+        </div>
+      </Panel>
+
+      <Panel title="Tower Floor-Band Scaled Loot & Spire Relic Caches">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 14px 0" }}>
+          Tower ascents now roll specialized floor-band loot pools. The higher the floor, the rarer the materials, skill books, and companion eggs dropped:
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "10px" }}>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px", fontSize: "0.85rem" }}>
+            <b style={{ color: "#fff" }}>Floors 1–20 (Novice Spire)</b>
+            <div style={{ color: "#888", marginTop: "4px" }}>Iron Ore, Undead Bones, Silk Cloth, Mystery Eggs, Potions</div>
+          </div>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px", fontSize: "0.85rem" }}>
+            <b style={{ color: "#fff" }}>Floors 21–40 (Adept Spire)</b>
+            <div style={{ color: "#888", marginTop: "4px" }}>Silk Cloth, Dragon Scales, Mystic Gems, Forest Eggs, Skill Books</div>
+          </div>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px", fontSize: "0.85rem" }}>
+            <b style={{ color: "#fff" }}>Floors 41–60 (Master Spire)</b>
+            <div style={{ color: "#888", marginTop: "4px" }}>Dragon Scales, Mystic Gems, Star Essence, Dragon Eggs, Superior Potions</div>
+          </div>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px", fontSize: "0.85rem" }}>
+            <b style={{ color: "#fff" }}>Floors 61–80 (Grandmaster Spire)</b>
+            <div style={{ color: "#888", marginTop: "4px" }}>Star Essence, Mystic Gems, Abyssal Shards, Golden & Void Eggs, Void Reforgers</div>
+          </div>
+          <div style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px", fontSize: "0.85rem" }}>
+            <b style={{ color: "#fff" }}>Floors 81–100+ (Ascendant Apex)</b>
+            <div style={{ color: "#888", marginTop: "4px" }}>Abyssal Shards, Star Essence, Celestial & Phoenix Eggs, High-tier Relic Reforgers</div>
+          </div>
+        </div>
+        <p style={{ color: "#888", fontSize: "0.8rem", marginTop: "12px" }}>
+          💡 <b>Spire Exploration Cache:</b> Every 5th floor conquered rewards an immediate bonus gold cache directly into your inventory!
+        </p>
       </Panel>
     </div>
   );

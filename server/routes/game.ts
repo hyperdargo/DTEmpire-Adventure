@@ -31,6 +31,7 @@ import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, re
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
 import * as merchant from "../game/merchant.ts";
+import * as factions from "../game/factions.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
 
@@ -97,8 +98,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.6.0",
-      appVersion: "5.6.0-ultra",
+      version: "5.9.0",
+      appVersion: "5.9.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -727,6 +728,28 @@ export async function registerGameRoutes(app: FastifyInstance) {
     savePlayer(g, p);
     const done = new Set(p.state.achievements ?? []);
     return { achievements: ACHIEVEMENTS.map((a) => ({ ...a, progress: Math.min(a.goal, p.counters[a.counter] ?? 0), done: done.has(a.id) })), titles: p.state.titles ?? [], active: p.title };
+  });
+
+  // ── Imperial Factions & Allegiance ──
+  app.get("/api/factions", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return factions.getFactionOverview(g, p);
+    });
+  });
+
+  app.post("/api/factions/pledge", async (req) => {
+    const { factionId } = parse(z.object({ factionId: z.string().max(50) }), req);
+    return mutate(g, u(req), (p) => factions.pledgeFaction(g, p, factionId));
+  });
+
+  app.post("/api/factions/tribute", async (req) => {
+    return mutate(g, u(req), (p) => factions.submitDailyTribute(g, p));
+  });
+
+  app.post("/api/factions/title", async (req) => {
+    return mutate(g, u(req), (p) => factions.claimFactionTitle(g, p));
   });
 
   void bumpMission;

@@ -5,7 +5,7 @@ export type Counter =
   | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsReforged" | "itemsUpgraded" | "petsHatched" | "skillsLearned" | "skillsFused"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
-  | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins";
+  | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation";
 
 export interface AchievementDef {
   id: string;
@@ -68,6 +68,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("wealth_1m", "Tycoon", "💎", "Earn 1,000,000 lifetime coins.", "coinsEarned", 1_000_000, 25_000, "the Wealthy"),
   a("wealth_10m", "Midas", "👑", "Earn 10,000,000 lifetime coins.", "coinsEarned", 10_000_000, 100_000, "Midas Touch"),
   a("hoard_1m", "Dragon's Hoard", "🐉", "Hold 1,000,000 coins in your purse.", "peakCoins", 1_000_000, 50_000, "the Hoarder"),
+  a("faction_sworn", "Allegiance Sworn", "🚩", "Pledge allegiance to an Imperial Faction.", "factionsPledged", 1, 2_500, "the Sworn"),
+  a("faction_champion", "Faction Paragon", "🎖️", "Amass 2,500 Faction Reputation.", "factionReputation", 2_500, 15_000, "Faction Paragon"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────

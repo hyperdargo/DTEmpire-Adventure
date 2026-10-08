@@ -1,4 +1,4 @@
-import { BedDouble, Compass, Download, Hammer, Home, Monitor, Smartphone, Sparkles, Vault } from "lucide-react";
+import { BedDouble, Compass, Download, Flag, Hammer, Home, Monitor, Smartphone, Sparkles, Vault } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { innCost } from "../../../shared/rules/progression.ts";
@@ -127,6 +127,13 @@ export default function TownPage() {
           <p className="muted">Safeguard your fortune in private savings against death and banditry, lock fixed deposits for guaranteed yields, or take emergency gold loans.</p>
           <div style={{ marginTop: "12px" }}>
             <Link to="/bank" className="btn btn--primary">Enter the Bank</Link>
+          </div>
+        </Panel>
+
+        <Panel title={<h2><Flag size={22} aria-hidden /> Imperial Factions (Level 10+)</h2>}>
+          <p className="muted">Swear fealty to The Iron Vanguard, The Shadow Syndicate, or The Celestial Arcanum to gain permanent passive blessings, daily tributes, and prestige insignia titles.</p>
+          <div style={{ marginTop: "12px" }}>
+            <Link to="/factions" className="btn btn--primary">Visit Faction Halls</Link>
           </div>
         </Panel>
 

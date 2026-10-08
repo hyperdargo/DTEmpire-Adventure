@@ -7,6 +7,7 @@ import { MAX_LEVEL, applyXp, regenHp, xpToNext } from "../../shared/rules/progre
 import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower, petBonus } from "../../shared/rules/stats.ts";
 import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
 import { computeGuildBuildingBonuses } from "../../shared/rules/guildBuildings.ts";
+import { computeFactionBonuses } from "../../shared/data/factions.ts";
 import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -14,6 +15,14 @@ import { dayKey } from "../lib/time.ts";
 import type { GameCtx, Notice } from "./context.ts";
 
 export interface ActiveBuff { id: string; until: number; buff: Buffs }
+
+export interface PlayerFactionState {
+  factionId: string;
+  reputation: number;
+  pledgedAt: number;
+  lastTributeDay?: string;
+  reputations?: Record<string, number>;
+}
 
 export interface PlayerState {
   buffs?: ActiveBuff[];
@@ -50,6 +59,7 @@ export interface PlayerState {
   bank?: PlayerBankState;
   towerFloors?: Record<string, number>;
   petParty?: number[];
+  faction?: PlayerFactionState;
 }
 
 export interface Player {
@@ -151,6 +161,14 @@ export function combinedBuffs(p: Player, now: number): Buffs {
   out.defPct = (out.defPct ?? 0) + estate.defPct;
   out.coinPct = (out.coinPct ?? 0) + estate.coinPct;
   out.xpPct = (out.xpPct ?? 0) + estate.xpPct;
+
+  if (p.state.faction?.factionId) {
+    const fBonuses = computeFactionBonuses(p.state.faction.factionId, p.state.faction.reputation);
+    out.atkPct = (out.atkPct ?? 0) + fBonuses.atkPct;
+    out.defPct = (out.defPct ?? 0) + fBonuses.defPct;
+    out.coinPct = (out.coinPct ?? 0) + fBonuses.coinPct;
+    out.xpPct = (out.xpPct ?? 0) + fBonuses.xpPct;
+  }
   return out;
 }
 
@@ -256,6 +274,16 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
     stats.def = Math.round(stats.def * mult);
     stats.maxHp = Math.round(stats.maxHp * mult);
   }
+
+  // Faction Allegiance bonuses
+  if (p.state.faction?.factionId) {
+    const fBonuses = computeFactionBonuses(p.state.faction.factionId, p.state.faction.reputation);
+    if (fBonuses.atkPct) stats.atk = Math.round(stats.atk * (1 + fBonuses.atkPct / 100));
+    if (fBonuses.defPct) stats.def = Math.round(stats.def * (1 + fBonuses.defPct / 100));
+    if (fBonuses.hpPct) stats.maxHp = Math.round(stats.maxHp * (1 + fBonuses.hpPct / 100));
+    if (fBonuses.crit) stats.crit = Math.min(75, stats.crit + fBonuses.crit);
+  }
+
   stats.power = heroPower(stats);
   return stats;
 }

@@ -73,6 +73,12 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       createdAt: p.createdAt,
       counters: p.counters,
       achievements: p.state.achievements ?? [],
+      faction: p.state.faction?.factionId
+        ? {
+            factionId: p.state.faction.factionId,
+            reputation: p.state.faction.reputation ?? 0,
+          }
+        : null,
     },
     activeBattle: battle ? { id: battle.id, kind: battle.kind } : null,
     badges: {

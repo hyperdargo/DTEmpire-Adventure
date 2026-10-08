@@ -8,6 +8,38 @@
 
 ---
 
+## Session: `20261009` — Imperial Factions System & Tower Floor-Band Scaled Loot (v5.9.0)
+
+### Added & Expanded
+- **Imperial Factions System (`/factions`)**:
+  - Unlocks at Level 10. Heroes may swear fealty to 3 sovereign factions:
+    - **The Iron Vanguard**: +10% Defense & +10% Max HP (escalates with rank). Favored by bastion tanks.
+    - **The Shadow Syndicate**: +10% Crit Chance & +15% Battle Gold (escalates with rank). Favored by precision rogues.
+    - **The Celestial Arcanum**: +10% Attack & +20% Battle XP (escalates with rank). Favored by fast-leveling mages.
+  - 5-Tier Reputation Progression: Initiate (0 rep, 1.0x), Veteran (500 rep, 1.25x), Champion (2,500 rep, 1.5x), High Commander (10,000 rep, 1.75x), and Sovereign (30,000 rep, 2.0x).
+  - Daily Tribute: pledge 5,000 coins for +300 Faction Rep and +500 XP once per UTC day.
+  - Fealty Switching: transfer allegiance for 25,000 coins with complete lifetime reputation preserved per faction.
+  - Prestige Insignia Titles: earn and equip `🛡️ Vanguard Ironclad`, `🗡️ Syndicate Shadowblade`, or `🔮 Arcanum Archmagus` at High Commander rank (10,000+ rep).
+  - Navigation & Town integration: added Factions nav link with Level 10 gate and Town building shortcut.
+  - Full theme adherence: strict black/white (#0a0a0a, #141414, #282828) aesthetics, dark grey borders, zero colorful slop.
+- **Tower Floor-Band Scaled Loot & Spire Relics (`shared/rules/loot.ts`)**:
+  - Dynamic material drops across 5 distinct spire floor bands:
+    - Floors 1–20 (Novice): Iron Ore, Undead Bones, Silk Cloth, Mystery Eggs, Potions.
+    - Floors 21–40 (Adept): Silk Cloth, Dragon Scales, Mystic Gems, Forest Eggs, Skill Books.
+    - Floors 41–60 (Master): Dragon Scales, Mystic Gems, Star Essence, Dragon Eggs, Superior Potions.
+    - Floors 61–80 (Grandmaster): Star Essence, Mystic Gems, Abyssal Shards, Golden & Void Eggs, Void Reforgers.
+    - Floors 81–100+ (Ascendant Apex): Abyssal Shards, Star Essence, Celestial & Phoenix Eggs, Relic Reforgers.
+  - Elemental Spire theme loot multipliers: Infernal Spire (+50% coins, Dragon Scales, Phoenix Eggs), Celestial Pillar (+40% XP, Star Essence, Celestial Eggs), Abyssal Obelisk (Abyss Shards, Void Eggs, Void Reforgers).
+  - Guaranteed tier drops and bonus gold exploration caches every 5th floor.
+- **Adventurer's Codex Expansion (`/guide`)**:
+  - Added dedicated Factions & Spire Guide tab detailing lore, passive stat formulas, rank thresholds, and tower loot bands.
+- **Achievements & Tracking**:
+  - `faction_sworn` ("Allegiance Sworn", 2,500 coins) upon joining any faction.
+  - `faction_champion` ("Faction Paragon", 15,000 coins) upon reaching 2,500 reputation.
+- Update log entries signed `- By Hermes`.
+
+---
+
 ## Session: `20261007` — Endless Abyss Mode, Void Relics & Reforging System
 
 ### Added & Expanded

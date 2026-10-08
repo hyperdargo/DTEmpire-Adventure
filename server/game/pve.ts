@@ -22,11 +22,11 @@ export const bestiaryKey = (regionId: string, monsterId: string) => `${regionId}
 
 export function payVictory(
   g: GameCtx, p: Player,
-  opts: { level: number; coins: number; xp: number; boss?: boolean; elite?: boolean; source: LootSource; noDrops?: boolean },
+  opts: { level: number; coins: number; xp: number; boss?: boolean; elite?: boolean; source: LootSource; noDrops?: boolean; towerFloor?: number; towerId?: string },
 ) {
   const stats = heroStats(g, p);
   const loot = rollVictoryLoot(createRng(freshSeed()), {
-    level: opts.level, baseCoins: opts.coins, baseXp: opts.xp, boss: opts.boss, elite: opts.elite, luck: stats.luck, source: opts.source,
+    level: opts.level, baseCoins: opts.coins, baseXp: opts.xp, boss: opts.boss, elite: opts.elite, luck: stats.luck, source: opts.source, towerFloor: opts.towerFloor, towerId: opts.towerId,
   });
   const coins = grantCoins(g, p, loot.coins, { fromBattle: true });
   const companionXp = Math.floor(loot.xp * (1 + stats.xpBonus / 100));
@@ -40,6 +40,11 @@ export function payVictory(
     bumpMission(p, "boss");
   }
   if (opts.elite) bump(g, p, "eliteKills");
+  if (p.state.faction?.factionId) {
+    const repGain = opts.boss ? 15 : opts.elite ? 8 : 3;
+    p.state.faction.reputation = (p.state.faction.reputation ?? 0) + repGain;
+    bump(g, p, "factionReputation", repGain);
+  }
   growCompanions(g, p, companionXp);
   return { coins, xp, drops };
 }
@@ -266,7 +271,7 @@ registerFinalizer("tower", (g, p, b) => {
   const towerId = c.towerId ?? "ascension";
   const currentFloor = getPlayerTowerFloor(p, towerId);
   const firstClear = c.floor > currentFloor;
-  const pay = payVictory(g, p, { level: c.level, coins: c.coins, xp: c.xp, boss: c.boss, elite: !c.boss, source: "tower" });
+  const pay = payVictory(g, p, { level: c.level, coins: c.coins, xp: c.xp, boss: c.boss, elite: !c.boss, source: "tower", towerFloor: c.floor, towerId });
   bumpMission(p, "tower");
   const extra: Record<string, unknown> = { towerId, floor: c.floor, firstClear };
   if (firstClear) {
@@ -275,6 +280,13 @@ registerFinalizer("tower", (g, p, b) => {
       setMax(g, p, "towerFloor", c.floor);
     }
     if (c.boss && towerId === "ascension") extra.chapter = completeChapter(g, p, c.chapter);
+    if (c.floor % 5 === 0 && c.floor % 10 !== 0) {
+      const cacheCoins = Math.round(c.floor * 150);
+      p.coins += cacheCoins;
+      extra.spireCache = cacheCoins;
+      p.notices = p.notices ?? [];
+      p.notices.push({ kind: "toast", tone: "good", icon: "🗝️", text: `Spire Exploration Cache: +${cacheCoins.toLocaleString()} coins for conquering floor ${c.floor}!` });
+    }
     if (c.floor % 10 === 0) {
       g.hub.toChannel("world", {
         type: "feed",
