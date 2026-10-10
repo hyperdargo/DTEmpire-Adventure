@@ -72,7 +72,7 @@ export default function TownPage() {
           )}
         </Panel>
 
-        <Panel title={<h2><Hammer size={22} aria-hidden /> Work</h2>}>
+        <Panel title={<h2><Hammer size={22} aria-hidden /> Work</h2>} action={<Link className="chip chip--gold" to="/jobs">Professions Hall →</Link>}>
           {current ? (
             <div className="stack">
               <p><span className="art">{current.icon}</span> You work as a <b>{current.name}</b>, earning <Coins value={current.wage} compact /> per 8-hour shift.</p>

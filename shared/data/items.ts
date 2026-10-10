@@ -140,6 +140,10 @@ const eventGear: GearTemplate[] = [
   { id: "void_blade", name: "Void Edge", icon: "🌌", slot: "weapon", weaponType: "sword", levelReq: 15, desc: "Carved from solidified void aether." },
   { id: "null_aegis", name: "Null Aegis", icon: "🛡️", slot: "armor", levelReq: 15, desc: "Absorbs incoming force into non-existence." },
   { id: "abyssal_cowl", name: "Abyssal Cowl", icon: "👁️", slot: "helmet", levelReq: 15, desc: "Allows mortal eyes to gaze into oblivion." },
+  // Guild Armory rewards
+  { id: "guild_vanguard_blade", name: "Guild Vanguard Blade", icon: "⚔️", slot: "weapon", weaponType: "sword", levelReq: 25, desc: "Heavy oathbound greatsword tempered in the guild War Forge." },
+  { id: "guild_guardian_plate", name: "Guild Guardian Plate", icon: "🛡️", slot: "armor", levelReq: 35, desc: "Fortified citadel armor bearing clan crests." },
+  { id: "guild_sovereign_crest", name: "Guild Sovereign Relic", icon: "⚜️", slot: "accessory", levelReq: 45, desc: "The ultimate emblem of clan leadership and supremacy." },
 ];
 
 export const GEAR: GearTemplate[] = [...starters, ...weapons, ...bows, ...armors, ...helmets, ...boots, ...accessories, ...eventGear];
@@ -234,6 +238,13 @@ const eventConsumables: ConsumableTemplate[] = [
     desc: "A pulsing orb of pure void energy. Hatches an epic abyss companion." },
   { id: "void_reforger", name: "Void Reforger", icon: "🧿", kind: "book", levelReq: 15, basePrice: 5_000, sellPrice: 1_000,
     desc: "Harnesses void gravity to re-forge the magical affixes on an equipped item." },
+  // Guild Armory consumables
+  { id: "guild_banner", name: "Guild Battle Standard", icon: "🚩", kind: "potion", levelReq: 1, basePrice: 4_500, sellPrice: 900,
+    healPct: 0.2, xpPct: 0.2, desc: "A glorious clan war banner. Rallies combat focus, restores 20% HP, and grants 20% XP." },
+  { id: "guild_elixir", name: "Draught of Brotherhood", icon: "🧪", kind: "potion", levelReq: 1, basePrice: 8_000, sellPrice: 1_600,
+    healPct: 1.0, xpPct: 0.35, desc: "A rejuvenating elixir brewed in the clan alchemy lab. Restores 100% HP and bestows 35% XP." },
+  { id: "guild_griffin_egg", name: "Guild Griffin Egg", icon: "🦅", kind: "egg", eggRarity: "epic", levelReq: 1, basePrice: 50_000, sellPrice: 5_000,
+    desc: "A noble griffin egg infused with the clan's legacy. Hatches an epic or legendary companion." },
 ];
 
 export const CONSUMABLES: ConsumableTemplate[] = [...potions, ...materials, ...eggs, ...books, ...eventConsumables];

@@ -8,7 +8,49 @@
 
 ---
 
-## Session: `20261009` — Imperial Factions System & Tower Floor-Band Scaled Loot (v5.9.0)
+## Session: `20261011` — Professions & Career Mastery + Guild Armory System (v5.10.0)
+
+### Added & Expanded
+- **Professions & Career Mastery System (`/jobs`)**:
+  - Unlocks at Level 10 with progressive unlock levels up to Level 50.
+  - 10 Artisan Professions:
+    - **Farmer** (Lv 10): 2,500 coins, 6% XP
+    - **Miner** (Lv 12): 3,200 coins, 7% XP
+    - **Blacksmith** (Lv 32): 8,000 coins, 10% XP
+    - **Alchemist** (Lv 22): 5,800 coins, 9% XP
+    - **Cook** (Lv 15): 3,800 coins, 8% XP
+    - **Fisher** (Lv 18): 4,500 coins, 8% XP
+    - **Guard** (Lv 26): 6,500 coins, 9% XP
+    - **Merchant** (Lv 36): 9,500 coins, 11% XP
+    - **Knight** (Lv 42): 11,500 coins, 12% XP
+    - **Wizard** (Lv 50): 14,000 coins, 14% XP
+  - 5 Career Mastery Ranks:
+    - **Apprentice** (0 shifts, +0% wage)
+    - **Journeyman** (5 shifts, +15% wage)
+    - **Artisan** (15 shifts, +30% wage)
+    - **Master** (30 shifts, +50% wage)
+    - **Grandmaster** (55 shifts, +75% wage)
+  - Timed 8-hour shifts with real-time countdown timer, career progression tracking, and shift collection.
+  - **Trade Commissions Dispatch Board**: 4-hour cooldown profession dispatches granting instant coins, XP, crafting trade materials (iron ore, dragon scales, star essence, etc.), eggs, and health restoration.
+  - Full UI integration with Town shortcut and TopNav link (`/jobs`).
+- **Guild Armory & Clan Quartermaster (`/guild` -> Armory tab)**:
+  - Exclusive clan supply quartermaster requiring clan membership and tier unlocks (Clan Lv 1 to 10).
+  - High-tier oathbound gear and guild battle consumables:
+    - `guild_banner` (Clan Lv 1): 1,500 coins + 50 contribution.
+    - `guild_feast` (Clan Lv 2): 3,000 coins + 100 contribution.
+    - `guild_vanguard_helm` (Clan Lv 3): 12,000 coins + 300 contribution (+65 HP, +22 DEF).
+    - `guild_bulwark_of_unity` (Clan Lv 4): 25,000 coins + 600 contribution (+140 HP, +48 DEF).
+    - `guild_vanguard_blade` (Clan Lv 5): 40,000 coins + 1,000 contribution (+60 ATK, +15 Crit).
+    - `guild_sovereign_crest` (Clan Lv 10): 150,000 coins + 3,500 contribution (+80 ATK, +80 DEF, +200 HP).
+  - Kickback Mechanism: Every armory purchase reinvests +30% of contribution cost back into personal clan contribution.
+  - Requisition counter tracked on hero profile (`guildArmoryPurchases`).
+- **Adventurer's Codex Expansion (`/guide`)**:
+  - Comprehensive reference guide covering all 10 Professions, unlock levels, shift wages, career ranks, trade commission dispatch rewards, and Guild Armory item specifications.
+- **Theme & Strict Design Adherence**:
+  - Pure monochrome black & dark palette (#0a0a0a, #141414, #262626) with crisp white text and dark borders. Zero neon gradients, purple, or pastel accents.
+- Update log entries signed `- By Hermes`.
+
+---
 
 ### Added & Expanded
 - **Imperial Factions System (`/factions`)**:

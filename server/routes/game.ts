@@ -75,6 +75,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   // ── Shell ──
   app.get("/api/me", async (req) => (req.user ? readMe(g, req.user) : { user: null, hero: null }));
+  app.get("/api/hero", async (req) => (req.user ? readMe(g, req.user) : { user: null, hero: null }));
 
   app.post("/api/hero", async (req) => {
     const user = u(req);
@@ -627,6 +628,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
   });
   app.post("/api/jobs/start", async (req) => mutate(g, u(req), (p) => daily.startShift(g, p)));
   app.post("/api/jobs/collect", async (req) => mutate(g, u(req), (p) => daily.collectShift(g, p)));
+  app.post("/api/jobs/commission", async (req) => mutate(g, u(req), (p) => daily.claimJobCommission(g, p)));
   app.post("/api/temple/pray", async (req) => {
     const { blessingId } = parse(z.object({ blessingId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => daily.pray(g, p, blessingId));

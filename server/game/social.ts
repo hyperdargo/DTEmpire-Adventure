@@ -1,12 +1,14 @@
 import { randomBytes } from "node:crypto";
 import { CLASS_BY_ID } from "../../shared/data/classes.ts";
+import { GUILD_SHOP_BY_ID, GUILD_SHOP_ITEMS } from "../../shared/data/guildShop.ts";
 import { GEAR_BY_ID } from "../../shared/data/items.ts";
 import {
   ACHIEVEMENTS, AUCTION_FEE_PCT, AUCTION_HOURS, CHAT_MAX_LENGTH, type Counter, GUILD_CREATE_COST, GUILD_CREATE_LEVEL,
   GUILD_MAX_MEMBERS, GUILD_TASK_POOL, TRADE_EXPIRY_HOURS, guildXpToNext,
 } from "../../shared/data/meta.ts";
+import { rollGear } from "../../shared/rules/items.ts";
 import type { ItemRecord } from "../../shared/rules/items.ts";
-import { createRng } from "../../shared/rules/rng.ts";
+import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { toItemView, toPetView } from "../../shared/rules/views.ts";
 import { json } from "../db/db.ts";
 import { GameError, conflict, forbidden, notFound, tooFast } from "../lib/errors.ts";
@@ -14,7 +16,7 @@ import { HOUR, dayKey } from "../lib/time.ts";
 import { throttle } from "../lib/throttle.ts";
 import type { GameCtx } from "./context.ts";
 import { getOwnedItem } from "./inventory.ts";
-import { type Player, addStack, bump, findPlayer, heroStats, itemFromRow, loadPlayer, playerTitle, savePlayer, sendMail, spendCoins } from "./player.ts";
+import { type Player, addGear, addStack, bump, findPlayer, heroStats, itemFromRow, loadPlayer, playerTitle, savePlayer, sendMail, spendCoins } from "./player.ts";
 import { computeGovernanceTax } from "../../shared/rules/governance.ts";
 import {
   GUILD_BUILDINGS,
@@ -964,6 +966,93 @@ export function searchPlayers(g: GameCtx, q: string) {
   if (term.length < 2) return [];
   return g.db.all<{ user_id: number; name: string; level: number; class_id: string }>("SELECT user_id, name, level, class_id FROM players WHERE name LIKE ? ORDER BY level DESC LIMIT 12", term)
     .map((r) => ({ userId: r.user_id, name: r.name, level: r.level, classIcon: CLASS_BY_ID[r.class_id]?.icon ?? "⚔️", online: g.hub.isOnline(r.user_id) }));
+}
+
+// ═════════════════════════════════ Guild Armory ═════════════════════════════════
+
+export function getGuildShop(g: GameCtx, p: Player) {
+  if (!p.guildId) {
+    return { inGuild: false, items: [], guildLevel: 1, contribution: 0, coins: p.coins };
+  }
+  const guild = g.db.get<{ level: number; name: string }>("SELECT level, name FROM guilds WHERE id = ?", p.guildId);
+  if (!guild) {
+    return { inGuild: false, items: [], guildLevel: 1, contribution: 0, coins: p.coins };
+  }
+  const member = g.db.get<{ contribution: number }>("SELECT contribution FROM guild_members WHERE user_id = ?", p.userId);
+  const contribution = member?.contribution ?? 0;
+  const items = GUILD_SHOP_ITEMS.map((item) => ({
+    ...item,
+    unlocked: guild.level >= item.minGuildLevel,
+    canAffordCoins: p.coins >= item.costCoins,
+    canAffordContribution: contribution >= item.costContribution,
+  }));
+  return {
+    inGuild: true,
+    guildName: guild.name,
+    guildLevel: guild.level,
+    contribution,
+    coins: p.coins,
+    items,
+  };
+}
+
+export function buyGuildShopItem(g: GameCtx, p: Player, itemId: string, qty = 1) {
+  if (!p.guildId) throw new GameError("You must belong to a guild to access the Guild Armory.");
+  if (qty < 1 || qty > 99) throw new GameError("Invalid quantity.");
+  const item = GUILD_SHOP_BY_ID[itemId];
+  if (!item) throw notFound("Guild shop item");
+  const guild = g.db.get<{ id: number; level: number; name: string }>("SELECT id, level, name FROM guilds WHERE id = ?", p.guildId);
+  if (!guild) throw notFound("Guild");
+  if (guild.level < item.minGuildLevel) {
+    throw new GameError(`Requires Guild Level ${item.minGuildLevel}. Your guild is Level ${guild.level}.`);
+  }
+  const member = g.db.get<{ contribution: number }>("SELECT contribution FROM guild_members WHERE user_id = ?", p.userId);
+  const currentContribution = member?.contribution ?? 0;
+  const totalCoins = item.costCoins * qty;
+  const totalContribCost = item.costContribution * qty;
+  if (currentContribution < totalContribCost) {
+    throw new GameError(`Insufficient Guild Contribution. Need ${totalContribCost.toLocaleString("en-US")} (you have ${currentContribution.toLocaleString("en-US")}).`);
+  }
+  spendCoins(p, totalCoins, `${item.name} (${qty}x) (Guild Armory)`);
+  if (totalContribCost > 0) {
+    g.db.run("UPDATE guild_members SET contribution = MAX(0, contribution - ?) WHERE user_id = ?", totalContribCost, p.userId);
+  }
+  // Award contribution reward and guild XP
+  const rewardContrib = item.rewardContribution * qty;
+  g.db.run("UPDATE guild_members SET contribution = contribution + ? WHERE user_id = ?", rewardContrib, p.userId);
+  g.db.run("UPDATE guilds SET xp = xp + ? WHERE id = ?", rewardContrib, p.guildId);
+
+  // Deliver item
+  if (item.kind === "stack") {
+    addStack(g, p.userId, item.templateId, qty);
+  } else if (item.kind === "gear") {
+    const template = GEAR_BY_ID[item.templateId];
+    if (!template) throw notFound("Gear template");
+    for (let i = 0; i < qty; i++) {
+      const rolled = rollGear(createRng(freshSeed()), template, item.ilvl ?? 50, item.rarity ?? "epic");
+      addGear(g, p.userId, {
+        kind: "gear",
+        templateId: item.templateId,
+        rarity: item.rarity ?? "epic",
+        ilvl: item.ilvl ?? 50,
+        base: rolled.base as Record<string, number>,
+        affixes: rolled.affixes,
+      });
+    }
+  }
+
+  bump(g, p, "guildArmoryPurchases", qty);
+  const updatedMember = g.db.get<{ contribution: number }>("SELECT contribution FROM guild_members WHERE user_id = ?", p.userId);
+  return {
+    success: true,
+    item: item.name,
+    qty,
+    costCoins: totalCoins,
+    costContribution: totalContribCost,
+    rewardContribution: rewardContrib,
+    currentContribution: updatedMember?.contribution ?? 0,
+    coins: p.coins,
+  };
 }
 
 export { GEAR_BY_ID };

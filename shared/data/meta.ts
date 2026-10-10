@@ -5,7 +5,8 @@ export type Counter =
   | "coinsEarned" | "itemsCrafted" | "itemsForged" | "itemsReforged" | "itemsUpgraded" | "petsHatched" | "skillsLearned" | "skillsFused"
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
-  | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation";
+  | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation"
+  | "jobShifts" | "guildArmoryPurchases";
 
 export interface AchievementDef {
   id: string;
@@ -70,6 +71,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("hoard_1m", "Dragon's Hoard", "🐉", "Hold 1,000,000 coins in your purse.", "peakCoins", 1_000_000, 50_000, "the Hoarder"),
   a("faction_sworn", "Allegiance Sworn", "🚩", "Pledge allegiance to an Imperial Faction.", "factionsPledged", 1, 2_500, "the Sworn"),
   a("faction_champion", "Faction Paragon", "🎖️", "Amass 2,500 Faction Reputation.", "factionReputation", 2_500, 15_000, "Faction Paragon"),
+  a("job_10", "Journeyman Artisan", "🔨", "Complete 10 profession work shifts.", "jobShifts", 10, 3_000, "Journeyman"),
+  a("job_30", "Master Craftsman", "⭐", "Complete 30 profession work shifts.", "jobShifts", 30, 15_000, "Master Artisan"),
+  a("guild_armory_1", "Clan Quartermaster", "🛡️", "Acquire an item from the Guild Armory.", "guildArmoryPurchases", 1, 5_000, "Vanguard Supporter"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────
@@ -130,6 +134,91 @@ export const JOBS: JobDef[] = [
   { id: "wizard", name: "Wizard", icon: "🧙", level: 85, wage: 25_000, xpPct: 0.12 },
 ];
 export const JOB_SHIFT_HOURS = 8;
+
+export interface JobRank {
+  id: string;
+  name: string;
+  shiftsRequired: number;
+  wageBonusPct: number;
+}
+
+export const JOB_RANKS: JobRank[] = [
+  { id: "apprentice", name: "Apprentice", shiftsRequired: 0, wageBonusPct: 0 },
+  { id: "journeyman", name: "Journeyman", shiftsRequired: 5, wageBonusPct: 15 },
+  { id: "artisan", name: "Artisan", shiftsRequired: 15, wageBonusPct: 30 },
+  { id: "master", name: "Master", shiftsRequired: 30, wageBonusPct: 50 },
+  { id: "grandmaster", name: "Grandmaster", shiftsRequired: 50, wageBonusPct: 75 },
+];
+
+export function getJobRank(shiftsCompleted: number): JobRank {
+  for (let i = JOB_RANKS.length - 1; i >= 0; i--) {
+    if (shiftsCompleted >= JOB_RANKS[i]!.shiftsRequired) return JOB_RANKS[i]!;
+  }
+  return JOB_RANKS[0]!;
+}
+
+export interface TradeCommissionReward {
+  desc: string;
+  coins: number;
+  xpPct: number;
+  materials?: Record<string, number>;
+  egg?: string;
+  healsHpPct?: number;
+}
+
+export const JOB_COMMISSIONS: Record<string, { name: string; desc: string; reward: TradeCommissionReward }> = {
+  farmer: {
+    name: "Harvest Golden Crops",
+    desc: "Tend the imperial granaries and reap the autumn harvest.",
+    reward: { desc: "Bountiful harvest delivered to city merchants.", coins: 1_200, xpPct: 0.08, materials: { silk_cloth: 2 } },
+  },
+  miner: {
+    name: "Deep Shaft Excavation",
+    desc: "Delve deep into cavernous ore veins beneath the crags.",
+    reward: { desc: "Mined high-grade iron veins and rare crystals.", coins: 2_000, xpPct: 0.1, materials: { iron_ore: 5, mystic_gem: 1 } },
+  },
+  cook: {
+    name: "Citadel Grand Banquet",
+    desc: "Prepare a multi-course restorative feast for town guards.",
+    reward: { desc: "The banquet was a grand success! Vitality fully restored.", coins: 2_800, xpPct: 0.1, healsHpPct: 1.0 },
+  },
+  fisher: {
+    name: "Abyssal Trench Angling",
+    desc: "Cast enchanted nets into mysterious coastal depths.",
+    reward: { desc: "Hauled in deep-sea silk and a mysterious egg!", coins: 3_500, xpPct: 0.12, materials: { silk_cloth: 3 }, egg: "mystery_egg" },
+  },
+  guard: {
+    name: "High Citadel Patrol",
+    desc: "Stand vigil against incursions along the fortress battlements.",
+    reward: { desc: "Repelled shadowy scouts and secured imperial bounty.", coins: 5_000, xpPct: 0.15 },
+  },
+  blacksmith: {
+    name: "Warforge Tempering",
+    desc: "Smelt and temper heavy ingots for frontline battalions.",
+    reward: { desc: "Masterfully forged batch of tempered armaments.", coins: 7_500, xpPct: 0.15, materials: { iron_ore: 6, star_essence: 1 } },
+  },
+  merchant: {
+    name: "Imperial Caravan Escort",
+    desc: "Manage high-value cargo transport across dangerous trade passes.",
+    reward: { desc: "Successful caravan delivery with lucrative dividends.", coins: 12_000, xpPct: 0.18 },
+  },
+  alchemist: {
+    name: "Celestial Distillation",
+    desc: "Concoct unstable alchemical draughts under starlight.",
+    reward: { desc: "Distilled glowing essences and pristine reagents.", coins: 18_000, xpPct: 0.2, materials: { mystic_gem: 2, star_essence: 2 } },
+  },
+  knight: {
+    name: "Vanguard Monster Purge",
+    desc: "Lead elite sorties against marauding behemoths.",
+    reward: { desc: "Slew dangerous beasts and retrieved pristine dragon scales.", coins: 28_000, xpPct: 0.25, materials: { dragon_scales: 3 } },
+  },
+  wizard: {
+    name: "Arcane Leyline Siphon",
+    desc: "Channel untamed magical rifts at the world boundary.",
+    reward: { desc: "Absorbed immense cosmic mana and crystallized essence.", coins: 45_000, xpPct: 0.3, materials: { star_essence: 3 } },
+  },
+};
+export const COMMISSION_COOLDOWN_MS = 6 * 3600 * 1000; // 6 hours
 
 // ── Temple (original blessings + offerings + ascension) ───────────────
 export interface BlessingDef { id: string; name: string; icon: string; desc: string; costPerLevel: number; minutes: number; buff: { atkPct?: number; defPct?: number; coinPct?: number; xpPct?: number } }

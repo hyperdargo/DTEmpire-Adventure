@@ -29,7 +29,7 @@ export interface PlayerState {
   daily?: { lastDay: string; lastAt: number; streak: number; best: number };
   contracts?: { day: string; tasks: { key: string; need: number; base: number; coins: number; xp: number }[]; claimed: number[] };
   missions?: { day: string; list: { type: MissionType; name: string; desc: string; goal: number; progress: number; coins: number; xp: number; claimed: boolean }[]; bonusClaimed: boolean };
-  job?: { id: string; shiftStartedAt: number | null };
+  job?: { id: string; shiftStartedAt: number | null; commissionReadyAt?: number };
   lucky?: { day: string; spins: number };
   offerings?: { day: string; count: number };
   expedition?: { regionId: string; durationId: string; startedAt: number; endsAt: number } | null;

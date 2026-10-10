@@ -34,6 +34,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: "/quests", label: "Quests", icon: ScrollText, badge: "quests" },
       { to: "/town", label: "Town", icon: Landmark, badge: "town" },
+      { to: "/jobs", label: "Professions", icon: Hammer, minLevel: 5 },
       { to: "/factions", label: "Factions", icon: Flag, minLevel: 10 },
       { to: "/estate", label: "Estate", icon: Home, minLevel: 5 },
       { to: "/bank", label: "Bank", icon: Vault, minLevel: 3 },

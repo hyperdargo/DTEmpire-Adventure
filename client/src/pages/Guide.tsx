@@ -1,4 +1,4 @@
-import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2, Flag } from "lucide-react";
+import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2, Flag, Briefcase } from "lucide-react";
 import { useMemo, useState } from "react";
 import { REGIONS, type Region } from "../../../shared/data/regions.ts";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID, RECIPES } from "../../../shared/data/items.ts";
@@ -6,11 +6,13 @@ import { PET_SPECIES, PET_MAX_LEVEL } from "../../../shared/data/pets.ts";
 import { CLASSES } from "../../../shared/data/classes.ts";
 import { ESTATE_HOUSES, ESTATE_OBJECTS, ESTATE_PET_HOUSES } from "../../../shared/data/estate.ts";
 import { ABYSS_BOONS, ABYSS_SHOP } from "../../../shared/data/abyss.ts";
+import { GUILD_SHOP_ITEMS } from "../../../shared/data/guildShop.ts";
+import { JOBS, JOB_RANKS, JOB_COMMISSIONS } from "../../../shared/data/meta.ts";
 import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
@@ -56,6 +58,7 @@ export default function GuidePage() {
           { value: "classes", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Shield size={16} /> Classes & Skills</span> },
           { value: "abyss", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Endless Abyss</span> },
           { value: "factions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flag size={16} /> Factions & Spire</span> },
+          { value: "professions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Briefcase size={16} /> Professions & Armory</span> },
         ]}
       />
 
@@ -67,6 +70,7 @@ export default function GuidePage() {
         {tab === "classes" && <ClassesGuide search={search} />}
         {tab === "abyss" && <AbyssGuide search={search} />}
         {tab === "factions" && <FactionsGuide search={search} />}
+        {tab === "professions" && <ProfessionsGuide search={search} />}
       </div>
     </div>
   );
@@ -851,6 +855,98 @@ function FactionsGuide({ search }: { search: string }) {
         <p style={{ color: "#888", fontSize: "0.8rem", marginTop: "12px" }}>
           💡 <b>Spire Exploration Cache:</b> Every 5th floor conquered rewards an immediate bonus gold cache directly into your inventory!
         </p>
+      </Panel>
+    </div>
+  );
+}
+
+// ── Tab 8: Professions & Guild Armory ─────────────────────────────────────
+function ProfessionsGuide({ search }: { search: string }) {
+  const q = search.toLowerCase();
+  const filteredJobs = useMemo(() => {
+    if (!q) return JOBS;
+    return JOBS.filter((j) => j.name.toLowerCase().includes(q) || JOB_COMMISSIONS[j.id]?.name.toLowerCase().includes(q) || JOB_COMMISSIONS[j.id]?.desc.toLowerCase().includes(q));
+  }, [q]);
+
+  const filteredArmory = useMemo(() => {
+    if (!q) return GUILD_SHOP_ITEMS;
+    return GUILD_SHOP_ITEMS.filter((i) => i.name.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q));
+  }, [q]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--s-4)" }}>
+      {/* Career Mastery */}
+      <Panel title="Artisan Career Mastery & Rank Tiers">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          Adventurers who consistently work shifts in the Professions Hall rise through artisan ranks. Advancing your rank grants permanent wage multipliers on all shift payouts!
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.8rem" }}>
+          {JOB_RANKS.map((r) => (
+            <div key={r.id} style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "10px" }}>
+              <div style={{ fontWeight: 600, color: "#fff", fontSize: "0.9rem" }}>{r.name}</div>
+              <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
+                Requires: <strong style={{ color: "#fff" }}>{r.shiftsRequired}</strong> shifts
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#4ade80", marginTop: "2px" }}>
+                +{r.wageBonusPct}% Wage Bonus
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      {/* Professions List */}
+      <Panel title="Artisan Professions & Trade Commissions">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          Each trade allows starting 8-hour shifts for coins and XP, plus special 6-hour cooldown trade commissions providing materials, eggs, and full health restorative feasts.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.8rem" }}>
+          {filteredJobs.map((j) => {
+            const comm = JOB_COMMISSIONS[j.id];
+            return (
+              <div key={j.id} style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <span style={{ fontWeight: 600, color: "#fff", fontSize: "0.95rem" }}>{j.icon} {j.name}</span>
+                  <Chip>Level {j.level}</Chip>
+                </div>
+                <div style={{ fontSize: "0.82rem", color: "#aaa", marginBottom: "6px" }}>
+                  Shift Wage: <strong style={{ color: "#fff" }}>{j.wage.toLocaleString("en-US")} coins</strong> (+{Math.round(j.xpPct * 100)}% XP)
+                </div>
+                {comm && (
+                  <div style={{ borderTop: "1px solid #222", paddingTop: "6px", fontSize: "0.78rem" }}>
+                    <div style={{ color: "#fff", fontWeight: 500 }}>Trade Commission: {comm.name}</div>
+                    <div style={{ color: "#777", marginTop: "2px" }}>{comm.desc}</div>
+                    <div style={{ color: "#bbb", marginTop: "4px" }}>Yields: {comm.reward.desc}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      {/* Guild Armory */}
+      <Panel title="Guild Armory & Clan Quartermaster Catalogue">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          Guild members pool honor and resources to unlock exclusive supplies. Higher clan levels unlock rare consumables, griffin eggs, and oathbound gear. Purchases award personal contribution and clan XP!
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.8rem" }}>
+          {filteredArmory.map((item) => (
+            <div key={item.id} style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 600, color: "#fff", fontSize: "0.95rem" }}>{item.icon} {item.name}</span>
+                <Chip tone="gold">Clan Lv {item.minGuildLevel}</Chip>
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#aaa", margin: "4px 0 8px", lineHeight: 1.4 }}>{item.desc}</p>
+              <div style={{ borderTop: "1px solid #222", paddingTop: "6px", display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                <span style={{ color: "#777" }}>Price:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>
+                  {item.costCoins.toLocaleString("en-US")} coins {item.costContribution > 0 ? `+ ${item.costContribution} Contrib` : ""}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </Panel>
     </div>
   );

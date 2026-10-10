@@ -28,6 +28,7 @@ const PetsPage = lazy(() => import("./pages/Pets.tsx"));
 const SmithyPage = lazy(() => import("./pages/Smithy.tsx"));
 const QuestsPage = lazy(() => import("./pages/Quests.tsx"));
 const TownPage = lazy(() => import("./pages/Town.tsx"));
+const JobsPage = lazy(() => import("./pages/Jobs.tsx"));
 const FactionsPage = lazy(() => import("./pages/Factions.tsx"));
 const MarketPage = lazy(() => import("./pages/Market.tsx"));
 const MerchantPage = lazy(() => import("./pages/Merchant.tsx"));
@@ -55,7 +56,7 @@ const ProfilePage = lazy(() => import("./pages/Profile.tsx"));
 const TITLES: Record<string, string> = {
   "/": "The Table", "/adventure": "Adventure", "/tower": "Tower of Ascension", "/dungeon": "Dungeon", "/abyss": "Endless Abyss", "/arena": "Arena",
   "/raid": "World Boss", "/festival": "Festival", "/hero": "Hero", "/bag": "Bag", "/pets": "Pets", "/smithy": "Blacksmith", "/quests": "Quests",
-  "/town": "Town", "/factions": "Imperial Factions", "/estate": "Estate & Housing", "/bank": "Royal Bank", "/guide": "Guide Book", "/market": "Market", "/merchant": "Grand Merchant", "/blackmarket": "Grand Merchant", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
+  "/town": "Town", "/jobs": "Professions & Jobs", "/factions": "Imperial Factions", "/estate": "Estate & Housing", "/bank": "Royal Bank", "/guide": "Guide Book", "/market": "Market", "/merchant": "Grand Merchant", "/blackmarket": "Grand Merchant", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
   "/friends": "Friends", "/trade": "Trades", "/ranks": "Leaderboards", "/records": "Records", "/mail": "Mail",
   "/apps": "Native Apps & Downloads",
   "/settings": "Settings", "/battle": "Battle", "/login": "Sign in", "/register": "Create account",
@@ -142,6 +143,7 @@ export function App() {
           <Route path="/smithy" element={<Page><SmithyPage /></Page>} />
           <Route path="/quests" element={<Page><QuestsPage /></Page>} />
           <Route path="/town" element={<Page><TownPage /></Page>} />
+          <Route path="/jobs" element={<Page><JobsPage /></Page>} />
           <Route path="/factions" element={<Page><FactionsPage /></Page>} />
           <Route path="/estate" element={<Page><EstatePage /></Page>} />
           <Route path="/bank" element={<Page><BankPage /></Page>} />

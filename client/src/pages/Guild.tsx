@@ -127,7 +127,7 @@ function FindGuild({ inMyGuild }: { inMyGuild?: boolean } = {}) {
 function MyGuild({ id }: { id: number }) {
   const { user } = useHero();
   const { data, isPending } = useData<GuildDetail>(["guild", id], `/api/guilds/${id}`);
-  const [tab, setTab] = useState<"overview" | "buildings" | "vault" | "war" | "clans">("overview");
+  const [tab, setTab] = useState<"overview" | "buildings" | "armory" | "vault" | "war" | "clans">("overview");
   const [donation, setDonation] = useState(1000);
   const inv = [["guild", id]];
   const leave = useAction("/api/guild/leave", { success: "You left the guild." });
@@ -155,6 +155,7 @@ function MyGuild({ id }: { id: number }) {
           options={[
             { value: "overview", label: "Overview" },
             { value: "buildings", label: "🏗️ Buildings & Citadel" },
+            { value: "armory", label: "⚔️ Armory" },
             { value: "vault", label: `🏦 Guild Vault (${fmt(data.vault?.balance ?? 0)})` },
             { value: "war", label: "⚔️ Guild War" },
             { value: "clans", label: "🛡️ All Clans" },
@@ -163,6 +164,8 @@ function MyGuild({ id }: { id: number }) {
       </div>
       {tab === "buildings" ? (
         <GuildBuildingsPanel guild={data} officer={officer} />
+      ) : tab === "armory" ? (
+        <GuildArmoryPanel guild={data} />
       ) : tab === "war" ? (
         <GuildWarPanel />
       ) : tab === "vault" ? (
@@ -858,6 +861,146 @@ function GuildVaultPanel({ guild, officer }: { guild: GuildDetail; officer: bool
             })}
           </div>
         )}
+      </Panel>
+    </div>
+  );
+}
+
+interface GuildShopItem {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  kind: "gear" | "stack";
+  templateId: string;
+  slot?: "weapon" | "armor" | "accessory";
+  rarity?: string;
+  ilvl?: number;
+  minGuildLevel: number;
+  costCoins: number;
+  costContribution: number;
+  rewardContribution: number;
+  unlocked: boolean;
+  canAffordCoins: boolean;
+  canAffordContribution: boolean;
+}
+
+interface GuildShopData {
+  inGuild: boolean;
+  guildName: string;
+  guildLevel: number;
+  contribution: number;
+  coins: number;
+  items: GuildShopItem[];
+}
+
+interface GuildBuyResult {
+  item: string;
+  qty: number;
+  costCoins: number;
+  costContribution: number;
+  rewardContribution: number;
+  currentContribution: number;
+  coins: number;
+}
+
+function GuildArmoryPanel({ guild }: { guild: GuildDetail }) {
+  const { data, isPending } = useData<GuildShopData>(["guildShop"], "/api/guild/shop");
+  const buy = useAction<{ itemId: string; qty?: number }, GuildBuyResult>(
+    "/api/guild/shop/buy",
+    {
+      invalidate: [["guildShop"], ["guild", guild.id], ["hero"]],
+      success: (r: GuildBuyResult) => `Acquired ${r.qty}x ${r.item}! +${r.rewardContribution} Contribution gained.`,
+    }
+  );
+
+  if (isPending || !data) return <Loading />;
+
+  return (
+    <div className="stack" style={{ gap: "var(--s-4)" }}>
+      <Panel
+        title="⚔️ Guild Armory & Clan Quartermaster"
+        action={
+          <span style={{ fontSize: "0.85rem", color: "#aaa" }}>
+            Clan Level <strong style={{ color: "#fff" }}>{data.guildLevel}</strong> • Contribution: <strong style={{ color: "#fff" }}>{fmt(data.contribution)}</strong>
+          </span>
+        }
+      >
+        <p style={{ color: "#888", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          Requisition oathbound weapons, citadel armor, war standards, and companion eggs unlocked by clan level. Every requisition awards personal contribution and guild experience.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+          {data.items.map((item) => {
+            const isLocked = !item.unlocked;
+            const canBuy = item.unlocked && item.canAffordCoins && item.canAffordContribution;
+
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: isLocked ? "#0d0d0d" : "#141414",
+                  border: isLocked ? "1px dashed #333" : "1px solid #2a2a2a",
+                  borderRadius: "6px",
+                  padding: "1rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  opacity: isLocked ? 0.65 : 1,
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span style={{ fontSize: "1.5rem" }}>{item.icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 600, color: "#fff" }}>{item.name}</div>
+                        <div style={{ fontSize: "0.75rem", color: "#888", textTransform: "capitalize" }}>
+                          {item.kind === "gear" ? `${item.rarity ?? ""} ${item.slot ?? "Gear"}` : "Clan Consumable"}
+                        </div>
+                      </div>
+                    </div>
+                    {isLocked ? (
+                      <Chip>Lv {item.minGuildLevel} Req</Chip>
+                    ) : (
+                      <Chip tone="gold">Unlocked</Chip>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "0.82rem", color: "#aaa", margin: "0.5rem 0 1rem", lineHeight: 1.4 }}>
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div style={{ borderTop: "1px solid #222", paddingTop: "0.75rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", fontSize: "0.85rem" }}>
+                    <span style={{ color: "#bbb" }}>Cost:</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <Coins value={item.costCoins} />
+                      {item.costContribution > 0 && (
+                        <span style={{ color: item.canAffordContribution ? "#fff" : "#ff5555", fontSize: "0.75rem" }}>
+                          ({item.costContribution} Contrib)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={() => buy.mutate({ itemId: item.id, qty: 1 })}
+                    disabled={!canBuy || buy.isPending}
+                    style={{ width: "100%" }}
+                  >
+                    {isLocked
+                      ? `Locked (Guild Lv ${item.minGuildLevel})`
+                      : !item.canAffordCoins
+                      ? "Not enough coins"
+                      : !item.canAffordContribution
+                      ? "Not enough contribution"
+                      : "Requisition"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Panel>
     </div>
   );

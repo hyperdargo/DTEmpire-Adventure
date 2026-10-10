@@ -113,6 +113,17 @@ export async function registerSocialRoutes(app: FastifyInstance) {
     const { taskId } = parse(z.object({ taskId: z.string().max(40) }), req);
     return mutate(g, u(req), (p) => social.claimGuildTask(g, p, taskId));
   });
+  app.get("/api/guild/shop", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return social.getGuildShop(g, p);
+    });
+  });
+  app.post("/api/guild/shop/buy", async (req) => {
+    const { itemId, qty } = parse(z.object({ itemId: z.string().max(60), qty: z.number().int().min(1).max(99).optional() }), req);
+    return mutate(g, u(req), (p) => social.buyGuildShopItem(g, p, itemId, qty ?? 1));
+  });
 
   // ── Guild Wars ──
   app.get("/api/guild/war", async (req) => {

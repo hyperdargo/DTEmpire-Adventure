@@ -1,8 +1,10 @@
 import type {
   LUCKY_SYMBOLS} from "../../shared/data/meta.ts";
 import {
-  BLESSINGS, CONTRACT_TIERS, LUCKY_PAIR_MULT, EXPEDITION_DURATIONS, EXPEDITION_EFFICIENCY, JOBS, JOB_SHIFT_HOURS, LUCKY_DAILY_SPINS, LUCKY_PAYOUT, LUCKY_WEIGHTS, MISSIONS_PER_DAY, MISSION_BONUS_CHEST, MISSION_POOL, OFFERING_DAILY_CAP, STREAK_GRACE_HOURS,
-  dailyBase, luckyCost, streakMultiplier,
+  BLESSINGS, COMMISSION_COOLDOWN_MS, CONTRACT_TIERS, EXPEDITION_DURATIONS, EXPEDITION_EFFICIENCY,
+  JOBS, JOB_COMMISSIONS, JOB_SHIFT_HOURS, LUCKY_DAILY_SPINS, LUCKY_PAIR_MULT, LUCKY_PAYOUT, LUCKY_WEIGHTS,
+  MISSIONS_PER_DAY, MISSION_BONUS_CHEST, MISSION_POOL, OFFERING_DAILY_CAP, STREAK_GRACE_HOURS,
+  dailyBase, getJobRank, luckyCost, streakMultiplier,
 } from "../../shared/data/meta.ts";
 import { REGIONS, REGION_BY_ID } from "../../shared/data/regions.ts";
 import { rollVictoryLoot } from "../../shared/rules/loot.ts";
@@ -167,7 +169,24 @@ export function jobStatus(g: GameCtx, p: Player) {
   const job = p.state.job ? JOBS.find((j) => j.id === p.state.job!.id) : undefined;
   const started = p.state.job?.shiftStartedAt ?? null;
   const endsAt = started ? started + JOB_SHIFT_HOURS * HOUR : null;
-  return { jobId: job?.id ?? null, shiftStartedAt: started, endsAt, ready: !!endsAt && endsAt <= now };
+  const shiftsCompleted = p.counters.jobShifts ?? 0;
+  const rank = getJobRank(shiftsCompleted);
+  const wageWithBonus = job ? Math.round(job.wage * (1 + rank.wageBonusPct / 100)) : 0;
+  const commissionDef = job ? JOB_COMMISSIONS[job.id] ?? null : null;
+  const commissionReadyAt = p.state.job?.commissionReadyAt ?? 0;
+  const commissionReady = now >= commissionReadyAt;
+  return {
+    jobId: job?.id ?? null,
+    shiftStartedAt: started,
+    endsAt,
+    ready: !!endsAt && endsAt <= now,
+    shiftsCompleted,
+    rank,
+    wageWithBonus,
+    commissionReady,
+    commissionReadyAt,
+    commissionDef,
+  };
 }
 
 export function takeJob(g: GameCtx, p: Player, jobId: string) {
@@ -175,7 +194,8 @@ export function takeJob(g: GameCtx, p: Player, jobId: string) {
   if (!job) throw notFound("Job");
   requireLevel(p, job.level, `The ${job.name} job`);
   if (p.state.job?.shiftStartedAt) throw new GameError("Finish your current shift before changing jobs.");
-  p.state.job = { id: job.id, shiftStartedAt: null };
+  const prevCommission = p.state.job?.commissionReadyAt ?? 0;
+  p.state.job = { id: job.id, shiftStartedAt: null, ...(prevCommission ? { commissionReadyAt: prevCommission } : {}) };
 }
 
 export function startShift(g: GameCtx, p: Player) {
@@ -190,9 +210,54 @@ export function collectShift(g: GameCtx, p: Player) {
   if (!job || !s.shiftStartedAt) throw new GameError("You aren't on a shift.");
   if (!s.ready) throw new GameError(`Your shift ends in ${Math.ceil((s.endsAt! - g.clock.now()) / MINUTE)} minutes.`);
   p.state.job!.shiftStartedAt = null;
-  const coins = grantCoins(g, p, job.wage);
+  const wage = s.wageWithBonus || job.wage;
+  const coins = grantCoins(g, p, wage);
   const xp = grantXp(g, p, xpPctOfLevel(p, job.xpPct));
-  return { coins, xp };
+  bump(g, p, "jobShifts");
+  return { coins, xp, wage, rank: s.rank, shiftsCompleted: p.counters.jobShifts ?? 0 };
+}
+
+export function claimJobCommission(g: GameCtx, p: Player) {
+  if (!p.state.job) throw new GameError("Pick a job first.");
+  const job = JOBS.find((j) => j.id === p.state.job!.id);
+  if (!job) throw notFound("Job");
+  const commission = JOB_COMMISSIONS[job.id];
+  if (!commission) throw notFound("Job commission");
+  const now = g.clock.now();
+  const readyAt = p.state.job.commissionReadyAt ?? 0;
+  if (now < readyAt) {
+    const minsLeft = Math.ceil((readyAt - now) / MINUTE);
+    throw new GameError(`Commission is on cooldown. Next dispatch ready in ${minsLeft} minutes.`);
+  }
+  p.state.job.commissionReadyAt = now + COMMISSION_COOLDOWN_MS;
+  const r = commission.reward;
+  const coins = grantCoins(g, p, r.coins);
+  const xp = grantXp(g, p, xpPctOfLevel(p, r.xpPct));
+  const grantedMaterials: Record<string, number> = {};
+  if (r.materials) {
+    for (const [matId, qty] of Object.entries(r.materials)) {
+      addStack(g, p.userId, matId, qty);
+      grantedMaterials[matId] = qty;
+    }
+  }
+  if (r.egg) {
+    addStack(g, p.userId, r.egg, 1);
+  }
+  if (r.healsHpPct) {
+    const maxHp = heroStats(g, p).maxHp;
+    p.hp = Math.min(maxHp, Math.round(p.hp + maxHp * r.healsHpPct));
+  }
+  bump(g, p, "jobShifts");
+  return {
+    success: true,
+    name: commission.name,
+    desc: r.desc,
+    coins,
+    xp,
+    materials: grantedMaterials,
+    egg: r.egg ?? null,
+    nextReadyAt: p.state.job.commissionReadyAt,
+  };
 }
 
 // ── Temple ────────────────────────────────────────────────────────────
