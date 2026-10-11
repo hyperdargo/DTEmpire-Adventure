@@ -1,7 +1,8 @@
 import type {
   LUCKY_SYMBOLS} from "../../shared/data/meta.ts";
 import {
-  BLESSINGS, COMMISSION_COOLDOWN_MS, CONTRACT_TIERS, EXPEDITION_DURATIONS, EXPEDITION_EFFICIENCY,
+  BLESSINGS, COMMISSION_COOLDOWN_MS, CONTRACT_TIERS, BOUNTY_TIERS, BOUNTIES_PER_WEEK,
+  EXPEDITION_DURATIONS, EXPEDITION_EFFICIENCY,
   JOBS, JOB_COMMISSIONS, JOB_SHIFT_HOURS, LUCKY_DAILY_SPINS, LUCKY_PAIR_MULT, LUCKY_PAYOUT, LUCKY_WEIGHTS,
   MISSIONS_PER_DAY, MISSION_BONUS_CHEST, MISSION_POOL, OFFERING_DAILY_CAP, STREAK_GRACE_HOURS,
   dailyBase, getJobRank, luckyCost, streakMultiplier,
@@ -12,7 +13,7 @@ import { monsterStats } from "../../shared/rules/monsters.ts";
 import { innCost } from "../../shared/rules/progression.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { GameError, notFound, tooFast } from "../lib/errors.ts";
-import { DAY, HOUR, MINUTE, dayKey, nextUtcMidnight } from "../lib/time.ts";
+import { DAY, HOUR, MINUTE, dayKey, weekKey, nextUtcMidnight } from "../lib/time.ts";
 import type { GameCtx } from "./context.ts";
 import { giveDrops } from "./inventory.ts";
 import { type Player, addStack, bump, bumpMission, grantCoins, grantXp, heroStats, requireLevel, setMax, settleHp, spendCoins, xpPctOfLevel } from "./player.ts";
@@ -466,6 +467,60 @@ export function highRollerGamble(
     coins: p.coins,
     details,
   };
+}
+
+// ── Weekly bounty board ───────────────────────────────────────────────
+
+export function ensureBounties(g: GameCtx, p: Player) {
+	const week = weekKey(g.clock.now());
+	if (p.state.bountyBoard?.week === week) return p.state.bountyBoard;
+	const unlocked = REGIONS.filter((r) => r.minLevel <= p.level);
+	const top = unlocked.slice(-3);
+	const rng = createRng(`bounties:${week}:${top.map((r) => r.id).join(",")}`);
+	const pool = top.flatMap((r) => r.monsters.map((m) => ({ key: bestiaryKey(r.id, m.id) })));
+	const picks: string[] = [];
+	while (picks.length < BOUNTIES_PER_WEEK && picks.length < pool.length) {
+		const k = rng.pick(pool).key;
+		if (!picks.includes(k)) picks.push(k);
+	}
+	const bestiary = p.state.bestiary ?? {};
+	p.state.bountyBoard = {
+		week,
+		tasks: picks.map((key, i) => {
+			const tier = BOUNTY_TIERS[Math.min(i, BOUNTY_TIERS.length - 1)]!;
+			return { key, need: tier.kills, base: bestiary[key] ?? 0, coins: tier.coins + tier.coinsPerLevel * p.level, xp: xpPctOfLevel(p, tier.xpPct), tier: tier.name };
+		}),
+		claimed: [],
+	};
+	return p.state.bountyBoard;
+}
+
+export function bountyView(g: GameCtx, p: Player) {
+	const b = ensureBounties(g, p);
+	const bestiary = p.state.bestiary ?? {};
+	return {
+		week: b.week,
+		tasks: b.tasks.map((t, i) => {
+			const [regionId, monsterId] = t.key.split(":");
+			const region = REGION_BY_ID[regionId!];
+			const monster = region?.monsters.find((m) => m.id === monsterId);
+			const done = Math.max(0, Math.min(t.need, (bestiary[t.key] ?? 0) - t.base));
+			return { index: i, regionId, regionName: region?.name, monster: monster?.name ?? monsterId, icon: monster?.icon ?? "👹", need: t.need, done, coins: t.coins, xp: t.xp, tier: t.tier, claimed: b.claimed.includes(i) };
+		}),
+	};
+}
+
+export function claimBounty(g: GameCtx, p: Player, index: number) {
+	const view = bountyView(g, p);
+	const t = view.tasks[index];
+	if (!t) throw notFound("Bounty");
+	if (t.claimed) throw new GameError("Already claimed.");
+	if (t.done < t.need) throw new GameError(`Slay ${t.need - t.done} more ${t.monster}.`);
+	p.state.bountyBoard!.claimed.push(index);
+	grantCoins(g, p, t.coins);
+	grantXp(g, p, t.xp);
+	bump(g, p, "bountiesDone");
+	return { coins: t.coins, xp: t.xp };
 }
 
 export const DAILY_RESET_MS = DAY;

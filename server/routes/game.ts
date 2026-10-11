@@ -32,6 +32,7 @@ import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
 import * as merchant from "../game/merchant.ts";
 import * as factions from "../game/factions.ts";
+import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
 
@@ -585,6 +586,7 @@ export async function registerGameRoutes(app: FastifyInstance) {
         realm: { modifier: currentRealmModifier(now), endsAt: realmModifierEndsAt(now) },
         daily: daily.dailyStatus(g, p),
         contracts: daily.contractView(g, p),
+        bounties: daily.bountyView(g, p),
         missions: daily.ensureMissions(g, p),
         job: { ...daily.jobStatus(g, p), jobs: JOBS },
         expedition: { current: p.state.expedition ?? null, durations: EXPEDITION_DURATIONS },
@@ -616,6 +618,19 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/contracts/claim", async (req) => {
     const { index } = parse(z.object({ index: z.number().int().min(0).max(10) }), req);
     return mutate(g, u(req), (p) => daily.claimContract(g, p, index));
+  });
+  app.get("/api/bounties", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      const view = daily.bountyView(g, p);
+      savePlayer(g, p);
+      return view;
+    });
+  });
+  app.post("/api/bounties/claim", async (req) => {
+    const { index } = parse(z.object({ index: z.number().int().min(0).max(10) }), req);
+    return mutate(g, u(req), (p) => daily.claimBounty(g, p, index));
   });
   app.post("/api/missions/claim", async (req) => {
     const { index } = parse(z.object({ index: z.number().int().min(0).max(10) }), req);
@@ -730,6 +745,14 @@ export async function registerGameRoutes(app: FastifyInstance) {
     savePlayer(g, p);
     const done = new Set(p.state.achievements ?? []);
     return { achievements: ACHIEVEMENTS.map((a) => ({ ...a, progress: Math.min(a.goal, p.counters[a.counter] ?? 0), done: done.has(a.id) })), titles: p.state.titles ?? [], active: p.title };
+  });
+
+  app.get("/api/stats", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return combatStats(g, p);
+    });
   });
 
   // ── Imperial Factions & Allegiance ──

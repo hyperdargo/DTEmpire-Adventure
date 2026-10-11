@@ -6,7 +6,7 @@ export type Counter =
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation"
-  | "jobShifts" | "guildArmoryPurchases";
+  | "jobShifts" | "guildArmoryPurchases" | "bountiesDone";
 
 export interface AchievementDef {
   id: string;
@@ -74,6 +74,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("job_10", "Journeyman Artisan", "🔨", "Complete 10 profession work shifts.", "jobShifts", 10, 3_000, "Journeyman"),
   a("job_30", "Master Craftsman", "⭐", "Complete 30 profession work shifts.", "jobShifts", 30, 15_000, "Master Artisan"),
   a("guild_armory_1", "Clan Quartermaster", "🛡️", "Acquire an item from the Guild Armory.", "guildArmoryPurchases", 1, 5_000, "Vanguard Supporter"),
+  a("bounty_10", "Bounty Hunter", "🎯", "Complete 10 bounties.", "bountiesDone", 10, 10_000, "Bounty Hunter"),
+  a("bounty_50", "The Mandalorian", "🏹", "Complete 50 bounties.", "bountiesDone", 50, 75_000, "the Headhunter"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────
@@ -96,6 +98,14 @@ export const CONTRACT_TIERS = [
   { need: 5, coins: 1_400, xpPct: 0.25, coinsPerLevel: 45 },
   { need: 8, coins: 3_200, xpPct: 0.4, coinsPerLevel: 80 },
 ] as const;
+
+// ── Weekly Bounties ──
+export const BOUNTY_TIERS = [
+  { name: "Bronze Bounty", minLevel: 10, kills: 15, coins: 5_000, xpPct: 0.4, coinsPerLevel: 80 },
+  { name: "Silver Bounty", minLevel: 25, kills: 10, coins: 15_000, xpPct: 0.6, coinsPerLevel: 200 },
+  { name: "Gold Bounty", minLevel: 50, kills: 5, coins: 50_000, xpPct: 1.0, coinsPerLevel: 500 },
+] as const;
+export const BOUNTIES_PER_WEEK = 3;
 
 // ── Daily missions ────────────────────────────────────────────────────
 export type MissionType = "kill" | "boss" | "tower" | "dungeon" | "duel" | "craft" | "hatch" | "sell" | "shop" | "potion" | "expedition" | "coins";

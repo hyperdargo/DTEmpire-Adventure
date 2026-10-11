@@ -7,6 +7,7 @@ import { useAction, useData } from "../state/game.ts";
 interface DailyView {
   daily: { claimedToday: boolean; streak: number; best: number; nextStreak: number; multiplier: number; preview: { coins: number; xp: number }; chestDay: boolean; resetsAt: number };
   contracts: { resetsAt: number; tasks: { index: number; regionName?: string; monster: string; icon: string; need: number; done: number; coins: number; xp: number; claimed: boolean }[] };
+  bounties?: { week: string; tasks: { index: number; regionName?: string; monster: string; icon: string; need: number; done: number; coins: number; xp: number; tier: string; claimed: boolean }[] };
   missions: { list: { name: string; desc: string; goal: number; progress: number; coins: number; xp: number; claimed: boolean }[]; bonusClaimed: boolean };
 }
 
@@ -15,6 +16,7 @@ export default function QuestsPage() {
   const inv = [["daily"]];
   const claim = useAction("/api/daily/claim", { invalidate: inv, success: (r) => { const x = r as { coins: number; streak: number; chest: unknown }; return `Day ${x.streak}: +${fmt(x.coins)} coins${x.chest ? " and a streak chest!" : ""}`; } });
   const contract = useAction<{ index: number }>("/api/contracts/claim", { invalidate: inv, success: "Contract fulfilled." });
+  const bounty = useAction<{ index: number }>("/api/bounties/claim", { invalidate: inv, success: "Bounty fulfilled." });
   const mission = useAction<{ index: number }>("/api/missions/claim", { invalidate: inv, success: "Mission complete." });
   const chest = useAction("/api/missions/chest", { invalidate: [["daily"], ["inventory"]], success: "The mission chest opens: coins and a Mystery Egg!" });
 
@@ -72,6 +74,30 @@ export default function QuestsPage() {
           </ul>
           <Link to="/adventure" className="faint">Find them in Adventure →</Link>
         </Panel>
+
+        {data.bounties && (
+          <Panel title="Weekly Bounties" action={<span className="faint">Week {data.bounties.week}</span>}>
+            <p className="muted" style={{ marginBottom: "var(--s-4)" }}>Elite weekly targets offering grand rewards. Slay the targets before the week concludes.</p>
+            <ul className="quest-list">
+              {data.bounties.tasks.map((t) => (
+                <li key={t.index} className="quest">
+                  <span className="art quest__art" aria-hidden>{t.icon}</span>
+                  <div className="quest__body">
+                    <b>{t.tier}: Slay {t.need} {t.monster}</b>
+                    <span className="faint">{t.regionName}</span>
+                    <Bar value={t.done} max={t.need} kind="xp" showNumbers label="Progress" />
+                  </div>
+                  <div className="quest__reward">
+                    <Coins value={t.coins} compact />
+                    <span className="faint">+{fmt(t.xp)} XP</span>
+                    <Button size="sm" variant={t.done >= t.need && !t.claimed ? "primary" : "default"} disabled={t.claimed || t.done < t.need} onClick={() => bounty.mutate({ index: t.index })}>{t.claimed ? "Done" : "Claim"}</Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link to="/adventure" className="faint">Find them in Adventure →</Link>
+          </Panel>
+        )}
 
         <Panel title="Today's missions">
           <ul className="quest-list">

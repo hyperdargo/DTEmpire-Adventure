@@ -58,6 +58,7 @@ export interface PlayerState {
   paragon?: number;
   bank?: PlayerBankState;
   towerFloors?: Record<string, number>;
+  bountyBoard?: { week: string; tasks: { key: string; need: number; base: number; coins: number; xp: number; tier: string }[]; claimed: number[] };
   petParty?: number[];
   faction?: PlayerFactionState;
 }

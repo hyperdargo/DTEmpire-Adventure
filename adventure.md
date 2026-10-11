@@ -424,3 +424,27 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
 - All 97 vitest tests passing cleanly.
 
 - By Hermes
+
+## Session: `20261012` — Weekly Bounty Board, Combat Stats Dashboard, Bounty Achievements
+
+### Added & Expanded
+- **Weekly Bounty Board System (`/api/bounties`)**:
+  - Weekly rotating targets across 3 difficulty tiers: Bronze (Lv 10+, 15 kills, 5k coins), Silver (Lv 25+, 10 kills, 15k coins), Gold (Lv 50+, 5 kills, 50k coins) + level-scaled coins & XP.
+  - Progress tracked against Bestiary kills from target issue timestamp with full week persistence and rollover.
+  - Endpoints: `GET /api/bounties` (overview & active tasks), `POST /api/bounties/claim` (claim rewards & update counters).
+  - Integrated into daily overview response (`GET /api/daily`).
+  - Added Weekly Bounties section to Quests UI (`client/src/pages/Quests.tsx`) with progress meters and claim actions.
+- **Adventurer's Combat Statistics Dashboard (`/api/stats`)**:
+  - Comprehensive telemetry endpoint returning total kills, boss kills, battles won, death count, win rate percentage.
+  - Tracks bestiary discovery completion, mastered count, nemesis count.
+  - Top 5 most hunted creatures breakdown and full regional kill telemetry.
+  - Lifetime economic and milestone statistics (coins earned, peak coins, streaks, paragon rank).
+- **Bounty Achievements & Titles**:
+  - "Bounty Hunter" (10 bounties completed, 10,000 coins, title "Bounty Hunter").
+  - "The Mandalorian" (50 bounties completed, 75,000 coins, title "the Headhunter").
+- **Quality & Verification**:
+  - Full test suite in `tests/bounties_and_stats.test.ts` (7 tests).
+  - Preserved strict black/white theme compliance (`#0a0a0a` / `#111111` / `#333333`).
+  - All 121 vitest tests across 18 test files passing cleanly.
+
+- By Hermes
