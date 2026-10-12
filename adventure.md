@@ -448,3 +448,21 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
   - All 121 vitest tests across 18 test files passing cleanly.
 
 - By Hermes
+
+## Session: `20261013` — Adventurer's Logbook & Title Compendium (v5.12.0)
+
+### Added & Expanded
+- **Adventurer's Logbook System (`/api/logbook`)**:
+  - Persistent activity feed tracking player milestones: boss kills, achievement unlocks, level ups, and major events.
+  - SQLite `logbook` table with index on `(user_id, created_at DESC)`.
+  - Cap of 200 entries per player to keep storage bounded and performant.
+  - Endpoint `GET /api/logbook` supporting pagination via `before` timestamp filter.
+  - Automated logging wired into `checkAchievements` and `payVictory` (boss kills).
+- **Title Compendium (`/api/titles`)**:
+  - Read-only collection tracker displaying all earnable titles in the game, current active title, earned count, total count, completion percentage, and individual progress meters toward unearned titles.
+- **Quality & Verification**:
+  - Comprehensive unit test suite in `tests/logbook_and_titles.test.ts` (8 tests).
+  - All 129 vitest tests across 19 test files passing cleanly.
+  - Zero TypeScript or ESLint errors.
+
+- By Hermes

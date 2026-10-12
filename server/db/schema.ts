@@ -287,4 +287,20 @@ CREATE TABLE IF NOT EXISTS guild_wars (
 CREATE INDEX IF NOT EXISTS guild_wars_week ON guild_wars(week);
 `,
   },
+  {
+    id: 4,
+    name: "logbook",
+    sql: `
+CREATE TABLE IF NOT EXISTS logbook (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  text TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT '',
+  meta TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_logbook_user ON logbook(user_id, created_at DESC);
+`,
+  },
 ];

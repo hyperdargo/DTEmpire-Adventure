@@ -35,6 +35,7 @@ import * as factions from "../game/factions.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
+import { getLogbook } from "../game/logbook.ts";
 
 const id = z.coerce.number().int().positive();
 const actionSchema: z.ZodType<BattleAction> = z.discriminatedUnion("type", [
@@ -100,8 +101,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.9.0",
-      appVersion: "5.9.0-ultra",
+      version: "5.12.0",
+      appVersion: "5.12.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -752,6 +753,51 @@ export async function registerGameRoutes(app: FastifyInstance) {
     return g.db.tx(() => {
       const p = loadPlayer(g, user.id);
       return combatStats(g, p);
+    });
+  });
+
+  // ── Logbook & Titles ──
+  app.get("/api/logbook", async (req) => {
+    const user = u(req);
+    const before = (req.query as { before?: string })?.before ? Number((req.query as { before?: string }).before) : undefined;
+    return { entries: getLogbook(g, user.id, 50, before) };
+  });
+
+  app.get("/api/titles", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      const owned = new Set(p.state.titles ?? []);
+      const active = p.title;
+
+      // Collect all title sources
+      const titleSources: { title: string; source: string; desc: string; icon: string; progress?: number; goal?: number; earned: boolean }[] = [];
+
+      // From achievements
+      for (const a of ACHIEVEMENTS) {
+        if (!a.title) continue;
+        titleSources.push({
+          title: a.title,
+          source: `Achievement: ${a.name}`,
+          desc: a.desc,
+          icon: a.icon,
+          progress: Math.min(a.goal, p.counters[a.counter] ?? 0),
+          goal: a.goal,
+          earned: owned.has(a.title),
+        });
+      }
+
+      // Count stats
+      const total = titleSources.length;
+      const earned = titleSources.filter((t) => t.earned).length;
+
+      return {
+        active,
+        earned,
+        total,
+        completionPct: total > 0 ? Math.round((earned / total) * 100) : 0,
+        titles: titleSources,
+      };
     });
   });
 

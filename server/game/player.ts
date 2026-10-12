@@ -13,6 +13,7 @@ import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
 import { dayKey } from "../lib/time.ts";
 import type { GameCtx, Notice } from "./context.ts";
+import { logEvent } from "./logbook.ts";
 
 export interface ActiveBuff { id: string; until: number; buff: Buffs }
 
@@ -341,6 +342,7 @@ export function checkAchievements(g: GameCtx, p: Player) {
       subject: `${a.icon} Achievement: ${a.name}`,
       body: `${a.desc}\n\n+${a.coins.toLocaleString("en-US")} coins have been added to your purse.${a.title ? `\nNew title unlocked: “${a.title}”.` : ""}`,
     });
+    logEvent(g, p.userId, "achievement", `Unlocked: ${a.name}`, a.icon, { achievementId: a.id, coins: a.coins, title: a.title });
   }
   p.state.achievements = [...done];
 }

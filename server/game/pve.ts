@@ -14,6 +14,7 @@ import { GameError, notFound } from "../lib/errors.ts";
 import type { GameCtx } from "./context.ts";
 import { type BattleOutcome, type BattleRow, assertCanStartBattle, heroCombatant, insertBattle, registerFinalizer } from "./battles.ts";
 import { giveDrops } from "./inventory.ts";
+import { logEvent } from "./logbook.ts";
 import { type Player, bump, bumpMission, grantCoins, grantXp, heroStats, sendMail, setMax, settleHp } from "./player.ts";
 
 export const bestiaryKey = (regionId: string, monsterId: string) => `${regionId}:${monsterId}`;
@@ -38,6 +39,7 @@ export function payVictory(
   if (opts.boss) {
     bump(g, p, "bossKills");
     bumpMission(p, "boss");
+    logEvent(g, p.userId, "boss_kill", "Defeated a boss!", "👑", { level: opts.level, source: opts.source });
   }
   if (opts.elite) bump(g, p, "eliteKills");
   if (p.state.faction?.factionId) {
