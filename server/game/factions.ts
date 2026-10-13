@@ -14,6 +14,7 @@ import { GameError } from "../lib/errors.ts";
 import { dayKey } from "../lib/time.ts";
 import type { GameCtx } from "./context.ts";
 import { giveDrops } from "./inventory.ts";
+import { logEvent } from "./logbook.ts";
 import { bump, checkAchievements, grantXp, refreshPower, type Player } from "./player.ts";
 
 export function addFactionRep(g: GameCtx, p: Player, amount: number) {
@@ -96,6 +97,7 @@ export function pledgeFaction(g: GameCtx, p: Player, targetFactionId: string) {
 
   bump(g, p, "factionsPledged", 1);
   refreshPower(g, p);
+  logEvent(g, p.userId, "milestone", isSwitching ? `Switched allegiance to ${target.name}!` : `Sworn allegiance to ${target.name}!`, target.banner, { factionId: target.id });
 
   p.notices = p.notices ?? [];
   p.notices.push({
@@ -170,6 +172,8 @@ export function claimFactionTitle(g: GameCtx, p: Player) {
     p.state.titles.push(target.title);
   }
   p.title = target.title;
+
+  logEvent(g, p.userId, "title_earned", `Prestige title unlocked: "${target.title}"!`, "👑", { title: target.title });
 
   p.notices = p.notices ?? [];
   p.notices.push({

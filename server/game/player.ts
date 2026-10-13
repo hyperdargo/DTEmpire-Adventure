@@ -380,6 +380,7 @@ export function grantXp(g: GameCtx, p: Player, amount: number, opts: { applyBonu
     p.hp = stats.maxHp;
     p.hpAt = g.clock.now();
     setMax(g, p, "level", p.level);
+    logEvent(g, p.userId, "level_up", `Reached Level ${p.level}!`, "⭐", { level: p.level });
     g.hub.toChannel("world", { type: "feed", text: `${p.name} reached level ${p.level}.`, icon: "⭐", at: g.clock.now() });
   }
   return gain;

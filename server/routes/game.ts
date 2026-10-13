@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { dayKey } from "../lib/time.ts";
-import { ACHIEVEMENTS, AI_DUELISTS, ARENA_DAILY_RANKED, BLESSINGS, JOBS, EXPEDITION_DURATIONS, MASTERY_TIERS, masteryBonus } from "../../shared/data/meta.ts";
+import { ACHIEVEMENTS, AI_DUELISTS, ARENA_DAILY_RANKED, BLESSINGS, JOBS, EXPEDITION_DURATIONS, MASTERY_TIERS, PARAGON_TITLES, masteryBonus } from "../../shared/data/meta.ts";
 import { CONSUMABLE_BY_ID, RECIPES } from "../../shared/data/items.ts";
 import { SKILL_FUSIONS } from "../../shared/data/skillFusions.ts";
 import { SKILL_RUNES } from "../../shared/data/skillRunes.ts";
@@ -27,6 +27,9 @@ import * as inv from "../game/inventory.ts";
 import { meSnapshot } from "../game/me.ts";
 import * as modes from "../game/modes.ts";
 import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/realm.ts";
+import { FACTIONS } from "../../shared/data/factions.ts";
+import { ABYSS_SHOP } from "../../shared/data/abyss.ts";
+import { SEASONAL_EVENTS } from "../../shared/data/events.ts";
 import { type Player, bumpMission, checkAchievements, findPlayer, loadPlayer, refreshPower, savePlayer, takeStack } from "../game/player.ts";
 import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
@@ -35,7 +38,7 @@ import * as factions from "../game/factions.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
-import { getLogbook } from "../game/logbook.ts";
+import { getLogbook, logEvent } from "../game/logbook.ts";
 
 const id = z.coerce.number().int().positive();
 const actionSchema: z.ZodType<BattleAction> = z.discriminatedUnion("type", [
@@ -101,8 +104,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.12.0",
-      appVersion: "5.12.0-ultra",
+      version: "5.13.0",
+      appVersion: "5.13.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -770,21 +773,114 @@ export async function registerGameRoutes(app: FastifyInstance) {
       const owned = new Set(p.state.titles ?? []);
       const active = p.title;
 
-      // Collect all title sources
-      const titleSources: { title: string; source: string; desc: string; icon: string; progress?: number; goal?: number; earned: boolean }[] = [];
+      // Auto-credit paragon titles if player has achieved the rank
+      const paragonRank = Number(p.state.paragon ?? 0);
+      for (const [r, t] of Object.entries(PARAGON_TITLES)) {
+        if (paragonRank >= Number(r)) owned.add(t);
+      }
 
-      // From achievements
+      // Collect all title sources across the game
+      const titleSources: {
+        title: string;
+        source: string;
+        category: "achievement" | "paragon" | "faction" | "abyss" | "seasonal" | "special";
+        desc: string;
+        icon: string;
+        progress?: number;
+        goal?: number;
+        earned: boolean;
+      }[] = [];
+
+      // 1. From achievements
       for (const a of ACHIEVEMENTS) {
         if (!a.title) continue;
         titleSources.push({
           title: a.title,
           source: `Achievement: ${a.name}`,
+          category: "achievement",
           desc: a.desc,
           icon: a.icon,
           progress: Math.min(a.goal, p.counters[a.counter] ?? 0),
           goal: a.goal,
           earned: owned.has(a.title),
         });
+      }
+
+      // 2. From Paragon ranks
+      for (const [rankStr, title] of Object.entries(PARAGON_TITLES)) {
+        const rank = Number(rankStr);
+        titleSources.push({
+          title,
+          source: `Paragon Rank ${rank}`,
+          category: "paragon",
+          desc: `Attain Paragon Rank ${rank} after reaching Level 100.`,
+          icon: "⚡",
+          progress: Math.min(rank, paragonRank),
+          goal: rank,
+          earned: owned.has(title) || paragonRank >= rank,
+        });
+      }
+
+      // 3. From Imperial Factions
+      for (const f of FACTIONS) {
+        const currentRep = p.state.faction?.factionId === f.id
+          ? (p.state.faction?.reputation ?? 0)
+          : (p.state.faction?.reputations?.[f.id] ?? 0);
+        titleSources.push({
+          title: f.title,
+          source: `Faction: ${f.name}`,
+          category: "faction",
+          desc: `Reach High Commander (Rank 4, 10,000 reputation) in ${f.name}.`,
+          icon: f.banner,
+          progress: Math.min(10000, currentRep),
+          goal: 10000,
+          earned: owned.has(f.title),
+        });
+      }
+
+      // 4. From Endless Abyss
+      for (const item of ABYSS_SHOP) {
+        if (item.kind !== "title") continue;
+        titleSources.push({
+          title: item.ref,
+          source: "Endless Abyss Relics",
+          category: "abyss",
+          desc: item.desc,
+          icon: "🌀",
+          progress: Math.min(item.minWave, p.abyssBest ?? 0),
+          goal: item.minWave,
+          earned: owned.has(item.ref),
+        });
+      }
+
+      // 5. From Seasonal Festivals
+      for (const ev of SEASONAL_EVENTS) {
+        for (const item of ev.shop) {
+          if (item.kind !== "title") continue;
+          titleSources.push({
+            title: item.ref,
+            source: `${ev.name} Festival`,
+            category: "seasonal",
+            desc: item.note ?? `Event-exclusive title from the ${ev.name}.`,
+            icon: ev.icon,
+            earned: owned.has(item.ref),
+          });
+        }
+      }
+
+      // 6. Additional / Legacy / Special titles recorded in player state
+      const known = new Set(titleSources.map((t) => t.title));
+      for (const t of owned) {
+        if (!known.has(t)) {
+          titleSources.push({
+            title: t,
+            source: "Special Honor",
+            category: "special",
+            desc: "Granted by ancient realm lore or imperial decree.",
+            icon: "🎖️",
+            earned: true,
+          });
+        }
       }
 
       // Count stats
@@ -798,6 +894,61 @@ export async function registerGameRoutes(app: FastifyInstance) {
         completionPct: total > 0 ? Math.round((earned / total) * 100) : 0,
         titles: titleSources,
       };
+    });
+  });
+
+  // ── Title Equip / Unequip endpoints ──
+  app.post("/api/title/equip", async (req) => {
+    const { title } = parse(z.object({ title: z.string().max(80).nullable().optional() }), req);
+    return mutate(g, u(req), (p) => {
+      if (!title) {
+        p.title = null;
+        logEvent(g, p.userId, "milestone", "Unequipped active title", "🏅");
+        return { active: null, message: "Title unequipped." };
+      }
+      const owned = new Set(p.state.titles ?? []);
+      const paragonRank = Number(p.state.paragon ?? 0);
+      for (const [r, t] of Object.entries(PARAGON_TITLES)) {
+        if (paragonRank >= Number(r)) owned.add(t);
+      }
+      if (!owned.has(title)) {
+        throw new GameError("You haven't earned that title yet.");
+      }
+      p.title = title;
+      p.state.titles = [...new Set([...(p.state.titles ?? []), title])];
+      logEvent(g, p.userId, "title_earned", `Equipped title: "${title}"`, "🏅", { title });
+      return { active: p.title, message: `Equipped title: "${title}"` };
+    });
+  });
+
+  app.post("/api/titles/equip", async (req) => {
+    const { title } = parse(z.object({ title: z.string().max(80).nullable().optional() }), req);
+    return mutate(g, u(req), (p) => {
+      if (!title) {
+        p.title = null;
+        logEvent(g, p.userId, "milestone", "Unequipped active title", "🏅");
+        return { active: null, message: "Title unequipped." };
+      }
+      const owned = new Set(p.state.titles ?? []);
+      const paragonRank = Number(p.state.paragon ?? 0);
+      for (const [r, t] of Object.entries(PARAGON_TITLES)) {
+        if (paragonRank >= Number(r)) owned.add(t);
+      }
+      if (!owned.has(title)) {
+        throw new GameError("You haven't earned that title yet.");
+      }
+      p.title = title;
+      p.state.titles = [...new Set([...(p.state.titles ?? []), title])];
+      logEvent(g, p.userId, "title_earned", `Equipped title: "${title}"`, "🏅", { title });
+      return { active: p.title, message: `Equipped title: "${title}"` };
+    });
+  });
+
+  app.post("/api/titles/unequip", async (req) => {
+    return mutate(g, u(req), (p) => {
+      p.title = null;
+      logEvent(g, p.userId, "milestone", "Unequipped active title", "🏅");
+      return { active: null, message: "Title unequipped." };
     });
   });
 

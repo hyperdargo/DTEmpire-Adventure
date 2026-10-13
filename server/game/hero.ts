@@ -11,6 +11,7 @@ import { type Rng, createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { computeHeroStats } from "../../shared/rules/stats.ts";
 import { GameError, conflict, notFound } from "../lib/errors.ts";
 import type { GameCtx } from "./context.ts";
+import { logEvent } from "./logbook.ts";
 import { type Player, addGear, addStack, bump, heroStats, itemFromRow, requireLevel, sendMail, spendCoins } from "./player.ts";
 
 function rollClass(g: GameCtx, rng: Rng, weights: Partial<Record<Rarity, number>>, exclude: string[] = []): ClassDef {
@@ -116,8 +117,11 @@ export function ascendParagon(g: GameCtx, p: Player) {
 
   const titles = PARAGON_TITLES;
   if (titles[newRank]) {
+    p.state.titles = [...new Set([...(p.state.titles ?? []), titles[newRank]!])];
     p.title = titles[newRank]!;
   }
+
+  logEvent(g, p.userId, "paragon", `Ascended to Paragon Rank ${newRank}!`, "👑", { rank: newRank, title: titles[newRank] });
 
   const stats = heroStats(g, p);
   p.hp = stats.maxHp;

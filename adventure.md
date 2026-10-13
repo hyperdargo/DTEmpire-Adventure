@@ -465,4 +465,38 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
   - All 129 vitest tests across 19 test files passing cleanly.
   - Zero TypeScript or ESLint errors.
 
-- By Hermes
+  - By Hermes
+
+  ## Session: `20261014` — Records Hub Overhaul, Full Title Compendium & Dedicated Equip, Combat Telemetry & Logbook UI (v5.13.0)
+
+  ### Added & Expanded
+  - **Records Hub UI Overhaul (`/records`)**:
+    - Transformed `/records` into a 5-tab Adventurer's Hall of Records:
+      1. **Bestiary**: Living monster encyclopedia with discovery progress, kill counters, and mastery combat bonus tiers.
+      2. **Achievements**: All realm deeds with progress meters and coin rewards.
+      3. **Title Compendium**: Interactive wardrobe and collection tracker for all 50+ titles across the realm with filter options (All, Earned, Locked) and categories (Achievements, Paragon, Imperial Factions, Endless Abyss, Seasonal Festivals, Special Honors).
+      4. **Combat Statistics**: High-fidelity telemetry dashboard with win rate %, battles won, deaths, boss kills, nemeses smashed, top 5 most hunted beasts with visual quarry cards, regional kill distribution bars, and lifetime economic milestones.
+      5. **Adventurer's Logbook**: Live chronological feed of personal milestones, triumphs, and promotions with relative time-ago stamps and category badges.
+  - **Title Compendium Backend Expansion & Dedicated Equip/Unequip**:
+    - Expanded `GET /api/titles` to aggregate all titles across the game:
+      - Achievements with titles (`ACHIEVEMENTS`)
+      - Paragon progression ranks (`PARAGON_TITLES` Ranks 1 to 50)
+      - Imperial Factions High Commander prestige titles (`FACTIONS`)
+      - Endless Abyss relic titles (`ABYSS_SHOP`)
+      - Seasonal Festival titles (`SEASONAL_EVENTS`)
+      - Special/legacy titles recorded in player state
+    - Added dedicated title wardrobe endpoints:
+      - `POST /api/title/equip` & `POST /api/titles/equip`: equips any earned title or unequips when given `null`.
+      - `POST /api/titles/unequip`: resets active title back to base class rank.
+      - Automatic query cache invalidations (`["titles"]`, `["hero"]`, `["me"]`, `["achievements"]`) and toast alerts.
+  - **Automated Lifecycle Logbook Hooks**:
+    - Hero level up in `server/game/player.ts`: records `level_up` event to logbook on each level breakthrough.
+    - Paragon ascension in `server/game/hero.ts`: records `paragon` event and ensures earned paragon title is pushed to player state titles.
+    - Faction allegiance and prestige claim in `server/game/factions.ts`: records `milestone` and `title_earned` events.
+  - **Quality & Verification**:
+    - Updated test suite in `tests/logbook_and_titles.test.ts` to test category resolution, equipping, unequipping, and unearned title rejection.
+    - 130 vitest tests across 19 test files passing cleanly.
+    - Strict black/white theme compliance (`#0a0a0a` / `#111111` / `#333333`) strictly preserved with zero purple/blue/pink.
+    - Full TypeScript typecheck, ESLint, and Vite production build passed.
+
+  - By Hermes

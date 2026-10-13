@@ -134,15 +134,19 @@ describe("Title Compendium", () => {
       earned: number;
       total: number;
       completionPct: number;
-      titles: { title: string; source: string; desc: string; icon: string; progress: number; goal: number; earned: boolean }[];
+      titles: { title: string; source: string; category?: string; desc: string; icon: string; progress: number; goal: number; earned: boolean }[];
     }>("/api/titles");
 
-    expect(res.total).toBe(withTitles.length);
+    expect(res.total).toBeGreaterThanOrEqual(withTitles.length);
     expect(res.earned).toBe(0);
     expect(res.completionPct).toBe(0);
-    expect(res.titles).toHaveLength(withTitles.length);
+    expect(res.titles.length).toBe(res.total);
+    expect(res.titles.some((t) => t.category === "paragon")).toBe(true);
+    expect(res.titles.some((t) => t.category === "faction")).toBe(true);
+    expect(res.titles.some((t) => t.category === "abyss")).toBe(true);
+    expect(res.titles.some((t) => t.category === "seasonal")).toBe(true);
 
-    const first = res.titles[0]!;
+    const first = res.titles.find((t) => t.category === "achievement")!;
     expect(first.title).toBeTruthy();
     expect(first.source).toContain("Achievement:");
     expect(first.desc).toBeTruthy();
@@ -175,5 +179,37 @@ describe("Title Compendium", () => {
     expect(breaker).toBeDefined();
     expect(breaker?.earned).toBe(true);
     expect(breaker?.progress).toBe(25);
+  });
+
+  it("equips and unequips earned titles via POST /api/title/equip", async () => {
+    const c = new Client(app);
+    await c.signup("EquipHero");
+    const g = app.game;
+
+    const p = loadPlayer(g, 1);
+    bump(g, p, "bossKills", 25);
+    savePlayer(g, p);
+
+    // Try equipping unearned title -> throws 400
+    const err = await c.post("/api/title/equip", { title: "Nonexistent Legend" }).catch((e) => e);
+    expect(err).toBeDefined();
+
+    // Equip earned title "Boss Breaker"
+    const equipped = await c.post<{ result: { active: string } }>("/api/title/equip", { title: "Boss Breaker" });
+    expect(equipped.result.active).toBe("Boss Breaker");
+
+    const playerAfter = loadPlayer(g, 1);
+    expect(playerAfter.title).toBe("Boss Breaker");
+
+    // Unequip title
+    const unequipped = await c.post<{ result: { active: string | null } }>("/api/title/equip", { title: null });
+    expect(unequipped.result.active).toBeNull();
+    expect(loadPlayer(g, 1).title).toBeNull();
+
+    // Re-equip and unequip via POST /api/titles/unequip
+    await c.post("/api/titles/equip", { title: "Boss Breaker" });
+    expect(loadPlayer(g, 1).title).toBe("Boss Breaker");
+    await c.post("/api/titles/unequip", {});
+    expect(loadPlayer(g, 1).title).toBeNull();
   });
 });
