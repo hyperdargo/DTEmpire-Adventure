@@ -8,6 +8,33 @@
 
 ---
 
+## Session: `20261016` — The Imperial Reliquary & Ancient Artifacts System (v5.14.0)
+
+### Added & Expanded
+- **The Imperial Reliquary & Ancient Artifacts (`/records` -> Reliquary tab, `/api/relics`)**:
+  - 24 unique Ancient Relics discovered across story chapters, elemental spires, the endless abyss, and apex achievements:
+    - 20 Story Campaign Relics (Chapters 1–20): Goblin Chieftain's Blade, Wraith's Shadow Dagger, King Grok's Bone Crown, Crystal Queen's Shard, Magma Titan's Core, Solar Sigil Amulet, Void Rift Fragment, etc.
+    - 3 Elemental Spire Relics (Floor 50+): Molten Spire Ember, Celestial Starlight Shard, Abyssal Singularity.
+    - 1 Endgame Apex Relic: Genesis-Terminus Core (Tower Floor 100 or Abyss Wave 50).
+  - Every relic permanently radiates **Relic Resonance** across the player's account, boosting ATK, DEF, HP, SPD, Crit Chance, Lifesteal, Boss Damage, Pierce, Gold Find, and Experience.
+- **Relic Consecration & Transcendent Ranks (`/api/relics/consecrate`)**:
+  - Consecrate discovered relics from Rank 1 (Awakened) up to Rank 5 (Transcendent) using gold and tiered crafting materials (Iron Ore, Dragon Scales, Mystic Gems, Star Essence).
+  - Each rank amplifies resonance blessings by +30% to +150% (up to 2.5× base value).
+- **Achievements & Prestige Titles**:
+  - `relic_5`: "Relic Hunter" (5 relics discovered, 10,000 coins, 'Relic Hunter' title).
+  - `relic_consecrate_10`: "Imperial Antiquarian" (10 relic consecrations, 50,000 coins, 'Imperial Antiquarian' title).
+- **Adventurer's Codex Expansion (`/guide` -> Relics tab)**:
+  - Interactive codex reference documenting all 24 relics, discovery sources, base stats, and consecration scaling.
+- **Adventurer's Chronicle Feed Hook**:
+  - Relic discovery and rank consecrations are automatically written to the player's personal logbook chronicle.
+- **Retroactive Progression Sync**:
+  - Existing player accounts automatically unlock relics earned through past Tower, Spire, and Abyss progression.
+- **Theme & Strict Design Adherence**:
+  - Strict black/white (#0a0a0a, #141414, #282828) aesthetics, dark grey borders, zero purple/blue/neon accents.
+- Update log entries signed `- By Hermes`.
+
+---
+
 ## Session: `20261011` — Professions & Career Mastery + Guild Armory System (v5.10.0)
 
 ### Added & Expanded

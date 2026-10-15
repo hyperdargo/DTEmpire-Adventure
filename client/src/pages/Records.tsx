@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GameCard } from "../components/GameCard.tsx";
-import { Bar, Button, Chip, Empty, Loading, PageHead, Panel, Tabs } from "../components/ui.tsx";
+import { Bar, Button, Chip, Empty, Loading, PageHead, Panel, RarityChip, Tabs } from "../components/ui.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { useAction, useData } from "../state/game.ts";
 import { regionRarity } from "./Adventure.tsx";
@@ -88,7 +88,7 @@ interface LogEntry {
 }
 
 export default function RecordsPage() {
-  const [tab, setTab] = useState<"bestiary" | "achievements" | "titles" | "stats" | "logbook">("bestiary");
+  const [tab, setTab] = useState<"bestiary" | "achievements" | "titles" | "stats" | "logbook" | "relics">("bestiary");
   return (
     <>
       <PageHead title="Records">Every creature you've slain, every title you've earned, and every deed in your chronicle.</PageHead>
@@ -102,6 +102,7 @@ export default function RecordsPage() {
           { value: "titles", label: "Titles" },
           { value: "stats", label: "Combat Stats" },
           { value: "logbook", label: "Logbook" },
+          { value: "relics", label: "Reliquary" },
         ]}
       />
       <div style={{ marginTop: "var(--s-5)" }}>
@@ -110,6 +111,7 @@ export default function RecordsPage() {
         {tab === "titles" && <TitlesView />}
         {tab === "stats" && <CombatStatsView />}
         {tab === "logbook" && <LogbookView />}
+        {tab === "relics" && <ReliquaryView />}
       </div>
     </>
   );
@@ -437,6 +439,175 @@ function LogbookView() {
           ))}
         </ul>
       </Panel>
+    </div>
+  );
+}
+
+interface RelicViewItem {
+  id: string;
+  name: string;
+  icon: string;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic" | "unique";
+  category: "chapter" | "spire" | "abyss" | "apex";
+  chapter?: number;
+  source: string;
+  desc: string;
+  statSummary: string;
+  owned: boolean;
+  rank: number;
+  currentStats: Record<string, number>;
+  nextCost?: {
+    coins: number;
+    material: string;
+    materialName: string;
+    materialQty: number;
+    canAfford: boolean;
+  };
+}
+
+interface RelicsData {
+  relics: RelicViewItem[];
+  totalDiscovered: number;
+  totalRelics: number;
+  totalConsecrations: number;
+  resonanceBonuses: Record<string, number>;
+  completionPct: number;
+}
+
+function ReliquaryView() {
+  const { data, isPending } = useData<RelicsData>(["relics"], "/api/relics");
+  const consecrate = useAction<{ relicId: string }>("/api/relics/consecrate", {
+    invalidate: [["relics"], ["me"]],
+    success: "Relic consecrated!",
+  });
+  const [filter, setFilter] = useState<"all" | "discovered" | "undiscovered" | "consecrated">("all");
+
+  if (isPending || !data) return <Loading rows={4} />;
+
+  const filtered = data.relics.filter((r) => {
+    if (filter === "discovered") return r.owned;
+    if (filter === "undiscovered") return !r.owned;
+    if (filter === "consecrated") return r.owned && r.rank > 1;
+    return true;
+  });
+
+  const bonusEntries = Object.entries(data.resonanceBonuses).filter(([, v]) => typeof v === "number" && v > 0);
+
+  return (
+    <div className="stack stack--lg">
+      <Panel tight>
+        <Bar value={data.totalDiscovered} max={data.totalRelics} kind="xp" showNumbers label="Ancient Relics Discovered" />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)", marginTop: "var(--s-3)", alignItems: "center" }}>
+          <Chip tone="gold">🏛️ Reliquary: {data.totalDiscovered} / {data.totalRelics} ({data.completionPct}%)</Chip>
+          <Chip tone="good">⭐ Total Consecration Ranks: {data.totalConsecrations}</Chip>
+        </div>
+        {bonusEntries.length > 0 && (
+          <div style={{ marginTop: "var(--s-3)", paddingTop: "var(--s-3)", borderTop: "1px solid var(--border)" }}>
+            <div className="faint" style={{ fontSize: "var(--text-xs)", marginBottom: "var(--s-2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Active Relic Resonance (Permanent Account Blessings):
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--s-2)" }}>
+              {bonusEntries.map(([k, v]) => (
+                <Chip key={k} tone="gold">
+                  +{v}{k.endsWith("Pct") ? "%" : k.startsWith("crit") || k === "dodge" || k === "lifesteal" || k === "pierce" ? "%" : ""} {k.replace("Pct", "").toUpperCase()}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+      </Panel>
+
+      <div style={{ display: "flex", gap: "var(--s-2)", flexWrap: "wrap" }}>
+        {(["all", "discovered", "undiscovered", "consecrated"] as const).map((mode) => (
+          <Button
+            key={mode}
+            variant={filter === mode ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setFilter(mode)}
+            style={{ textTransform: "capitalize" }}
+          >
+            {mode} ({mode === "all" ? data.relics.length : mode === "discovered" ? data.totalDiscovered : mode === "undiscovered" ? data.totalRelics - data.totalDiscovered : data.relics.filter((r) => r.owned && r.rank > 1).length})
+          </Button>
+        ))}
+      </div>
+
+      <div className="grid-cards" style={{ "--card-min": "260px" } as React.CSSProperties}>
+        {filtered.map((relic) => {
+          const stars = relic.owned ? "★".repeat(relic.rank) + "☆".repeat(5 - relic.rank) : "☆☆☆☆☆";
+          return (
+            <div
+              key={relic.id}
+              style={{
+                background: relic.owned ? "var(--surface)" : "#111",
+                border: `1px solid ${relic.owned ? "var(--border-bright)" : "var(--border)"}`,
+                borderRadius: "var(--radius)",
+                padding: "var(--s-4)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--s-2)",
+                opacity: relic.owned ? 1 : 0.65,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "1.75rem" }} aria-hidden>{relic.icon}</span>
+                <div style={{ display: "flex", gap: "var(--s-1)" }}>
+                  <RarityChip rarity={relic.rarity} />
+                  <Chip>{relic.category.toUpperCase()}</Chip>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: "var(--text-md)", fontWeight: "bold", margin: 0, color: relic.owned ? "var(--text)" : "var(--text-faint)" }}>
+                  {relic.name}
+                </h3>
+                <div className="faint" style={{ fontSize: "var(--text-xs)", marginTop: "2px" }}>
+                  {relic.source}
+                </div>
+              </div>
+
+              <p className="faint" style={{ fontSize: "var(--text-xs)", margin: "4px 0", flex: 1 }}>
+                {relic.desc}
+              </p>
+
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "var(--s-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="faint" style={{ fontSize: "var(--text-xs)" }}>Resonance:</span>
+                  <span style={{ fontWeight: "bold", color: relic.owned ? "#d4af37" : "var(--text-faint)" }}>
+                    {relic.statSummary} {relic.owned && relic.rank > 1 ? `(Rank ${relic.rank})` : ""}
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.85rem", letterSpacing: "2px", marginTop: "2px", color: relic.owned ? "#d4af37" : "#555" }}>
+                  {stars} {relic.owned ? `Rank ${relic.rank}/5` : "Undiscovered"}
+                </div>
+              </div>
+
+              {relic.owned && relic.rank < 5 && relic.nextCost && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={!relic.nextCost.canAfford || consecrate.isPending}
+                  onClick={() => consecrate.mutate({ relicId: relic.id })}
+                  style={{ marginTop: "var(--s-1)" }}
+                >
+                  ⭐ Consecrate (Rank {relic.rank + 1}): {fmt(relic.nextCost.coins)}g + {relic.nextCost.materialQty}x {relic.nextCost.materialName}
+                </Button>
+              )}
+
+              {relic.owned && relic.rank === 5 && (
+                <div style={{ textAlign: "center", padding: "var(--s-1)", fontSize: "var(--text-xs)", color: "#d4af37", fontWeight: "bold" }}>
+                  🌟 Maximum Transcendent Rank
+                </div>
+              )}
+
+              {!relic.owned && (
+                <div className="faint" style={{ textAlign: "center", padding: "var(--s-1)", fontSize: "var(--text-xs)", fontStyle: "italic" }}>
+                  🔒 Defeat boss or clear spire to discover
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

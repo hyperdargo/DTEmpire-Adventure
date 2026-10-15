@@ -8,6 +8,7 @@ import { type Buffs, type HeroStats, type PetRecord, computeHeroStats, heroPower
 import { computeEstateStats, type PlayerEstateState } from "../../shared/data/estate.ts";
 import { computeGuildBuildingBonuses } from "../../shared/rules/guildBuildings.ts";
 import { computeFactionBonuses } from "../../shared/data/factions.ts";
+import { computeRelicResonanceBonuses } from "../../shared/data/relics.ts";
 import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -62,6 +63,7 @@ export interface PlayerState {
   bountyBoard?: { week: string; tasks: { key: string; need: number; base: number; coins: number; xp: number; tier: string }[]; claimed: number[] };
   petParty?: number[];
   faction?: PlayerFactionState;
+  relics?: Record<string, number>;
 }
 
 export interface Player {
@@ -171,6 +173,12 @@ export function combinedBuffs(p: Player, now: number): Buffs {
     out.coinPct = (out.coinPct ?? 0) + fBonuses.coinPct;
     out.xpPct = (out.xpPct ?? 0) + fBonuses.xpPct;
   }
+
+  if (p.state.relics && Object.keys(p.state.relics).length > 0) {
+    const rBonuses = computeRelicResonanceBonuses(p.state.relics);
+    out.coinPct = (out.coinPct ?? 0) + (rBonuses.coinPct ?? 0);
+    out.xpPct = (out.xpPct ?? 0) + (rBonuses.xpBonus ?? 0);
+  }
   return out;
 }
 
@@ -224,6 +232,7 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
     pet: activePet(g, p.userId),
     buffs: combinedBuffs(p, now),
     guildPerkPct: guildPerk(g, p),
+    relicResonance: computeRelicResonanceBonuses(p.state.relics ?? {}),
   });
 
   // Pet Party (Companion Squad) resonance: non-active squad pets contribute +50% stat resonance

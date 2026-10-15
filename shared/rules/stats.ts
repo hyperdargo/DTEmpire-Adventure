@@ -31,6 +31,21 @@ export interface HeroInput {
   pet?: PetRecord | null;
   buffs?: Buffs;
   guildPerkPct?: number;
+  relicResonance?: {
+    atkPct?: number;
+    defPct?: number;
+    hpPct?: number;
+    spdPct?: number;
+    crit?: number;
+    critDmg?: number;
+    dodge?: number;
+    lifesteal?: number;
+    luck?: number;
+    xpBonus?: number;
+    skillPower?: number;
+    bossDamage?: number;
+    pierce?: number;
+  };
 }
 
 export interface HeroStats {
@@ -157,6 +172,23 @@ export function computeHeroStats(input: HeroInput): HeroStats {
   atk *= 1 + (b.atkPct ?? 0) / 100;
   def *= 1 + (b.defPct ?? 0) / 100;
   xpBonus += (b.xpPct ?? 0) + (input.guildPerkPct ?? 0);
+
+  if (input.relicResonance) {
+    const r = input.relicResonance;
+    if (r.hpPct) hp *= 1 + r.hpPct / 100;
+    if (r.atkPct) atk *= 1 + r.atkPct / 100;
+    if (r.defPct) def *= 1 + r.defPct / 100;
+    if (r.spdPct) spd *= 1 + r.spdPct / 100;
+    if (r.crit) crit += r.crit;
+    if (r.critDmg) critDmg += r.critDmg;
+    if (r.dodge) dodge += r.dodge;
+    if (r.lifesteal) lifesteal += r.lifesteal;
+    if (r.luck) luck += r.luck;
+    if (r.xpBonus) xpBonus += r.xpBonus;
+    if (r.skillPower) skillPower += r.skillPower;
+    if (r.bossDamage) bossDamage += r.bossDamage;
+    if (r.pierce) pierce += r.pierce;
+  }
 
   const stats: HeroStats = {
     maxHp: Math.max(1, Math.round(hp)),

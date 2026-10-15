@@ -12,7 +12,8 @@ export type LogKind =
   | "paragon"
   | "class_ascend"
   | "skill_fused"
-  | "milestone";
+  | "milestone"
+  | "relic";
 
 export function logEvent(
   g: GameCtx,

@@ -16,6 +16,8 @@ import { type BattleOutcome, type BattleRow, assertCanStartBattle, heroCombatant
 import { giveDrops } from "./inventory.ts";
 import { logEvent } from "./logbook.ts";
 import { type Player, bump, bumpMission, grantCoins, grantXp, heroStats, sendMail, setMax, settleHp } from "./player.ts";
+import { unlockRelic } from "./relics.ts";
+import { RELIC_BY_CHAPTER } from "../../shared/data/relics.ts";
 
 export const bestiaryKey = (regionId: string, monsterId: string) => `${regionId}:${monsterId}`;
 
@@ -344,6 +346,13 @@ function completeChapter(g: GameCtx, p: Player, chapterNo: number) {
     relic = ch.relic.name;
     stacks.golden_egg = 1;
     lines.push(`Found ${ch.relic.name}, which cracked open into a Golden Egg`);
+  }
+  const chapterRelic = RELIC_BY_CHAPTER[chapterNo];
+  if (chapterRelic) {
+    const isNew = unlockRelic(g, p, chapterRelic.id);
+    if (isNew) {
+      lines.push(`🏺 Discovered Ancient Relic: [${chapterRelic.name}]`);
+    }
   }
   const cleanStacks = Object.fromEntries(Object.entries(stacks).filter(([, q]) => q > 0));
   sendMail(g, p.userId, {

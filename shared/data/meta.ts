@@ -6,7 +6,8 @@ export type Counter =
   | "duelsWon" | "arenaWins" | "tradesCompleted" | "auctionsSold" | "dailyStreak" | "expeditions"
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation"
-  | "jobShifts" | "guildArmoryPurchases" | "bountiesDone";
+  | "jobShifts" | "guildArmoryPurchases" | "bountiesDone"
+  | "relicsFound" | "relicsConsecrated";
 
 export interface AchievementDef {
   id: string;
@@ -76,6 +77,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("guild_armory_1", "Clan Quartermaster", "🛡️", "Acquire an item from the Guild Armory.", "guildArmoryPurchases", 1, 5_000, "Vanguard Supporter"),
   a("bounty_10", "Bounty Hunter", "🎯", "Complete 10 bounties.", "bountiesDone", 10, 10_000, "Bounty Hunter"),
   a("bounty_50", "The Mandalorian", "🏹", "Complete 50 bounties.", "bountiesDone", 50, 75_000, "the Headhunter"),
+  a("relic_5", "Relic Hunter", "🏺", "Discover 5 ancient relics.", "relicsFound", 5, 10_000, "Relic Hunter"),
+  a("relic_consecrate_10", "Imperial Antiquarian", "🏛️", "Perform 10 relic consecrations.", "relicsConsecrated", 10, 50_000, "Imperial Antiquarian"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────

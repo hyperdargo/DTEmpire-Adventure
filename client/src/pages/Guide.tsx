@@ -8,11 +8,12 @@ import { ESTATE_HOUSES, ESTATE_OBJECTS, ESTATE_PET_HOUSES } from "../../../share
 import { ABYSS_BOONS, ABYSS_SHOP } from "../../../shared/data/abyss.ts";
 import { GUILD_SHOP_ITEMS } from "../../../shared/data/guildShop.ts";
 import { JOBS, JOB_RANKS, JOB_COMMISSIONS } from "../../../shared/data/meta.ts";
+import { RELICS } from "../../../shared/data/relics.ts";
 import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions" | "relics">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
@@ -59,6 +60,7 @@ export default function GuidePage() {
           { value: "abyss", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Endless Abyss</span> },
           { value: "factions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flag size={16} /> Factions & Spire</span> },
           { value: "professions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Briefcase size={16} /> Professions & Armory</span> },
+          { value: "relics", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Reliquary & Relics</span> },
         ]}
       />
 
@@ -71,6 +73,7 @@ export default function GuidePage() {
         {tab === "abyss" && <AbyssGuide search={search} />}
         {tab === "factions" && <FactionsGuide search={search} />}
         {tab === "professions" && <ProfessionsGuide search={search} />}
+        {tab === "relics" && <RelicsGuide search={search} />}
       </div>
     </div>
   );
@@ -943,6 +946,66 @@ function ProfessionsGuide({ search }: { search: string }) {
                 <span style={{ color: "#fff", fontWeight: 600 }}>
                   {item.costCoins.toLocaleString("en-US")} coins {item.costContribution > 0 ? `+ ${item.costContribution} Contrib` : ""}
                 </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+// ── Tab 9: Reliquary & Ancient Artifacts ────────────────────────────────
+function RelicsGuide({ search }: { search: string }) {
+  const filtered = useMemo(() => {
+    if (!search.trim()) return RELICS;
+    const q = search.toLowerCase();
+    return RELICS.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.desc.toLowerCase().includes(q) ||
+        r.source.toLowerCase().includes(q) ||
+        r.statSummary.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q)
+    );
+  }, [search]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <Panel title="The Imperial Reliquary & Ancient Artifacts">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          Ancient Relics are rare, irreplaceable relics of power scattered across the 20 story chapters, the 3 Elemental Spires, and the Endless Abyss.
+          Once discovered, every relic permanently radiates <strong style={{ color: "#d4af37" }}>Relic Resonance</strong> across your entire account, boosting your hero's battle stats, luck, gold find, and experience.
+        </p>
+
+        <div style={{ background: "#111", border: "1px solid #282828", borderRadius: "6px", padding: "12px", marginBottom: "1rem" }}>
+          <h4 style={{ margin: "0 0 6px", color: "#d4af37", fontSize: "0.9rem" }}>Relic Consecration & Transcendent Ranks</h4>
+          <p style={{ color: "#999", fontSize: "0.8rem", margin: 0 }}>
+            Discovered relics begin at <strong>Rank 1 (Awakened)</strong>. Visit <em>Records &rarr; Reliquary</em> to consecrate them up to <strong>Rank 5 (Transcendent)</strong> using gold and crafting materials (Iron Ore, Dragon Scales, Mystic Gems, and Star Essence). Each rank amplifies resonance blessings up to <strong>2.5× base value (+150%)</strong>!
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.8rem" }}>
+          {filtered.map((relic) => (
+            <div key={relic.id} style={{ background: "#141414", border: "1px solid #282828", borderRadius: "6px", padding: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 600, color: "#fff", fontSize: "0.95rem" }}>
+                  {relic.icon} {relic.name}
+                </span>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  <RarityChip rarity={relic.rarity} />
+                  <Chip>{relic.category.toUpperCase()}</Chip>
+                </div>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#888" }}>
+                Source: <span style={{ color: "#bbb" }}>{relic.source}</span>
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#aaa", margin: "4px 0", flex: 1, lineHeight: 1.4 }}>
+                {relic.desc}
+              </p>
+              <div style={{ borderTop: "1px solid #222", paddingTop: "6px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
+                <span style={{ color: "#777" }}>Resonance:</span>
+                <span style={{ color: "#d4af37", fontWeight: 600 }}>{relic.statSummary}</span>
               </div>
             </div>
           ))}

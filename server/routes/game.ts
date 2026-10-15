@@ -35,6 +35,7 @@ import * as pve from "../game/pve.ts";
 import * as estate from "../game/estate.ts";
 import * as merchant from "../game/merchant.ts";
 import * as factions from "../game/factions.ts";
+import * as relics from "../game/relics.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
@@ -972,6 +973,20 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.post("/api/factions/title", async (req) => {
     return mutate(g, u(req), (p) => factions.claimFactionTitle(g, p));
+  });
+
+  // ── Imperial Reliquary & Ancient Artifacts ──
+  app.get("/api/relics", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return relics.getRelicsOverview(g, p);
+    });
+  });
+
+  app.post("/api/relics/consecrate", async (req) => {
+    const { relicId } = parse(z.object({ relicId: z.string().max(60) }), req);
+    return mutate(g, u(req), (p) => relics.consecrateRelic(g, p, relicId));
   });
 
   void bumpMission;
