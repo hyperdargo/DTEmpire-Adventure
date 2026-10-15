@@ -105,8 +105,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.13.0",
-      appVersion: "5.13.0-ultra",
+      version: "5.14.0",
+      appVersion: "5.14.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
