@@ -78,14 +78,14 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
       { id: "amulet_eternity_limited", ref: "amulet_of_eternity_200", kind: "gear", price: 400, once: true, note: "One-Time Limited Edition Lv.100-200 Pendant of Eternity." },
     ],
   },
-  // ── 2. Hollow Eve: Shadow Fall Festival (Oct 18 - Oct 31) ───────────────
+  // ── 2. Hollow Eve: Shadow Fall Festival (Oct 17 - Oct 31) ───────────────
   {
     id: "shadow_fall_2026",
     name: "Shadow Fall Festival",
     icon: "🎃",
     description:
       "A spectral fog sweeps through the realm as restless spirits cross the veil. Slay nightmares to claim Soul Shards and forge forbidden twilight relics.",
-    start: "2026-10-18",
+    start: "2026-10-17",
     end: "2026-10-31",
     currency: { name: "Soul Shards", icon: "🔮" },
     minLevel: 5,
@@ -104,6 +104,11 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
       { id: "phantom_draught", ref: "phantom_draught", kind: "stack", price: 30, once: false, qty: 1, note: "Liquid soul essence." },
       { id: "soul_egg", ref: "soul_egg", kind: "stack", price: 50, once: false, qty: 1, note: "Hatches an eerie spirit companion." },
       { id: "shadow_title_scroll", ref: "🎃 The Hollow Knight", kind: "title", price: 100, once: true, note: "Walk unburdened among ghosts." },
+      { id: "void_annihilator_sf", ref: "void_annihilator_200", kind: "gear", price: 350, once: true, note: "Transcendent Weapon (Lv.100+). 400 Atk, 45% Crit, 40% Pierce." },
+      { id: "celestial_aegis_sf", ref: "celestial_aegis_200", kind: "gear", price: 350, once: true, note: "Transcendent Armor (Lv.100+). 450 Def, 1,200 Max HP, 20% Block." },
+      { id: "crown_cosmos_sf", ref: "crown_of_the_cosmos_200", kind: "gear", price: 300, once: true, note: "Transcendent Helmet (Lv.100+). 300 Def, 150 Atk, 25% All-Resist." },
+      { id: "boots_infinity_sf", ref: "boots_of_infinity_200", kind: "gear", price: 300, once: true, note: "Transcendent Boots (Lv.100+). 250 Def, 30% Haste, 25% Dodge." },
+      { id: "amulet_eternity_sf", ref: "amulet_of_eternity_200", kind: "gear", price: 250, once: true, note: "Transcendent Amulet (Lv.100+). 800 Max HP, 30% Lifesteal." },
     ],
   },
   // ── 3. Winter: Frostfall Solstice (Nov 16 - Dec 31) ──────────────────────

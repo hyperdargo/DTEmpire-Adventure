@@ -13,7 +13,8 @@ export type LogKind =
   | "class_ascend"
   | "skill_fused"
   | "milestone"
-  | "relic";
+  | "relic"
+  | "craft";
 
 export function logEvent(
   g: GameCtx,

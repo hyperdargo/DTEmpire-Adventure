@@ -8,6 +8,41 @@
 
 ---
 
+## Session: `20261017` — Shadow Fall Festival 2026 & Alchemical Transmutation Chamber (v5.15.0)
+
+### Added & Expanded
+- **🎃 LIVE: Shadow Fall Festival 2026 (`/event`, `shared/data/events.ts`)**:
+  - Live seasonal event active from **October 17 to October 31, 2026**.
+  - Event currency: **Soul Shards** (🔮) dropping from seasonal nightmare battles.
+  - 5 Festive Nightmares: Pumpkin Fiend, Crypt Stalker, Grim Banshee, Hollow Knight, and the terrifying Dread Lich Malakor (12% boss encounter rate).
+  - Festival stall shop with event gear (Shadow Scythe, Phantom Cloak, Crown of the Undying, Phantom Draught, Soulbound Egg, "🎃 The Hollow Knight" title) plus 5 exclusive limited-edition **Transcendent Level 200 relics** (`void_annihilator_200`, `celestial_aegis_200`, `crown_of_the_cosmos_200`, `boots_of_infinity_200`, `amulet_of_eternity_200`).
+  - Event kills telemetry integrated into the Adventurer's Logbook and world feed.
+- **⚗️ The Alchemical Transmutation Chamber (`/smithy` -> Transmute tab, `/api/smithy/transmute`)**:
+  - Refine raw crafting materials into rare reagents or decompose high-tier essences into bulk smithing ingredients:
+    - Smelt Dragon Scales: 10× Iron Ore + 2,500 coins → 1× Dragon Scales (Lv 10)
+    - Weave Ethereal Silk: 8× Undead Bones + 3,000 coins → 2× Silk Cloth (Lv 15)
+    - Crystallize Mystic Gem: 5× Dragon Scales + 10,000 coins → 1× Mystic Gem (Lv 25)
+    - Distill Star Essence: 3× Mystic Gems + 35,000 coins → 1× Star Essence (Lv 45)
+    - Synthesize Abyssal Shard: 2× Star Essence + 60,000 coins → 1× Abyssal Shard (Lv 60)
+    - Dissolve Star Essence: 1× Star Essence + 15,000 coins → 2× Mystic Gems
+    - Fracture Mystic Gem: 1× Mystic Gem + 5,000 coins → 3× Dragon Scales
+    - Pulverize Dragon Scales: 1× Dragon Scales + 1,500 coins → 5× Iron Ore
+  - Batch multiplier support (`1×`, `5×`, `10×`, and `Max` up to 50 items).
+  - Real-time client reactivity and inventory invalidation.
+- **🏆 Seasonal & Alchemical Achievements**:
+  - `event_10`: "Nightmare Hunter" (10 festival nightmare kills, 10,000 coins, 'Soul Harvester' title).
+  - `event_50`: "Shadow Exterminator" (50 festival nightmare kills, 40,000 coins, 'Lord of the Mist' title).
+  - `transmute_10`: "Alchemical Master" (10 transmutations, 15,000 coins, 'Grand Alchemist' title).
+  - `transmute_50`: "Philosopher's Crucible" (50 transmutations, 60,000 coins, 'Master Alchemist' title).
+- **📖 Adventurer's Codex Seasonal Festivals & Transmutation Reference (`/guide`)**:
+  - Full Seasonal Festivals reference tab cataloging all 4 realm festivals (Shadow Fall, Harvest Moon, Frostfall Solstice, Vernal Awakening) with live badges, drop rates, monster shapes, and exclusive stall rewards.
+  - Alchemical Transmutation guide section in the Crafting & Salvage guide tab.
+- **Theme & Strict Design Adherence**:
+  - Strict black/white (#0a0a0a, #141414, #282828, #333333) aesthetics with high contrast and zero purple/blue/neon accents.
+- Update log entries signed `- By Hermes`.
+
+---
+
 ## Session: `20261016` — The Imperial Reliquary & Ancient Artifacts System (v5.14.0)
 
 ### Added & Expanded

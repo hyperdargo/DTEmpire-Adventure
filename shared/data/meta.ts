@@ -7,7 +7,8 @@ export type Counter =
   | "contractsDone" | "missionsDone" | "worldBossHits" | "bestiaryDiscovered" | "potionsDrunk" | "luckyJackpots"
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation"
   | "jobShifts" | "guildArmoryPurchases" | "bountiesDone"
-  | "relicsFound" | "relicsConsecrated";
+  | "relicsFound" | "relicsConsecrated"
+  | "eventKills" | "itemsTransmuted";
 
 export interface AchievementDef {
   id: string;
@@ -79,6 +80,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("bounty_50", "The Mandalorian", "🏹", "Complete 50 bounties.", "bountiesDone", 50, 75_000, "the Headhunter"),
   a("relic_5", "Relic Hunter", "🏺", "Discover 5 ancient relics.", "relicsFound", 5, 10_000, "Relic Hunter"),
   a("relic_consecrate_10", "Imperial Antiquarian", "🏛️", "Perform 10 relic consecrations.", "relicsConsecrated", 10, 50_000, "Imperial Antiquarian"),
+  a("event_10", "Nightmare Hunter", "🎃", "Defeat 10 seasonal festival monsters.", "eventKills", 10, 10_000, "Soul Harvester"),
+  a("event_50", "Shadow Exterminator", "👻", "Defeat 50 seasonal festival monsters.", "eventKills", 50, 40_000, "Lord of the Mist"),
+  a("transmute_10", "Alchemical Master", "⚗️", "Transmute materials 10 times at the Alchemical Chamber.", "itemsTransmuted", 10, 15_000, "Grand Alchemist"),
+  a("transmute_50", "Philosopher's Crucible", "🔮", "Transmute materials 50 times at the Alchemical Chamber.", "itemsTransmuted", 50, 60_000, "Master Alchemist"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────

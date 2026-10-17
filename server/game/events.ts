@@ -115,6 +115,7 @@ registerFinalizer("event", (g, p, b) => {
   s.earned += c.tokens;
   s.kills += 1;
   if (boss) s.bossKills += 1;
+  bump(g, p, "eventKills", 1);
   if (boss && event) {
     g.hub.toChannel("world", { type: "feed", icon: event.icon, text: `${p.name} drove off ${c.name} at the ${event.name}.`, at: g.clock.now() });
   }

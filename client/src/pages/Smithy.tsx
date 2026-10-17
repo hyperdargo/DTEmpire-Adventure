@@ -2,11 +2,24 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID, type Recipe } from "../../../shared/data/items.ts";
 import type { ItemView } from "../../../shared/data/types.ts";
+import type { TransmutationRecipe } from "../../../shared/data/transmutation.ts";
 import { GameCard, ItemCard, isGear } from "../components/GameCard.tsx";
 import { Button, Coins, Empty, Loading, PageHead, Panel, Tabs } from "../components/ui.tsx";
 import { useAction, useData, useHero } from "../state/game.ts";
 
 type Cost = { coins: number; materials: Record<string, number> } | null;
+
+interface TransmutationState {
+  recipes: (TransmutationRecipe & {
+    available: number;
+    canAfford: boolean;
+    userFromQty: number;
+    fromName: string;
+    fromIcon: string;
+    toName: string;
+    toIcon: string;
+  })[];
+}
 
 function MaterialList({ materials, have }: { materials: Record<string, number>; have: Record<string, number> }) {
   return (
@@ -22,7 +35,7 @@ function MaterialList({ materials, have }: { materials: Record<string, number>; 
 
 export default function SmithyPage() {
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique" | "reforge">(params.get("item") ? "upgrade" : "craft");
+  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique" | "reforge" | "transmute">(params.get("item") ? "upgrade" : "craft");
   const { hero } = useHero();
   const inv = useData<{ items: ItemView[] }>(["inventory"], "/api/inventory");
   const smithy = useData<{ recipes: Recipe[]; upgradeCosts: Record<string, Cost> }>(["smithy"], "/api/smithy");
@@ -69,15 +82,16 @@ export default function SmithyPage() {
 
   return (
     <>
-      <PageHead title="Blacksmith">Upgrade gear to +10, forge two matching pieces into a rarer one, craft from materials, or sacrifice 5 Mythic pieces to synthesize supreme Unique relics.</PageHead>
+      <PageHead title="Blacksmith">Upgrade gear to +10, forge two matching pieces into a rarer one, craft from materials, or transmute alchemical reagents into higher-tier essences.</PageHead>
       <div className="row row--wrap" style={{ marginBottom: "var(--s-4)" }}>
-        {["iron_ore", "undead_bones", "silk_cloth", "dragon_scales", "mystic_gem", "star_essence"].map((m) => (
+        {["iron_ore", "undead_bones", "silk_cloth", "dragon_scales", "mystic_gem", "star_essence", "abyss_shard"].map((m) => (
           <span key={m} className="chip"><span className="art">{CONSUMABLE_BY_ID[m]?.icon}</span>{CONSUMABLE_BY_ID[m]?.name} <b className="num">{have[m] ?? 0}</b></span>
         ))}
       </div>
       <Tabs label="Blacksmith" value={tab} onChange={setTab} options={[
         { value: "craft", label: "Craft" },
         { value: "upgrade", label: "Upgrade" },
+        { value: "transmute", label: "⚗️ Transmute" },
         { value: "forge", label: "Forge" },
         { value: "unique", label: "👑 Unique Altar (5 Mythic)" },
         { value: "reforge", label: `🧿 Void Reforge (${voidReforgers})` },
@@ -306,7 +320,200 @@ export default function SmithyPage() {
             </Panel>
           </div>
         )}
+
+        {tab === "transmute" && (
+          <TransmutePanel have={have} heroLevel={hero?.level ?? 1} heroCoins={hero?.coins ?? 0} />
+        )}
       </div>
     </>
+  );
+}
+
+function TransmutePanel({ have, heroLevel, heroCoins }: { have: Record<string, number>; heroLevel: number; heroCoins: number }) {
+  const transData = useData<TransmutationState>(["transmute"], "/api/smithy/transmute");
+  const [filter, setFilter] = useState<"all" | "ascend" | "descend">("all");
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const invalidate = [["inventory"], ["smithy"], ["transmute"], ["me"]];
+  const transmute = useAction<{ recipeId: string; count: number }, { receivedQty: number; toName: string; usedQty: number; fromName: string }>(
+    "/api/smithy/transmute",
+    {
+      invalidate,
+      success: (r) => `⚗️ Transmuted ${r.usedQty}× ${r.fromName} into ${r.receivedQty}× ${r.toName}!`,
+    }
+  );
+
+  if (transData.isPending || !transData.data) return <Loading rows={2} />;
+
+  const recipes = transData.data.recipes.filter((r) => filter === "all" || r.category === filter);
+
+  return (
+    <Panel
+      title="Alchemical Transmutation Chamber"
+      action={
+        <div style={{ display: "flex", gap: "6px" }}>
+          <Button variant={filter === "all" ? "primary" : "default"} size="sm" onClick={() => setFilter("all")}>
+            All
+          </Button>
+          <Button variant={filter === "ascend" ? "primary" : "default"} size="sm" onClick={() => setFilter("ascend")}>
+            Refine ⬆️
+          </Button>
+          <Button variant={filter === "descend" ? "primary" : "default"} size="sm" onClick={() => setFilter("descend")}>
+            Fracture ⬇️
+          </Button>
+        </div>
+      }
+    >
+      <p className="muted" style={{ marginBottom: "var(--s-4)" }}>
+        Harness ancient alchemical crucibles to transmute common materials into rare reagents, or fracture high-tier essences into bulk crafting components.
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "var(--s-4)" }}>
+        {recipes.map((r) => {
+          const userQty = have[r.fromMaterial] ?? 0;
+          const selectedCount = counts[r.id] ?? 1;
+          const reqMaterial = r.fromQty * selectedCount;
+          const reqCoins = r.coins * selectedCount;
+          const canAffordMaterial = userQty >= reqMaterial;
+          const canAffordCoins = heroCoins >= reqCoins;
+          const meetsLevel = heroLevel >= r.minLevel;
+          const canCraft = meetsLevel && canAffordMaterial && canAffordCoins;
+
+          return (
+            <div
+              key={r.id}
+              style={{
+                background: "#141414",
+                border: "1px solid #333",
+                borderRadius: "8px",
+                padding: "var(--s-4)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--s-3)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <h4 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", color: "#eee", fontSize: "1rem" }}>
+                    <span>{r.icon}</span> {r.name}
+                  </h4>
+                  <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#888" }}>{r.desc}</p>
+                </div>
+                <span
+                  style={{
+                    background: r.category === "ascend" ? "#1f2a1f" : "#2a1f1f",
+                    color: r.category === "ascend" ? "#7cee7c" : "#ee7c7c",
+                    border: `1px solid ${r.category === "ascend" ? "#335533" : "#553333"}`,
+                    borderRadius: "4px",
+                    padding: "2px 8px",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {r.category === "ascend" ? "Refine" : "Fracture"}
+                </span>
+              </div>
+
+              {/* Conversion Diagram */}
+              <div
+                style={{
+                  background: "#0a0a0a",
+                  border: "1px solid #282828",
+                  borderRadius: "6px",
+                  padding: "8px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>{r.fromIcon}</span>
+                  <span style={{ color: canAffordMaterial ? "#ccc" : "#f77" }}>
+                    {reqMaterial}× {r.fromName}
+                  </span>
+                  <span style={{ color: "#666", fontSize: "0.75rem" }}>({userQty})</span>
+                </div>
+                <span style={{ color: "#888" }}>➔</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#fff", fontWeight: 600 }}>
+                  <span>{r.toIcon}</span>
+                  <span>{r.toQty * selectedCount}× {r.toName}</span>
+                </div>
+              </div>
+
+              {/* Cost & Requirements */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", color: canAffordCoins ? "#ccc" : "#f77" }}>
+                  <span>🪙</span>
+                  <span>{reqCoins.toLocaleString("en-US")} coins</span>
+                </div>
+                <span style={{ color: meetsLevel ? "#888" : "#f77", fontSize: "0.75rem" }}>
+                  Req. Lv.{r.minLevel}
+                </span>
+              </div>
+
+              {/* Multiplier buttons */}
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <span style={{ fontSize: "0.75rem", color: "#666", marginRight: "4px" }}>Batch:</span>
+                {[1, 5, 10].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setCounts((c) => ({ ...c, [r.id]: num }))}
+                    style={{
+                      background: selectedCount === num ? "#fff" : "#1a1a1a",
+                      color: selectedCount === num ? "#000" : "#bbb",
+                      border: "1px solid #444",
+                      borderRadius: "4px",
+                      padding: "2px 8px",
+                      fontSize: "0.75rem",
+                      cursor: "pointer",
+                      fontWeight: selectedCount === num ? 700 : 400,
+                    }}
+                  >
+                    {num}×
+                  </button>
+                ))}
+                {r.available > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setCounts((c) => ({ ...c, [r.id]: Math.min(50, r.available) }))}
+                    style={{
+                      background: selectedCount === Math.min(50, r.available) ? "#fff" : "#1a1a1a",
+                      color: selectedCount === Math.min(50, r.available) ? "#000" : "#bbb",
+                      border: "1px solid #444",
+                      borderRadius: "4px",
+                      padding: "2px 8px",
+                      fontSize: "0.75rem",
+                      cursor: "pointer",
+                      fontWeight: selectedCount === Math.min(50, r.available) ? 700 : 400,
+                    }}
+                  >
+                    Max ({Math.min(50, r.available)})
+                  </button>
+                )}
+              </div>
+
+              {/* Action Button */}
+              <Button
+                variant="primary"
+                size="lg"
+                disabled={!canCraft || transmute.isPending}
+                loading={transmute.isPending}
+                onClick={() => transmute.mutate({ recipeId: r.id, count: selectedCount })}
+                style={{ width: "100%", marginTop: "auto" }}
+              >
+                {!meetsLevel
+                  ? `Requires Lv.${r.minLevel}`
+                  : !canAffordMaterial
+                  ? `Need ${reqMaterial}× ${r.fromName}`
+                  : !canAffordCoins
+                  ? "Not enough coins"
+                  : `Transmute (${selectedCount}×)`}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }

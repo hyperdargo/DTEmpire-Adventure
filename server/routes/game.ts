@@ -36,6 +36,7 @@ import * as estate from "../game/estate.ts";
 import * as merchant from "../game/merchant.ts";
 import * as factions from "../game/factions.ts";
 import * as relics from "../game/relics.ts";
+import * as trans from "../game/transmutation.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
@@ -356,6 +357,17 @@ export async function registerGameRoutes(app: FastifyInstance) {
   app.post("/api/smithy/reforge", async (req) => {
     const { itemId } = parse(z.object({ itemId: id }), req);
     return mutate(g, u(req), (p) => eco.reforgeGear(g, p, itemId));
+  });
+  app.get("/api/smithy/transmute", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return trans.getTransmutationState(g, p);
+    });
+  });
+  app.post("/api/smithy/transmute", async (req) => {
+    const { recipeId, count } = parse(z.object({ recipeId: z.string().max(60), count: z.number().int().min(1).max(50).default(1) }), req);
+    return mutate(g, u(req), (p) => trans.transmuteMaterial(g, p, recipeId, count));
   });
 
   // ── Market ──

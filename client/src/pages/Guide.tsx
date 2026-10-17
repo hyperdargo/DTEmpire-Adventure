@@ -9,11 +9,13 @@ import { ABYSS_BOONS, ABYSS_SHOP } from "../../../shared/data/abyss.ts";
 import { GUILD_SHOP_ITEMS } from "../../../shared/data/guildShop.ts";
 import { JOBS, JOB_RANKS, JOB_COMMISSIONS } from "../../../shared/data/meta.ts";
 import { RELICS } from "../../../shared/data/relics.ts";
+import { SEASONAL_EVENTS } from "../../../shared/data/events.ts";
+import { TRANSMUTATION_RECIPES } from "../../../shared/data/transmutation.ts";
 import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions" | "relics">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions" | "relics" | "festivals">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
@@ -61,6 +63,7 @@ export default function GuidePage() {
           { value: "factions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flag size={16} /> Factions & Spire</span> },
           { value: "professions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Briefcase size={16} /> Professions & Armory</span> },
           { value: "relics", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Reliquary & Relics</span> },
+          { value: "festivals", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Seasonal Festivals</span> },
         ]}
       />
 
@@ -74,6 +77,7 @@ export default function GuidePage() {
         {tab === "factions" && <FactionsGuide search={search} />}
         {tab === "professions" && <ProfessionsGuide search={search} />}
         {tab === "relics" && <RelicsGuide search={search} />}
+        {tab === "festivals" && <FestivalsGuide search={search} />}
       </div>
     </div>
   );
@@ -327,7 +331,8 @@ function CraftingGuide({ search }: { search: string }) {
             { id: "silk_cloth", name: "Silk Cloth", icon: "🧵", source: "Levels 10–50 forest, marsh, and spider foes", use: "Light armor, robes, bows, and cloaks" },
             { id: "dragon_scales", name: "Dragon Scales", icon: "🐉", source: "Levels 25–70 volcanic beasts & bosses", use: "Epic and legendary tier arms & armors" },
             { id: "mystic_gem", name: "Mystic Gem", icon: "💎", source: "Levels 40+ bosses, spires, and high-floor tower", use: "High-tier relic forging & +7 to +10 upgrades" },
-            { id: "star_essence", name: "Star Essence", icon: "🌟", source: "Salvaging Rare, Epic, Legendary, or Mythic gear", use: "Peak mythic crafts and ascension gear" },
+            { id: "star_essence", name: "Star Essence", icon: "🌟", source: "Salvaging Rare, Epic, Legendary, or Mythic gear", use: "Peak mythic crafts, ascension gear & relic consecration" },
+            { id: "abyss_shard", name: "Abyssal Shard", icon: "🔮", source: "Endless Abyss floor completions & void bosses", use: "Void reforging, abyss boons, and tier transmutations" },
           ].map((m) => (
             <div key={m.id} style={{ background: "#151515", border: "1px solid #2a2a2a", borderRadius: "6px", padding: "10px 12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -339,6 +344,32 @@ function CraftingGuide({ search }: { search: string }) {
               </div>
               <div style={{ fontSize: "0.74rem", color: "#777", marginTop: "3px" }}>
                 <strong>Used For:</strong> {m.use}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      {/* Alchemical Transmutation Chamber */}
+      <Panel title={<h3><Sparkles size={18} /> The Alchemical Transmutation Chamber</h3>}>
+        <div style={{ fontSize: "0.85rem", color: "#aaa", marginBottom: "12px", lineHeight: 1.5 }}>
+          Visit the Blacksmith's <strong>⚗️ Transmute</strong> tab to refine common resources into rare reagents or break down high-tier materials into bulk components:
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "10px" }}>
+          {TRANSMUTATION_RECIPES.map((tr) => (
+            <div key={tr.id} style={{ background: "#141414", border: "1px solid #262626", borderRadius: "6px", padding: "10px 12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 600, color: "#fff", fontSize: "0.88rem" }}>
+                  {tr.icon} {tr.name}
+                </span>
+                <span style={{ fontSize: "0.72rem", color: tr.category === "ascend" ? "#7cee7c" : "#ee7c7c" }}>
+                  {tr.category === "ascend" ? "Refine ⬆️" : "Fracture ⬇️"}
+                </span>
+              </div>
+              <p style={{ fontSize: "0.78rem", color: "#888", margin: "4px 0" }}>{tr.desc}</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.78rem", color: "#ccc", marginTop: "6px", borderTop: "1px solid #222", paddingTop: "6px" }}>
+                <span>{tr.fromQty}× {tr.fromMaterial.replace(/_/g, " ")} ➔ {tr.toQty}× {tr.toMaterial.replace(/_/g, " ")}</span>
+                <span style={{ color: "#ffd700" }}>🪙 {tr.coins.toLocaleString("en-US")}</span>
               </div>
             </div>
           ))}
@@ -1009,6 +1040,176 @@ function RelicsGuide({ search }: { search: string }) {
               </div>
             </div>
           ))}
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function FestivalsGuide({ search }: { search: string }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const filtered = useMemo(() => {
+    if (!search.trim()) return SEASONAL_EVENTS;
+    const q = search.toLowerCase();
+    return SEASONAL_EVENTS.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        e.description.toLowerCase().includes(q) ||
+        e.currency.name.toLowerCase().includes(q) ||
+        e.monsters.some((m) => m.name.toLowerCase().includes(q)) ||
+        e.shop.some((s) => s.ref.toLowerCase().includes(q) || s.note?.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <Panel title="Seasonal Festivals & Celestial Calamities">
+        <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 1rem", lineHeight: 1.5 }}>
+          Throughout the cycle of the seasons, ancient astral alignments manifest across the realm. Slay festival nightmares to collect limited-edition tokens, conquer dread world bosses, and redeem exclusive relics, spectral companion eggs, and Transcendent Level 200 artifacts at the Seasonal Stall.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {filtered.map((event) => {
+            const isLive = today >= event.start && today <= event.end;
+            return (
+              <div
+                key={event.id}
+                style={{
+                  background: "#141414",
+                  border: isLive ? "1px solid #444" : "1px solid #262626",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                }}
+              >
+                {/* Festival Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "1.8rem" }}>{event.icon}</span>
+                      <div>
+                        <h3 style={{ margin: 0, color: "#fff", fontSize: "1.15rem" }}>{event.name}</h3>
+                        <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "2px" }}>
+                          📅 {event.start} &rarr; {event.end} · Min Lv.{event.minLevel} · Dread Boss Chance: {Math.round(event.bossChance * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span
+                      style={{
+                        background: isLive ? "#1a2e1a" : "#222",
+                        color: isLive ? "#7cee7c" : "#888",
+                        border: `1px solid ${isLive ? "#2d5e2d" : "#333"}`,
+                        padding: "3px 10px",
+                        borderRadius: "4px",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {isLive ? "🟢 LIVE NOW" : "⏳ Scheduled"}
+                    </span>
+                    <span
+                      style={{
+                        background: "#1a1a1a",
+                        color: "#eee",
+                        border: "1px solid #333",
+                        padding: "3px 10px",
+                        borderRadius: "4px",
+                        fontSize: "0.78rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <span>{event.currency.icon}</span>
+                      <strong>{event.currency.name}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#bbb", lineHeight: 1.4 }}>{event.description}</p>
+
+                {/* Festival Monsters */}
+                <div>
+                  <h4 style={{ margin: "0 0 8px", color: "#ddd", fontSize: "0.9rem" }}>Festival Nightmares</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "8px" }}>
+                    {event.monsters.map((m) => (
+                      <div
+                        key={m.id}
+                        style={{
+                          background: "#0c0c0c",
+                          border: "1px solid #222",
+                          borderRadius: "6px",
+                          padding: "8px 10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: "1.2rem" }}>{m.icon}</span>
+                          <div>
+                            <div style={{ fontSize: "0.82rem", color: "#eee", fontWeight: 600 }}>{m.name}</div>
+                            <div style={{ fontSize: "0.72rem", color: m.tier === "boss" ? "#ee7c7c" : m.tier === "elite" ? "#ffd700" : "#888", textTransform: "capitalize" }}>
+                              {m.tier}
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: "0.78rem", color: "#ccc" }}>
+                          +{m.tokens[0]}-{m.tokens[1]} {event.currency.icon}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Festival Shop */}
+                <div>
+                  <h4 style={{ margin: "0 0 8px", color: "#ddd", fontSize: "0.9rem" }}>Festival Stall Rewards ({event.shop.length} Items)</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
+                    {event.shop.map((s) => {
+                      const isTranscendent = s.ref.includes("_200");
+                      return (
+                        <div
+                          key={s.id}
+                          style={{
+                            background: isTranscendent ? "#161408" : "#0c0c0c",
+                            border: isTranscendent ? "1px solid #5a4810" : "1px solid #222",
+                            borderRadius: "6px",
+                            padding: "8px 10px",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            gap: "6px",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <strong style={{ fontSize: "0.82rem", color: isTranscendent ? "#ffd700" : "#eee" }}>
+                              {isTranscendent && "⭐ "}
+                              {s.ref.replace(/_/g, " ")}
+                            </strong>
+                            <span style={{ fontSize: "0.78rem", color: "#d4af37", fontWeight: 700, whiteSpace: "nowrap" }}>
+                              {s.price} {event.currency.icon}
+                            </span>
+                          </div>
+                          {s.note && <div style={{ fontSize: "0.75rem", color: isTranscendent ? "#bbb" : "#888" }}>{s.note}</div>}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "#666", borderTop: "1px solid #1a1a1a", paddingTop: "4px" }}>
+                            <span style={{ textTransform: "capitalize" }}>Type: {s.kind}</span>
+                            <span>{s.once ? "Once per Account" : "Repeatable"}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Panel>
     </div>
