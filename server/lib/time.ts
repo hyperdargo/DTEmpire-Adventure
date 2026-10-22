@@ -21,6 +21,13 @@ export const nextUtcMidnight = (ms: number) => {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
 };
 
+/** Next ISO-week boundary: Monday at midnight UTC, strictly in the future. */
+export function nextUtcWeek(ms: number): number {
+  const d = new Date(ms);
+  const days = 8 - (d.getUTCDay() || 7);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days);
+}
+
 /** Injectable clock so tests can travel in time. */
 export interface Clock { now(): number }
 export const systemClock: Clock = { now: () => Date.now() };

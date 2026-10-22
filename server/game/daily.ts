@@ -13,7 +13,7 @@ import { monsterStats } from "../../shared/rules/monsters.ts";
 import { innCost } from "../../shared/rules/progression.ts";
 import { createRng, freshSeed } from "../../shared/rules/rng.ts";
 import { GameError, notFound, tooFast } from "../lib/errors.ts";
-import { DAY, HOUR, MINUTE, dayKey, weekKey, nextUtcMidnight } from "../lib/time.ts";
+import { DAY, HOUR, MINUTE, dayKey, weekKey, nextUtcMidnight, nextUtcWeek } from "../lib/time.ts";
 import type { GameCtx } from "./context.ts";
 import { giveDrops } from "./inventory.ts";
 import { type Player, addStack, bump, bumpMission, grantCoins, grantXp, heroStats, requireLevel, setMax, settleHp, spendCoins, xpPctOfLevel } from "./player.ts";
@@ -500,6 +500,7 @@ export function bountyView(g: GameCtx, p: Player) {
 	const bestiary = p.state.bestiary ?? {};
 	return {
 		week: b.week,
+		resetsAt: nextUtcWeek(g.clock.now()),
 		tasks: b.tasks.map((t, i) => {
 			const [regionId, monsterId] = t.key.split(":");
 			const region = REGION_BY_ID[regionId!];

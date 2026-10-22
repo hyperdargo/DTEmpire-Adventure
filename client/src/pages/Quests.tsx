@@ -7,7 +7,7 @@ import { useAction, useData } from "../state/game.ts";
 interface DailyView {
   daily: { claimedToday: boolean; streak: number; best: number; nextStreak: number; multiplier: number; preview: { coins: number; xp: number }; chestDay: boolean; resetsAt: number };
   contracts: { resetsAt: number; tasks: { index: number; regionName?: string; monster: string; icon: string; need: number; done: number; coins: number; xp: number; claimed: boolean }[] };
-  bounties?: { week: string; tasks: { index: number; regionName?: string; monster: string; icon: string; need: number; done: number; coins: number; xp: number; tier: string; claimed: boolean }[] };
+  bounties?: { week: string; resetsAt: number; tasks: { index: number; regionName?: string; monster: string; icon: string; need: number; done: number; coins: number; xp: number; tier: string; claimed: boolean }[] };
   missions: { list: { name: string; desc: string; goal: number; progress: number; coins: number; xp: number; claimed: boolean }[]; bonusClaimed: boolean };
 }
 
@@ -27,7 +27,7 @@ export default function QuestsPage() {
 
   return (
     <>
-      <PageHead title="Quests">Everything here resets at midnight UTC. A short session that clears this page is always worth it.</PageHead>
+      <PageHead title="Quests">Daily rewards, contracts and missions reset at midnight UTC. Weekly bounties reset on Monday at 00:00 UTC.</PageHead>
       <div className="quests">
         <Panel title="Daily reward" action={<span className="faint">Best streak {d.best}</span>}>
           <div className="streak-pad" aria-label={`Streak: ${d.streak} days`}>
@@ -76,7 +76,7 @@ export default function QuestsPage() {
         </Panel>
 
         {data.bounties && (
-          <Panel title="Weekly Bounties" action={<span className="faint">Week {data.bounties.week}</span>}>
+          <Panel title="Weekly Bounties" action={<span className="faint">New in <Countdown to={data.bounties.resetsAt} /></span>}>
             <p className="muted" style={{ marginBottom: "var(--s-4)" }}>Elite weekly targets offering grand rewards. Slay the targets before the week concludes.</p>
             <ul className="quest-list">
               {data.bounties.tasks.map((t) => (
