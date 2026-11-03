@@ -1,3 +1,4 @@
+import { FRONTIER_REGIONS } from "./frontier.ts";
 import { DUNGEON_BANDS, REGIONS_SOURCE, STORY_CHAPTERS } from "./content.ts";
 import { EXPANDED_REGIONS_SOURCE } from "./expandedContent.ts";
 import type { MonsterShape } from "../rules/monsters.ts";
@@ -46,7 +47,7 @@ export const REGIONS: Region[] = ALL_REGIONS_SOURCE.map((r, i) => {
     boss: { id: r.boss.id, name: r.boss.name, icon: r.boss.icon, shape: { hp: 1, atk: 1, def: 1 } },
     bossUnlockKills: 10,
   };
-});
+}).concat(FRONTIER_REGIONS);
 
 export const REGION_BY_ID: Record<string, Region> = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 

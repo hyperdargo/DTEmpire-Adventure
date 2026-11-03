@@ -14,6 +14,7 @@ export type LogKind =
   | "skill_fused"
   | "milestone"
   | "relic"
+  | "talent"
   | "craft";
 
 export function logEvent(

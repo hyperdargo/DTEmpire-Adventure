@@ -9,6 +9,8 @@ import { computeEstateStats, type PlayerEstateState } from "../../shared/data/es
 import { computeGuildBuildingBonuses } from "../../shared/rules/guildBuildings.ts";
 import { computeFactionBonuses } from "../../shared/data/factions.ts";
 import { computeRelicResonanceBonuses } from "../../shared/data/relics.ts";
+import { computeTalentBonuses, totalTalentPointsInvested, TALENTS_BY_ID } from "../../shared/data/talents.ts";
+import type { ExcavationState } from "../../shared/data/excavation.ts";
 import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -64,6 +66,8 @@ export interface PlayerState {
   petParty?: number[];
   faction?: PlayerFactionState;
   relics?: Record<string, number>;
+  talents?: Record<string, number>;
+  excavation?: ExcavationState;
 }
 
 export interface Player {
@@ -295,6 +299,22 @@ export function heroStats(g: GameCtx, p: Player): HeroStats {
     if (fBonuses.crit) stats.crit = Math.min(75, stats.crit + fBonuses.crit);
   }
 
+  // Talent Specialization bonuses
+  const tBonuses = computeTalentBonuses(p.state.talents ?? {});
+  if (tBonuses.atkPct) stats.atk = Math.round(stats.atk * (1 + tBonuses.atkPct / 100));
+  if (tBonuses.defPct) stats.def = Math.round(stats.def * (1 + tBonuses.defPct / 100));
+  if (tBonuses.hpPct) stats.maxHp = Math.round(stats.maxHp * (1 + tBonuses.hpPct / 100));
+  if (tBonuses.spd) stats.spd += tBonuses.spd;
+  if (tBonuses.crit) stats.crit = Math.min(75, stats.crit + tBonuses.crit);
+  if (tBonuses.critDmg) stats.critDmg += tBonuses.critDmg;
+  if (tBonuses.dodge) stats.dodge = Math.min(40, stats.dodge + tBonuses.dodge);
+  if (tBonuses.lifesteal) stats.lifesteal = Math.min(30, stats.lifesteal + tBonuses.lifesteal);
+  if (tBonuses.luck) stats.luck += tBonuses.luck;
+  if (tBonuses.xpBonus) stats.xpBonus += tBonuses.xpBonus;
+  if (tBonuses.bossDamage) stats.bossDamage += tBonuses.bossDamage;
+  if (tBonuses.skillPower) stats.skillPower += tBonuses.skillPower;
+  if (tBonuses.pierce) stats.pierce = (stats.pierce ?? 0) + tBonuses.pierce;
+
   stats.power = heroPower(stats);
   return stats;
 }
@@ -338,6 +358,19 @@ export function checkAchievements(g: GameCtx, p: Player) {
       p.counters.skillsLearned = skillCount;
     }
   } catch { /* ignore */ }
+  try {
+    const invested = totalTalentPointsInvested(p.state.talents ?? {});
+    if (invested > (p.counters.talentsInvested ?? 0)) {
+      p.counters.talentsInvested = invested;
+    }
+    let keystones = 0;
+    for (const [id, rank] of Object.entries(p.state.talents ?? {})) {
+      if (TALENTS_BY_ID[id]?.isKeystone && typeof rank === "number" && rank > 0) keystones++;
+    }
+    if (keystones > (p.counters.talentKeystones ?? 0)) {
+      p.counters.talentKeystones = keystones;
+    }
+  } catch { /* ignore */ }
   const done = new Set(p.state.achievements ?? []);
   for (const a of ACHIEVEMENTS) {
     if (done.has(a.id)) continue;
@@ -364,6 +397,20 @@ export function bumpMission(p: Player, type: MissionType, amount = 1) {
   }
 }
 
+const HEROIC_MILESTONES: { level: number; coins: number; stacks: Record<string, number>; title: string }[] = [
+  { level: 25,  coins: 5_000,    stacks: { xp_scroll: 3, health_potion: 5 }, title: "Adventurer" },
+  { level: 50,  coins: 15_000,   stacks: { xp_scroll: 5, mystery_egg: 2 }, title: "Veteran" },
+  { level: 100, coins: 50_000,   stacks: { xp_scroll: 10, mystery_egg: 3, void_reforger: 1 }, title: "Centurion" },
+  { level: 150, coins: 100_000,  stacks: { xp_scroll: 15, mystery_egg: 5, void_reforger: 2 }, title: "Champion" },
+  { level: 200, coins: 250_000,  stacks: { xp_scroll: 20, mystery_egg: 8, void_reforger: 3, skill_book: 5 }, title: "Hero" },
+  { level: 250, coins: 500_000,  stacks: { xp_scroll: 25, mystery_egg: 10, void_reforger: 5, skill_book: 8 }, title: "Legend" },
+  { level: 300, coins: 1_000_000, stacks: { xp_scroll: 30, mystery_egg: 12, void_reforger: 8, skill_book: 10 }, title: "Mythic Hero" },
+  { level: 350, coins: 2_000_000, stacks: { xp_scroll: 40, mystery_egg: 15, void_reforger: 10, skill_book: 12 }, title: "Ascendant" },
+  { level: 400, coins: 3_500_000, stacks: { xp_scroll: 50, mystery_egg: 20, void_reforger: 15, skill_book: 15 }, title: "Immortal" },
+  { level: 450, coins: 5_000_000, stacks: { xp_scroll: 60, mystery_egg: 25, void_reforger: 18, skill_book: 18 }, title: "Eternal" },
+  { level: 500, coins: 10_000_000, stacks: { xp_scroll: 80, mystery_egg: 30, void_reforger: 25, skill_book: 25 }, title: "Transcendent" },
+];
+
 /** Grants XP with buffs applied, handling level-ups, full heals, and milestone eggs. */
 export function grantXp(g: GameCtx, p: Player, amount: number, opts: { applyBonus?: boolean } = {}): number {
   if (p.level >= MAX_LEVEL) return 0;
@@ -384,6 +431,17 @@ export function grantXp(g: GameCtx, p: Player, amount: number, opts: { applyBonu
         addStack(g, p.userId, "mystery_egg", 1);
         p.notices.push({ kind: "egg", name: "Mystery Egg" });
       }
+      const milestone = HEROIC_MILESTONES.find(m => m.level === lv);
+      if (milestone) {
+        sendMail(g, p.userId, {
+          sender: "The Empire",
+          subject: `🏆 Heroic Milestone: Level ${lv}!`,
+          body: `Congratulations, ${milestone.title}! You have reached Level ${lv} — a monumental achievement. The realm honors your ascension with these gifts.`,
+          attachments: { coins: milestone.coins, stacks: milestone.stacks },
+        });
+        logEvent(g, p.userId, "milestone", `Achieved Heroic Milestone: Level ${lv} — ${milestone.title}!`, "🏆", { level: lv });
+        g.hub.toChannel("world", { type: "feed", text: `${p.name} achieved the heroic milestone of Level ${lv}! — ${milestone.title}`, icon: "🏆", at: g.clock.now() });
+      }
     }
     const stats = heroStats(g, p);
     p.hp = stats.maxHp;
@@ -402,7 +460,8 @@ export function grantCoins(g: GameCtx, p: Player, amount: number, opts: { fromBa
   let gain = Math.max(0, Math.floor(amount));
   if (opts.fromBattle) {
     const coinPct = combinedBuffs(p, g.clock.now()).coinPct ?? 0;
-    gain = Math.floor(gain * (1 + coinPct / 100));
+    const talentCoinPct = computeTalentBonuses(p.state.talents ?? {}).coinPct ?? 0;
+    gain = Math.floor(gain * (1 + (coinPct + talentCoinPct) / 100));
     bumpMission(p, "coins", gain);
   }
   p.coins += gain;

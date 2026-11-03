@@ -119,27 +119,86 @@ export default function RecordsPage() {
 
 function BestiaryView() {
   const { data, isPending } = useData<Bestiary>(["bestiary"], "/api/bestiary");
+  const [search, setSearch] = useState("");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [rankFilter, setRankFilter] = useState("all");
+  const [showUndiscovered, setShowUndiscovered] = useState(true);
   if (isPending || !data) return <Loading rows={4} />;
   const all = data.regions.flatMap((r) => r.creatures);
   const found = all.filter((c) => c.kills > 0).length;
+  const lc = search.toLowerCase();
+  const filteredRegions = data.regions
+    .filter((r) => regionFilter === "all" || r.id === regionFilter)
+    .map((r) => ({
+      ...r,
+      creatures: r.creatures.filter((c) => {
+        if (!showUndiscovered && c.kills === 0) return false;
+        if (lc && !(c.name ?? "undiscovered").toLowerCase().includes(lc)) return false;
+        if (rankFilter !== "all") {
+          const targetRank = rankFilter === "none" ? 0 : data.tiers.findIndex(t => t.name.toLowerCase() === rankFilter) + 1;
+          if (c.rank !== targetRank) return false;
+        }
+        return true;
+      }),
+    }))
+    .filter((r) => r.creatures.length > 0);
   return (
     <div className="stack stack--lg">
       <Panel tight>
         <Bar value={found} max={all.length} kind="xp" showNumbers label="Creatures discovered" />
         <p className="faint" style={{ marginTop: "var(--s-3)" }}>Mastery ranks: {data.tiers.map((t) => `${t.name} at ${t.kills} kills`).join(" · ")}. Each rank adds +3% attack and +2% defense against that creature.</p>
       </Panel>
-      {data.regions.map((r, i) => (
-        <section key={r.id}>
-          <h2 className="section-title"><span className="art" aria-hidden>{r.icon}</span> {r.name} <span className="faint">Lv {r.minLevel}+</span></h2>
-          <div className="grid-cards" style={{ "--card-min": "130px" } as React.CSSProperties}>
-            {r.creatures.map((c) => (
-              <GameCard key={c.key} size="sm" rarity={c.boss ? "mythic" : c.kills ? regionRarity(i, data.regions.length) : "common"} art={c.icon ?? "❔"} name={c.name ?? "Undiscovered"}
-                type={c.kills ? `${fmt(c.kills)} slain` : c.boss ? "Boss" : "Unknown"} disabled={!c.kills}
-                badge={c.rank ? data.tiers[c.rank - 1]?.name : undefined} label={c.name ?? "Undiscovered creature"} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <Panel tight>
+        <div style={{ display: "flex", gap: "var(--s-3)", flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Search creatures…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: "1 1 180px", minWidth: "150px", padding: "var(--s-3) var(--s-4)", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "#fff", fontSize: "0.875rem" }}
+            aria-label="Search creatures by name"
+          />
+          <select
+            value={regionFilter}
+            onChange={(e) => setRegionFilter(e.target.value)}
+            style={{ padding: "var(--s-3) var(--s-4)", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "#fff", fontSize: "0.875rem" }}
+            aria-label="Filter by region"
+          >
+            <option value="all">All Regions</option>
+            {data.regions.map((r) => <option key={r.id} value={r.id}>{r.icon} {r.name}</option>)}
+          </select>
+          <select
+            value={rankFilter}
+            onChange={(e) => setRankFilter(e.target.value)}
+            style={{ padding: "var(--s-3) var(--s-4)", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", color: "#fff", fontSize: "0.875rem" }}
+            aria-label="Filter by mastery rank"
+          >
+            <option value="all">All Ranks</option>
+            <option value="none">No Rank</option>
+            {data.tiers.map((t) => <option key={t.name} value={t.name.toLowerCase()}>{t.name}</option>)}
+          </select>
+          <label style={{ display: "flex", alignItems: "center", gap: "var(--s-2)", color: "#999", fontSize: "0.8rem", cursor: "pointer" }}>
+            <input type="checkbox" checked={showUndiscovered} onChange={(e) => setShowUndiscovered(e.target.checked)} />
+            Undiscovered
+          </label>
+        </div>
+      </Panel>
+      {filteredRegions.length === 0 && <Empty art="🔍" title="No creatures match your filters">Try adjusting your search or filters.</Empty>}
+      {filteredRegions.map((r) => {
+        const origIdx = data.regions.findIndex(orig => orig.id === r.id);
+        return (
+          <section key={r.id}>
+            <h2 className="section-title"><span className="art" aria-hidden>{r.icon}</span> {r.name} <span className="faint">Lv {r.minLevel}+</span></h2>
+            <div className="grid-cards" style={{ "--card-min": "130px" } as React.CSSProperties}>
+              {r.creatures.map((c) => (
+                <GameCard key={c.key} size="sm" rarity={c.boss ? "mythic" : c.kills ? regionRarity(origIdx, data.regions.length) : "common"} art={c.icon ?? "❔"} name={c.name ?? "Undiscovered"}
+                  type={c.kills ? `${fmt(c.kills)} slain` : c.boss ? "Boss" : "Unknown"} disabled={!c.kills}
+                  badge={c.rank ? data.tiers[c.rank - 1]?.name : undefined} label={c.name ?? "Undiscovered creature"} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

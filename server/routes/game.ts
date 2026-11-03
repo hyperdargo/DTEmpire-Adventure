@@ -37,6 +37,8 @@ import * as merchant from "../game/merchant.ts";
 import * as factions from "../game/factions.ts";
 import * as relics from "../game/relics.ts";
 import * as trans from "../game/transmutation.ts";
+import * as talents from "../game/talents.ts";
+import * as excavation from "../game/excavation.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
@@ -106,8 +108,8 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.get("/api/version", async () => {
     return {
-      version: "5.15.0",
-      appVersion: "5.15.0-ultra",
+      version: "5.18.0",
+      appVersion: "5.18.0-ultra",
       buildTime: Date.now(),
       status: "online",
       name: "DTEmpire Adventure RPG"
@@ -1001,6 +1003,45 @@ export async function registerGameRoutes(app: FastifyInstance) {
     return mutate(g, u(req), (p) => relics.consecrateRelic(g, p, relicId));
   });
 
+  // ── Hero Talents & Specialization Trees ──
+  app.get("/api/talents", async (req) => {
+    const user = u(req);
+    return g.db.tx(() => {
+      const p = loadPlayer(g, user.id);
+      return talents.getTalentsOverview(g, p);
+    });
+  });
+
+  app.post("/api/talents/invest", async (req) => {
+    const { talentId } = parse(z.object({ talentId: z.string().max(60) }), req);
+    return mutate(g, u(req), (p) => talents.investTalentPoint(g, p, talentId));
+  });
+
+  app.post("/api/talents/reset", async (req) => {
+    return mutate(g, u(req), (p) => talents.resetTalents(g, p));
+  });
+
+  app.get('/api/excavation', async (req) => g.db.tx(() => excavation.excavationView(g, loadPlayer(g, u(req).id))));
+  app.post('/api/excavation/start', async (req) => {
+    const { sector } = parse(z.object({ sector: z.number().int().min(1).max(10) }).strict(), req);
+    return mutate(g, u(req), p => excavation.startExcavation(g, p, sector));
+  });
+  app.post('/api/excavation/work', async (req) => {
+    const { action } = parse(z.object({ action: z.enum(['survey', 'brace', 'extract', 'return']) }).strict(), req);
+    return mutate(g, u(req), p => excavation.workExcavation(g, p, action));
+  });
+  app.post('/api/excavation/upgrade', async (req) => {
+    const { equipment } = parse(z.object({ equipment: z.enum(['drill', 'hull', 'survey']) }).strict(), req);
+    return mutate(g, u(req), p => excavation.upgradeExcavation(g, p, equipment));
+  });
+  app.post('/api/excavation/redeem', async (req) => {
+    const { rewardId } = parse(z.object({ rewardId: z.string().max(60) }).strict(), req);
+    return mutate(g, u(req), p => excavation.redeemExcavation(g, p, rewardId));
+  });
+  app.post('/api/excavation/class', async (req) => {
+    const { classId } = parse(z.object({ classId: z.string().max(60) }).strict(), req);
+    return mutate(g, u(req), p => excavation.adoptExcavationClass(g, p, classId));
+  });
   void bumpMission;
 }
 

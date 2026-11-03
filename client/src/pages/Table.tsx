@@ -58,6 +58,7 @@ export function TablePage() {
   const bossReady = region && region.kills >= region.bossUnlockKills;
 
   const hand = [
+    { key: "excavation", art: "⛏️", name: "Imperial Excavation", rarity: "common", text: "Fund contracts. Earn research. Unlock permanent disciplines.", onClick: () => navigate("/excavation") },
     b.daily && { key: "daily", art: "🎁", name: "Daily reward", rarity: "legendary", text: `Day ${b.streak + 1} of your streak.`, cta: "Claim", onClick: () => claimDaily.mutate(undefined) },
     { key: "quests", art: "📜", name: "Quests", rarity: b.contracts + b.missions > 0 ? "epic" : "common", text: b.contracts + b.missions > 0 ? `${b.contracts + b.missions} reward${b.contracts + b.missions > 1 ? "s" : ""} to claim` : "Hunt contracts and missions", onClick: () => navigate("/quests") },
     { key: "tower", art: "🏰", name: `Tower · Floor ${Math.min(100, hero.towerFloor + 1)}`, rarity: (hero.towerFloor + 1) % 5 === 0 ? "mythic" : "rare", text: (hero.towerFloor + 1) % 5 === 0 ? "A chapter boss waits." : "Climb toward the Void Gate.", onClick: () => navigate("/tower") },

@@ -1,3 +1,4 @@
+import { FRONTIER_GEAR } from "./frontier.ts";
 import { ARMOR_SOURCE, POTION_SOURCE, RELIC_SOURCE, WEAPON_SOURCE } from "./content.ts";
 import type { ConsumableTemplate, EquipSlot, GearTemplate, Rarity, StatBlock, WeaponType } from "./types.ts";
 
@@ -146,7 +147,7 @@ const eventGear: GearTemplate[] = [
   { id: "guild_sovereign_crest", name: "Guild Sovereign Relic", icon: "⚜️", slot: "accessory", levelReq: 45, desc: "The ultimate emblem of clan leadership and supremacy." },
 ];
 
-export const GEAR: GearTemplate[] = [...starters, ...weapons, ...bows, ...armors, ...helmets, ...boots, ...accessories, ...eventGear];
+export const GEAR: GearTemplate[] = [...starters, ...weapons, ...bows, ...armors, ...helmets, ...boots, ...accessories, ...eventGear, ...FRONTIER_GEAR];
 export const GEAR_BY_ID: Record<string, GearTemplate> = Object.fromEntries(GEAR.map((g) => [g.id, g]));
 
 export function gearForSlot(slot: EquipSlot): GearTemplate[] {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { MAX_LEVEL, applyXp, xpToNext } from "../shared/rules/progression.ts";
 
-describe("XP Scroll Capping at Level 200", () => {
+describe("XP Scroll Capping at the realm cap", () => {
   it("stops granting XP and increments when player hits MAX_LEVEL", () => {
-    let level = 198;
+    let level = MAX_LEVEL - 2;
     let xp = 0;
     const scrollXpPct = 0.15; // 15% of level per scroll
     const totalScrolls = 500;

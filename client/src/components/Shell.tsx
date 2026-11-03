@@ -188,7 +188,7 @@ export function Shell({ me, children }: { me: HeroSnap; children: ReactNode }) {
       <a className="skip-link" href="#main">Skip to content</a>
       <nav className="rail" aria-label="Main">
         <Link to="/" className="rail__brand">
-          <img src="/logo.png" alt="" width={46} height={46} />
+          <img src="/icon-192.png" alt="" width={46} height={46} />
           <div>
             <b>DTEmpire</b>
             <span>Adventure</span>

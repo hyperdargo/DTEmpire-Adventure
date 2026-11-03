@@ -2,6 +2,7 @@ import { Gift } from "lucide-react";
 import { Link } from "react-router";
 import { Bar, Button, Coins, Countdown, Loading, PageHead, Panel } from "../components/ui.tsx";
 import { fmt } from "../lib/format.ts";
+import { readyQuestCount } from "../lib/questProgress.ts";
 import { useAction, useData } from "../state/game.ts";
 
 interface DailyView {
@@ -24,10 +25,18 @@ export default function QuestsPage() {
   const d = data.daily;
   const weekStart = Math.floor((d.claimedToday ? d.streak - 1 : d.streak) / 7) * 7;
   const allMissions = data.missions.list.every((m) => m.claimed);
+  const readyContracts = readyQuestCount(data.contracts.tasks);
+  const readyBounties = readyQuestCount(data.bounties?.tasks ?? []);
+  const readyMissions = readyQuestCount(data.missions.list.map((m) => ({ claimed: m.claimed, done: m.progress, need: m.goal })));
+  const readyRewards = readyContracts + readyBounties + readyMissions + Number(!d.claimedToday) + Number(allMissions && !data.missions.bonusClaimed);
 
   return (
     <>
       <PageHead title="Quests">Daily rewards, contracts and missions reset at midnight UTC. Weekly bounties reset on Monday at 00:00 UTC.</PageHead>
+      <Panel title="Reward readiness">
+        <p role="status" aria-live="polite">{readyRewards === 0 ? "No rewards ready yet. Keep adventuring!" : `${readyRewards} reward${readyRewards === 1 ? "" : "s"} ready to claim.`}</p>
+        <p className="muted">Daily: {d.claimedToday ? "claimed" : "ready"} · Contracts: {readyContracts} ready · Weekly bounties: {readyBounties} ready · Missions: {readyMissions} ready · Chest: {data.missions.bonusClaimed ? "opened" : allMissions ? "ready" : "locked"}</p>
+      </Panel>
       <div className="quests">
         <Panel title="Daily reward" action={<span className="faint">Best streak {d.best}</span>}>
           <div className="streak-pad" aria-label={`Streak: ${d.streak} days`}>

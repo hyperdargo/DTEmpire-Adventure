@@ -22,16 +22,29 @@ const SLOTS: { slot: EquipSlot; label: string; art: string }[] = [
 ];
 
 export default function HeroPage() {
-  const [tab, setTab] = useState<"gear" | "skills" | "class">("gear");
+  const { badges } = useHero();
+  const unspentTalents = badges?.unspentTalents ?? 0;
+  const [tab, setTab] = useState<"gear" | "skills" | "talents" | "class">("gear");
   return (
     <>
-      <PageHead title="Hero">Your class, your gear and your skills. Everything here feeds the numbers on your card.</PageHead>
+      <PageHead title="Hero">Your class, your gear, skills and talents. Everything here feeds the numbers on your card.</PageHead>
       <div className="hero-layout">
         <aside className="hero-layout__card"><HeroCard /><StatsPanel /></aside>
         <div className="stack stack--lg">
-          <Tabs label="Hero sections" value={tab} onChange={setTab} options={[{ value: "gear", label: "Gear" }, { value: "skills", label: "Skills" }, { value: "class", label: "Class" }]} />
+          <Tabs
+            label="Hero sections"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "gear", label: "Gear" },
+              { value: "skills", label: "Skills" },
+              { value: "talents", label: unspentTalents > 0 ? `⚡ Talents (${unspentTalents})` : "⚡ Talents" },
+              { value: "class", label: "Class" },
+            ]}
+          />
           {tab === "gear" && <GearPanel />}
           {tab === "skills" && <SkillsPanel />}
+          {tab === "talents" && <TalentsPanel />}
           {tab === "class" && <ClassPanel />}
         </div>
       </div>
@@ -572,5 +585,244 @@ function ParagonPanel() {
         )}
       </div>
     </Panel>
+  );
+}
+
+interface TalentNodeView {
+  id: string;
+  name: string;
+  treeId: "combat" | "sorcery" | "cunning";
+  tier: 1 | 2 | 3 | 4;
+  reqPoints: number;
+  maxRank: number;
+  icon: string;
+  desc: string;
+  statSummary: string;
+  currentRank: number;
+  unlocked: boolean;
+  canInvest: boolean;
+  isKeystone?: boolean;
+}
+
+interface TalentTreeView {
+  id: "combat" | "sorcery" | "cunning";
+  name: string;
+  title: string;
+  icon: string;
+  desc: string;
+  pointsInTree: number;
+  talents: TalentNodeView[];
+}
+
+interface TalentsData {
+  level: number;
+  unlocked: boolean;
+  unlockLevel: number;
+  totalPoints: number;
+  investedPoints: number;
+  unspentPoints: number;
+  resetCost: number;
+  canReset: boolean;
+  bonuses: Record<string, number>;
+  trees: TalentTreeView[];
+  playerTalents: Record<string, number>;
+}
+
+function TalentsPanel() {
+  const { hero } = useHero();
+  const { data, isPending } = useData<TalentsData>(["talents"], "/api/talents");
+  const [selectedTree, setSelectedTree] = useState<"combat" | "sorcery" | "cunning">("combat");
+  const [resetConfirm, setResetConfirm] = useState(false);
+
+  const invest = useAction<{ talentId: string }, TalentsData>("/api/talents/invest", {
+    invalidate: [["talents"], ["me"]],
+    success: () => "Talent point invested!",
+  });
+
+  const reset = useAction<void, TalentsData>("/api/talents/reset", {
+    invalidate: [["talents"], ["me"]],
+    success: () => "Talents reset! All points refunded.",
+  });
+
+  if (isPending || !data) {
+    return <Panel title="Hero Talents ⚡"><p className="faint">Loading talent trees...</p></Panel>;
+  }
+
+  if (hero.level < data.unlockLevel) {
+    return (
+      <Panel title="Hero Talents ⚡">
+        <div className="stack">
+          <p className="muted">
+            Talents and Specialization Trees unlock at <b>Level {data.unlockLevel}</b>.
+          </p>
+          <p className="faint">
+            Once unlocked, you earn 1 Talent Point per level to allocate across martial, arcane, and cunning disciplines.
+          </p>
+        </div>
+      </Panel>
+    );
+  }
+
+  const activeTree = data.trees.find((t) => t.id === selectedTree) ?? data.trees[0];
+  if (!activeTree) return null;
+
+  const activeBonuses = Object.entries(data.bonuses).filter(([_, v]) => typeof v === "number" && v > 0);
+
+  return (
+    <div className="stack stack--lg">
+      <Panel title="Specialization Mastery ⚡">
+        <div className="stack">
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--s-3)" }}>
+            <div>
+              <h3 style={{ margin: 0 }}>
+                Unspent Points: <span className="gold" style={{ fontSize: "1.4rem" }}>{data.unspentPoints}</span>
+                <span className="faint" style={{ fontSize: "0.9rem", marginLeft: "var(--s-2)" }}>
+                  ({data.investedPoints} / {data.totalPoints} invested)
+                </span>
+              </h3>
+              <p className="faint" style={{ margin: "var(--s-1) 0 0 0" }}>
+                1 talent point earned per level starting at Level 10. Allocate points to unlock tiers and Apex Keystones.
+              </p>
+            </div>
+            <Button
+              variant="default"
+              disabled={data.investedPoints <= 0 || hero.coins < data.resetCost}
+              onClick={() => setResetConfirm(true)}
+            >
+              🔄 Reset Trees · <Coins value={data.resetCost} compact />
+            </Button>
+          </div>
+
+          {activeBonuses.length > 0 && (
+            <div style={{ marginTop: "var(--s-2)", padding: "var(--s-3)", background: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--line)", borderRadius: "var(--r-md)" }}>
+              <div className="faint" style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "var(--s-2)" }}>
+                Active Specialization Passives
+              </div>
+              <div className="row" style={{ flexWrap: "wrap", gap: "var(--s-2)" }}>
+                {activeBonuses.map(([stat, val]) => (
+                  <span key={stat} className="chip chip--neutral" style={{ border: "1px solid #333", fontSize: "0.85rem" }}>
+                    <b>{stat.replace(/([A-Z])/g, " $1")}:</b> +{val}{stat.toLowerCase().includes("pct") || stat.toLowerCase().includes("bonus") || stat.toLowerCase().includes("damage") || stat.toLowerCase().includes("power") || stat.toLowerCase().includes("crit") || stat.toLowerCase().includes("dodge") || stat.toLowerCase().includes("lifesteal") || stat.toLowerCase().includes("pierce") ? "%" : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Panel>
+
+      <Tabs
+        label="Talent Trees"
+        value={selectedTree}
+        onChange={(v) => setSelectedTree(v as "combat" | "sorcery" | "cunning")}
+        options={data.trees.map((t) => ({
+          value: t.id,
+          label: `${t.icon} ${t.name} (${t.pointsInTree} pts)`,
+        }))}
+      />
+
+      <Panel title={`${activeTree.icon} ${activeTree.name} — ${activeTree.title}`}>
+        <div className="stack">
+          <p className="muted" style={{ margin: 0 }}>{activeTree.desc}</p>
+          <div className="row" style={{ alignItems: "center", gap: "var(--s-3)", marginBottom: "var(--s-2)" }}>
+            <span className="chip chip--gold">Points in Tree: {activeTree.pointsInTree}</span>
+            <span className="faint" style={{ fontSize: "0.85rem" }}>
+              Tier 1 (0 pts) · Tier 2 (5 pts) · Tier 3 (10 pts) · Apex Keystone (15 pts)
+            </span>
+          </div>
+
+          <div className="grid grid--2" style={{ gap: "var(--s-3)" }}>
+            {activeTree.talents.map((t) => {
+              const isMaxed = t.currentRank >= t.maxRank;
+              return (
+                <div
+                  key={t.id}
+                  style={{
+                    padding: "var(--s-3)",
+                    background: t.isKeystone ? "rgba(255, 215, 0, 0.05)" : "var(--bg-surface)",
+                    border: t.isKeystone ? "1px solid #c8aa6e" : t.unlocked ? "1px solid #333" : "1px solid #222",
+                    borderRadius: "var(--r-md)",
+                    opacity: t.unlocked ? 1 : 0.6,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: "var(--s-2)",
+                  }}
+                >
+                  <div>
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: "var(--s-2)" }}>
+                      <div className="row" style={{ alignItems: "center", gap: "var(--s-2)" }}>
+                        <span style={{ fontSize: "1.5rem" }}>{t.icon}</span>
+                        <div>
+                          <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "var(--s-2)" }}>
+                            {t.name}
+                            {t.isKeystone && <span className="chip chip--gold" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>KEYSTONE</span>}
+                          </div>
+                          <span className="gold" style={{ fontSize: "0.85rem" }}>{t.statSummary}</span>
+                        </div>
+                      </div>
+                      <span className={`chip ${isMaxed ? "chip--gold" : "chip--neutral"}`} style={{ fontSize: "0.8rem" }}>
+                        Rank {t.currentRank}/{t.maxRank}
+                      </span>
+                    </div>
+
+                    <p className="faint" style={{ margin: "var(--s-2) 0 0 0", fontSize: "0.85rem" }}>
+                      {t.desc}
+                    </p>
+                  </div>
+
+                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginTop: "var(--s-1)" }}>
+                    <div>
+                      {!t.unlocked ? (
+                        <span className="faint" style={{ fontSize: "0.8rem", color: "#888" }}>
+                          🔒 Requires {t.reqPoints} pts in tree
+                        </span>
+                      ) : isMaxed ? (
+                        <span className="faint" style={{ fontSize: "0.8rem", color: "#aaa" }}>
+                          ✓ Max Rank
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <Button
+                      variant={t.isKeystone ? "primary" : "default"}
+                      disabled={!t.canInvest}
+                      loading={invest.isPending}
+                      onClick={() => invest.mutate({ talentId: t.id })}
+                      style={{ padding: "var(--s-1) var(--s-3)", fontSize: "0.85rem" }}
+                    >
+                      {isMaxed ? "Maxed" : t.unlocked ? (data.unspentPoints > 0 ? "+ Invest Point" : "No Points") : "Locked"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Panel>
+
+      <Sheet open={resetConfirm} onClose={() => setResetConfirm(false)} title="Reset Specialization Trees?">
+        <div className="stack">
+          <p>
+            Resetting your specialization trees will refund all <b>{data.investedPoints} invested talent points</b>, allowing you to freely reallocate them.
+          </p>
+          <p className="faint">
+            Reset fee: <Coins value={data.resetCost} />
+          </p>
+          <div className="row">
+            <Button
+              variant="danger"
+              loading={reset.isPending}
+              onClick={() => {
+                reset.mutate(undefined);
+                setResetConfirm(false);
+              }}
+            >
+              Confirm Reset
+            </Button>
+            <Button onClick={() => setResetConfirm(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Sheet>
+    </div>
   );
 }

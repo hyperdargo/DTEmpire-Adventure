@@ -8,7 +8,8 @@ export type Counter =
   | "highRollerWon" | "highRollerLost" | "guildWarWins" | "peakCoins" | "factionsPledged" | "factionReputation"
   | "jobShifts" | "guildArmoryPurchases" | "bountiesDone"
   | "relicsFound" | "relicsConsecrated"
-  | "eventKills" | "itemsTransmuted";
+  | "eventKills" | "itemsTransmuted"
+  | "talentsInvested" | "talentKeystones";
 
 export interface AchievementDef {
   id: string;
@@ -84,6 +85,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("event_50", "Shadow Exterminator", "👻", "Defeat 50 seasonal festival monsters.", "eventKills", 50, 40_000, "Lord of the Mist"),
   a("transmute_10", "Alchemical Master", "⚗️", "Transmute materials 10 times at the Alchemical Chamber.", "itemsTransmuted", 10, 15_000, "Grand Alchemist"),
   a("transmute_50", "Philosopher's Crucible", "🔮", "Transmute materials 50 times at the Alchemical Chamber.", "itemsTransmuted", 50, 60_000, "Master Alchemist"),
+  a("talent_10", "Apprentice of War", "⚡", "Invest 10 talent points across specialization trees.", "talentsInvested", 10, 15_000, "the Gifted"),
+  a("talent_keystone", "Ascended Mastery", "🌟", "Unlock an Apex Keystone talent in any specialization tree.", "talentKeystones", 1, 50_000, "Grand Master"),
+  a("milestone_25", "First Steps", "🥉", "Reach Level 25.", "level", 25, 2_500),
+  a("milestone_100", "Centurion", "🥈", "Reach Level 100.", "level", 100, 10_000),
+  a("milestone_300", "Legendary Hero", "🥇", "Reach Level 300.", "level", 300, 50_000, "the Legendary"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────

@@ -1,3 +1,4 @@
+import { FRONTIER_CLASSES } from "./frontier.ts";
 import type { ClassDef, Rarity } from "./types.ts";
 
 // The original's 20 classes and base stats, each given a weapon affinity and a passive.
@@ -43,6 +44,8 @@ export const CLASSES: ClassDef[] = [
   { id: "chimera", name: "Chimera", icon: "🐲", rarity: "unique", archetype: "vanguard", base: { hp: 175, atk: 34, def: 18, spd: 12 }, weapon: "hammer",
     passive: { name: "Three Hearts", desc: "+12% to all stats", effect: { kind: "all_stats", pct: 12 } } },
 ];
+
+CLASSES.push(...FRONTIER_CLASSES);
 
 export const CLASS_BY_ID: Record<string, ClassDef> = Object.fromEntries(CLASSES.map((c) => [c.id, c]));
 

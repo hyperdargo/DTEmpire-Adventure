@@ -562,3 +562,47 @@ Nothing — all reported bugs this session resolved (Tower win-chance, Tower run
     - Full TypeScript typecheck, ESLint, and Vite production build passed.
 
   - By Hermes
+
+---
+
+## Session: `20261031` — Imperial Frontier Level 400 Expansion (v5.17.0)
+
+### Added & Expanded
+- **🏰 Imperial Frontier**: realm level cap raised 200 → 400. 8 append-only adventure regions (Imperial Marches → Last Horizon, levels 200–400) with shaped enemies and 10-kill boss gates. Existing region IDs, gates, 20 tower chapters and relic rewards unchanged.
+- **⚔️ Frontier Gear**: 45 templates across 5 tiers (200/250/300/350/400) for all 5 weapon affinities + 4 armor/accessory slots with defense/vitality/initiative/offense tradeoffs. Gear and affix rolls now use shared MAX_LEVEL instead of clamping to 100.
+- **🧬 Frontier Classes**: 4 research-unlocked mythic classes (Bastion Marshal, Imperial Runesmith, Horizon Warden, Veil Reaver), reversible adoption preserving original class/tier and HP%.
+- **⛏️ Imperial Excavation (`/excavation`)**: 10 sequential sector charters, 8 finite supplies, Survey/Brace/Extract/Return, Drill/Hull/Survey ranks (10 each), 7 one-time research commissions, collapse salvage (25% research). Research is bound state, never sold as coins.
+- **📈 Realm Cap**: `shared/data/realm_cap.json` corrected to 400 (was erroneously 500); MAX_LEVEL now 400, matching frontier design and tests.
+
+### Quality & Verification
+- 158/158 vitest tests pass (25 files). Typecheck, lint, build clean.
+- Maintenance SQLite backup: `data/maintenance_backups/pre-imperial-frontier-*.db` (integrity OK).
+- By Hermes
+
+---
+
+## Session: `20261103` — Hero Talents & Milestone Rewards Expansion (v5.18.0)
+
+### Added & Expanded
+- **⚡ Hero Talents & Specialization Trees (`/hero` -> Talents tab, `/api/talents`)**: Unlocks at Level 10 granting 1 talent point per level up to level cap. 3 deep specialization paths:
+  - *Juggernaut* (Combat Mastery & Boss Execution): Colossus stats, Iron Skin, Keen Edge, Titan's Wrath keystone (+15% Boss Damage, +5% ATK/DEF).
+  - *Archmage* (Arcane Potency & Tactical Speed): Swift Mind, Overcharge, Spell Flux, Arcane Apotheosis keystone (+20% Skill Power, +5 SPD).
+  - *Shadowstalker* (Cunning, Evasion & Loot): Fleet Footed, Opportunist, Gold Rush, Shadow Dance keystone (+15% Dodge, +20% Crit Dmg, +10% Coins).
+  - 21 distinct talents across 4 tiers with prerequisite point gating.
+- **🔄 Flexible Respec Engine (`/api/talents/reset`)**: Respec with 100% point refunds for a level-scaled coin fee (`500 * level`), with full validation and state recomputation.
+- **🏆 Heroic Milestone Rewards**: Reaching key level thresholds (25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500) automatically grants milestone mail reward parcels with escalating coins, scrolls, mystery eggs, void reforgers, and skill books, recorded in the logbook and broadcast to world chat.
+- **🎖️ Specialization & Milestone Achievements**:
+  - `Apprentice of War` (10 talent points invested, 15,000 coins, "the Gifted" title).
+  - `Ascended Mastery` (Apex Keystone unlocked, 50,000 coins, "Grand Master" title).
+  - `First Steps` (Level 25, 2,500 coins).
+  - `Centurion` (Level 100, 10,000 coins).
+  - `Legendary Hero` (Level 300, 50,000 coins, "the Legendary" title).
+- **🔍 Monster Almanac & Bestiary Search (`/records`)**: Full interactive search filter: instant text search, region dropdown filter, mastery rank filter, and undiscovered monster toggle.
+- **📖 Adventurer's Codex Talents & Specializations Guide (`/guide`)**: Comprehensive guide tab covering talent formulas, specialization paths, keystones, and respec mechanics.
+
+### Quality & Verification
+- 160/160 vitest tests pass across 26 test files.
+- Full TypeScript typecheck, ESLint, and Vite production build clean.
+- Preserved strict black/white (`#0a0a0a` / `#111111` / `#333333`) theme compliance.
+- Docker container rebuilt, restarted, and verified healthy.
+- By Hermes

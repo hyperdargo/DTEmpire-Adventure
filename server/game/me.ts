@@ -2,6 +2,7 @@ import { CLASS_BY_ID, dualXpToNext, rankTitle } from "../../shared/data/classes.
 import { activeEvent, eventEndsAt } from "../../shared/data/events.ts";
 import { currentRealmModifier, realmModifierEndsAt } from "../../shared/data/realm.ts";
 import { BLESSINGS, WORLD_BOSS_ATTEMPTS_PER_DAY } from "../../shared/data/meta.ts";
+import { totalTalentPointsEarned, totalTalentPointsInvested } from "../../shared/data/talents.ts";
 import { eventState } from "./events.ts";
 import { HP_FULL_REGEN_SECONDS, xpToNext } from "../../shared/rules/progression.ts";
 import type { SessionUser } from "../auth.ts";
@@ -73,6 +74,7 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       createdAt: p.createdAt,
       counters: p.counters,
       achievements: p.state.achievements ?? [],
+      talents: p.state.talents ?? {},
       faction: p.state.faction?.factionId
         ? {
             factionId: p.state.faction.factionId,
@@ -95,6 +97,7 @@ export function meSnapshot(g: GameCtx, user: SessionUser, loaded?: Player) {
       job: job.ready ? "ready" : job.shiftStartedAt ? "working" : job.jobId ? "idle" : "none",
       jobEndsAt: job.endsAt,
       worldBossAttempts: p.level >= 10 ? Math.max(0, WORLD_BOSS_ATTEMPTS_PER_DAY - wbUsed) : 0,
+      unspentTalents: p.level >= 10 ? Math.max(0, totalTalentPointsEarned(p.level) - totalTalentPointsInvested(p.state.talents ?? {})) : 0,
       event: event ? { id: event.id, name: event.name, icon: event.icon, tokens: eventState(p, event.id).tokens, currency: event.currency, endsAt: eventEndsAt(event) } : null,
     },
   };

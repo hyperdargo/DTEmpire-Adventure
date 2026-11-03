@@ -1,7 +1,7 @@
 import { CONSUMABLE_BY_ID, GEAR, GEAR_BY_ID } from "../data/items.ts";
 import type { Affix, EquipSlot, GearTemplate, ItemKind, Rarity, StatBlock, StatKey } from "../data/types.ts";
 import type { Rng } from "./rng.ts";
-import { GEAR_RARITY_MULT, MAX_UPGRADE, RARITY_INDEX, RARITY_ORDER, clamp, gearBudget, upgradeMult } from "./progression.ts";
+import { GEAR_RARITY_MULT, MAX_LEVEL, MAX_UPGRADE, RARITY_INDEX, RARITY_ORDER, clamp, gearBudget, upgradeMult } from "./progression.ts";
 
 /** The persisted shape of an owned item (server row, minus ownership). */
 export interface ItemRecord {
@@ -61,7 +61,7 @@ export function templateOf(templateId: string): { name: string; icon: string; ki
 
 /** Rolls the random magical affixes for an item based on its slot and rarity. */
 export function rollAffixes(rng: Rng, slot: EquipSlot, rarity: Rarity, ilvl: number): Affix[] {
-  const level = clamp(Math.round(ilvl), 1, 100);
+  const level = clamp(Math.round(ilvl), 1, MAX_LEVEL);
   const affixes: Affix[] = [];
   const pool = [...AFFIX_POOL[slot]];
   for (let i = 0; i < AFFIX_COUNT[rarity] && pool.length > 0; i++) {
@@ -74,7 +74,7 @@ export function rollAffixes(rng: Rng, slot: EquipSlot, rarity: Rarity, ilvl: num
 
 /** Rolls a gear piece's base stats and affixes. */
 export function rollGear(rng: Rng, template: GearTemplate, ilvl: number, rarity: Rarity): Pick<ItemRecord, "base" | "affixes" | "ilvl" | "rarity"> {
-  const level = clamp(Math.round(ilvl), 1, 100);
+  const level = clamp(Math.round(ilvl), 1, MAX_LEVEL);
   const mult = GEAR_RARITY_MULT[rarity];
   const budget = gearBudget[template.slot](level) as StatBlock;
   const base: StatBlock = {};

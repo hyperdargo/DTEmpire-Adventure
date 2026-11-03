@@ -1,4 +1,4 @@
-import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2, Flag, Briefcase } from "lucide-react";
+import { Search, Swords, Hammer, PawPrint, Home, Shield, Sparkles, Filter, Coins, ArrowRight, Building2, Flag, Briefcase, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { REGIONS, type Region } from "../../../shared/data/regions.ts";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID, RECIPES } from "../../../shared/data/items.ts";
@@ -11,16 +11,23 @@ import { JOBS, JOB_RANKS, JOB_COMMISSIONS } from "../../../shared/data/meta.ts";
 import { RELICS } from "../../../shared/data/relics.ts";
 import { SEASONAL_EVENTS } from "../../../shared/data/events.ts";
 import { TRANSMUTATION_RECIPES } from "../../../shared/data/transmutation.ts";
+import { TALENT_TREES, TALENT_UNLOCK_LEVEL } from "../../../shared/data/talents.ts";
 import { PageHead, Panel, Tabs, Chip, RarityChip } from "../components/ui.tsx";
 import type { Rarity } from "../../../shared/data/types.ts";
 
 export default function GuidePage() {
-  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "abyss" | "factions" | "professions" | "relics" | "festivals">("mobs");
+  const [tab, setTab] = useState<"mobs" | "crafting" | "pets" | "estate" | "classes" | "talents" | "abyss" | "factions" | "professions" | "relics" | "festivals">("mobs");
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
 
   return (
     <div>
+      <Panel title="Imperial Frontier · Levels 200–400">
+        <p>Eight new adventure regions bridge the old level-200 gate to the Last Horizon at 400. Each region has three enemy roles and a boss unlocked after ten kills. Frontier equipment now rolls at its actual item level, through 400; existing items and region gates are unchanged.</p>
+        <p><a href="/excavation">Imperial Excavation</a> opens at level 30. Fund a contract with in-game coins, then choose Survey, Brace or Extract. Eight supplies make every action count. Return with at least three extracted seams to unlock the next sector; level gates still apply. Collapse saves only a quarter of research and grants no XP or clear.</p>
+        <p>Research is bound, non-tradeable and cannot generate coins. Spend research and coins on ten permanent ranks each of Drill, Hull and Survey, mythic commissions, or four advanced role licenses. Adopt and restore classes at the survey office without losing skills, talents, gear, XP or your original class tier.</p>
+        <p>New roles: Bastion Marshal (hammer, defensive regeneration), Imperial Runesmith (staff, skill artillery), Horizon Warden (bow, boss hunting), Veil Reaver (dagger, drain skirmishing). These are earned licenses, not signup or reroll prizes. The Tower’s original twenty chapters and their relic rewards remain intact; frontier sector charters provide the new campaign gates.</p>
+      </Panel>
       <PageHead
         title="Adventurer's Codex & Guide"
         actions={
@@ -59,6 +66,7 @@ export default function GuidePage() {
           { value: "pets", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><PawPrint size={16} /> Pets & Breeding</span> },
           { value: "estate", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Home size={16} /> Estate & Housing</span> },
           { value: "classes", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Shield size={16} /> Classes & Skills</span> },
+          { value: "talents", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Zap size={16} /> Talents & Mastery</span> },
           { value: "abyss", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Sparkles size={16} /> Endless Abyss</span> },
           { value: "factions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flag size={16} /> Factions & Spire</span> },
           { value: "professions", label: <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Briefcase size={16} /> Professions & Armory</span> },
@@ -73,6 +81,7 @@ export default function GuidePage() {
         {tab === "pets" && <PetsGuide search={search} />}
         {tab === "estate" && <EstateGuide search={search} />}
         {tab === "classes" && <ClassesGuide search={search} />}
+        {tab === "talents" && <TalentsGuide search={search} />}
         {tab === "abyss" && <AbyssGuide search={search} />}
         {tab === "factions" && <FactionsGuide search={search} />}
         {tab === "professions" && <ProfessionsGuide search={search} />}
@@ -1212,6 +1221,116 @@ function FestivalsGuide({ search }: { search: string }) {
           })}
         </div>
       </Panel>
+    </div>
+  );
+}
+
+// ── Tab: Talents & Specialization Guide ───────────────────────────────
+function TalentsGuide({ search }: { search: string }) {
+  const q = search.trim().toLowerCase();
+
+  const filteredTrees = useMemo(() => {
+    if (!q) return TALENT_TREES;
+    return TALENT_TREES.map((tree) => {
+      const matchTree = tree.name.toLowerCase().includes(q) || tree.title.toLowerCase().includes(q) || tree.desc.toLowerCase().includes(q);
+      const matchingTalents = tree.talents.filter((t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.desc.toLowerCase().includes(q) ||
+        t.statSummary.toLowerCase().includes(q)
+      );
+      if (matchTree) return tree;
+      if (matchingTalents.length > 0) return { ...tree, talents: matchingTalents };
+      return null;
+    }).filter((t): t is typeof TALENT_TREES[number] => t !== null);
+  }, [q]);
+
+  return (
+    <div className="stack stack--lg">
+      <Panel title="Hero Talents & Specializations ⚡">
+        <div className="stack">
+          <p className="muted" style={{ margin: 0 }}>
+            Starting at <b>Level {TALENT_UNLOCK_LEVEL}</b>, adventurers earn <b>1 Talent Point</b> per level to invest across three distinct specialization disciplines: <b>Juggernaut</b> (Martial & Boss Slaying), <b>Archmage</b> (Arcane & Skill Potency), and <b>Shadowstalker</b> (Agility, Criticals & Bounty Hunting).
+          </p>
+
+          <div className="grid grid--3" style={{ gap: "var(--s-3)", marginTop: "var(--s-2)" }}>
+            <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid #333", borderRadius: "var(--r-md)", padding: "var(--s-3)" }}>
+              <strong style={{ color: "#eee", display: "flex", alignItems: "center", gap: "6px" }}>⚔️ Juggernaut Tree</strong>
+              <p className="faint" style={{ fontSize: "0.85rem", margin: "6px 0 0 0" }}>
+                Focuses on physical attack scaling, armor hardening, lifesteal, armor piercing, and apex boss damage execution.
+              </p>
+            </div>
+            <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid #333", borderRadius: "var(--r-md)", padding: "var(--s-3)" }}>
+              <strong style={{ color: "#eee", display: "flex", alignItems: "center", gap: "6px" }}>🔮 Archmage Tree</strong>
+              <p className="faint" style={{ fontSize: "0.85rem", margin: "6px 0 0 0" }}>
+                Focuses on skill power amplification, battle experience acceleration, protective mana barriers, and temporal haste.
+              </p>
+            </div>
+            <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid #333", borderRadius: "var(--r-md)", padding: "var(--s-3)" }}>
+              <strong style={{ color: "#eee", display: "flex", alignItems: "center", gap: "6px" }}>🗡️ Shadowstalker Tree</strong>
+              <p className="faint" style={{ fontSize: "0.85rem", margin: "6px 0 0 0" }}>
+                Focuses on dodge evasion, critical strike potency, extra battle gold find, and opportunistic fortune.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: "var(--s-3)", padding: "var(--s-3)", background: "#111", border: "1px solid #282828", borderRadius: "var(--r-md)", fontSize: "0.85rem" }}>
+            <strong style={{ color: "#d4af37" }}>Progression & Respec Mechanics:</strong>
+            <ul style={{ margin: "6px 0 0 0", paddingLeft: "20px", color: "#aaa" }}>
+              <li><b>Tier Gating:</b> Tier 1 (0 points required), Tier 2 (5 points in tree), Tier 3 (10 points in tree), Apex Keystone (15 points in tree).</li>
+              <li><b>Apex Keystones:</b> Single-point masteries providing massive game-changing passive bonuses and world broadcast achievements.</li>
+              <li><b>Reset / Respec:</b> At any time on the Hero screen, adventurers can reset their talent trees for a modest level-scaled coin fee, refunding 100% of all invested points.</li>
+            </ul>
+          </div>
+        </div>
+      </Panel>
+
+      {filteredTrees.map((tree) => (
+        <Panel key={tree.id} title={`${tree.icon} ${tree.name} — ${tree.title}`}>
+          <div className="stack">
+            <p className="muted" style={{ margin: 0 }}>{tree.desc}</p>
+            <div className="grid grid--2" style={{ gap: "var(--s-3)" }}>
+              {tree.talents.map((t) => (
+                <div
+                  key={t.id}
+                  style={{
+                    background: t.isKeystone ? "rgba(255, 215, 0, 0.04)" : "#0e0e0e",
+                    border: t.isKeystone ? "1px solid #c8aa6e" : "1px solid #282828",
+                    borderRadius: "6px",
+                    padding: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "1.3rem" }}>{t.icon}</span>
+                        <div>
+                          <strong style={{ color: t.isKeystone ? "#ffd700" : "#eee" }}>
+                            {t.name}
+                            {t.isKeystone && " ⭐ (Keystone)"}
+                          </strong>
+                          <div style={{ color: "#d4af37", fontSize: "0.82rem", fontWeight: 600 }}>{t.statSummary}</div>
+                        </div>
+                      </div>
+                      <span className="chip chip--neutral" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                        Max Rank {t.maxRank}
+                      </span>
+                    </div>
+                    <p style={{ margin: "8px 0 0 0", fontSize: "0.82rem", color: "#888" }}>{t.desc}</p>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#666", borderTop: "1px solid #1a1a1a", paddingTop: "6px" }}>
+                    <span>Tier {t.tier} ({t.reqPoints} pts required)</span>
+                    <span>{t.isKeystone ? "Apex Keystone" : "Standard Talent"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Panel>
+      ))}
     </div>
   );
 }
