@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GameCard } from "../components/GameCard.tsx";
 import { Bar, Button, Chip, Empty, Loading, PageHead, Panel, RarityChip, Tabs } from "../components/ui.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
+import { filterLogbook } from "../lib/logbook.ts";
 import { useAction, useData } from "../state/game.ts";
 import { regionRarity } from "./Adventure.tsx";
 
@@ -467,6 +468,8 @@ function CombatStatsView() {
 
 function LogbookView() {
   const { data, isPending } = useData<{ entries: LogEntry[] }>(["logbook"], "/api/logbook");
+  const [search, setSearch] = useState("");
+  const [kind, setKind] = useState("all");
 
   if (isPending || !data) return <Loading rows={4} />;
 
@@ -478,11 +481,23 @@ function LogbookView() {
     );
   }
 
+  const entries = filterLogbook(data.entries, search, kind);
+  const kinds = [...new Set(data.entries.map(entry => entry.kind))].sort();
   return (
     <div className="stack stack--lg">
       <Panel title={`Adventurer's Chronicle · ${data.entries.length} recorded deeds`}>
+        <div className="row row--wrap" style={{ marginBottom: "var(--s-4)" }}>
+          <input aria-label="Search chronicle" placeholder="Search deeds…" value={search} onChange={e => setSearch(e.target.value)} style={{ background: "#0a0a0a", color: "#fff", border: "1px solid #333", padding: "var(--s-3)", maxWidth: "100%" }} />
+          <select aria-label="Filter deed category" value={kind} onChange={e => setKind(e.target.value)} style={{ background: "#0a0a0a", color: "#fff", border: "1px solid #333", padding: "var(--s-3)" }}>
+            <option value="all">All deeds</option>
+            {kinds.map(value => <option key={value} value={value}>{value.replace(/_/g, " ")}</option>)}
+          </select>
+          <Button size="sm" onClick={() => { setSearch(""); setKind("all"); }}>Reset filters</Button>
+        </div>
+        <p className="faint" role="status">Showing {entries.length} of {data.entries.length} loaded deeds. Filters do not delete history.</p>
+        {entries.length === 0 && <Empty art="📖" title="No deeds match">Try another search or reset the filters.</Empty>}
         <ul className="quest-list">
-          {data.entries.map((entry) => (
+          {entries.map((entry) => (
             <li key={entry.id} className="quest">
               <span className="art quest__art" aria-hidden>{entry.icon}</span>
               <div className="quest__body">

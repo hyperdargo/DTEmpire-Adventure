@@ -1,5 +1,12 @@
 # DTEmpire Adventure — State & Progress
 
+## 2026-11-06 — Chronicle filters (v5.18.2)
+- Records / Logbook now searches loaded deed text and category labels, combines exact category filtering, shows matching counts and supports reset / empty states.
+- History, reward rules and player data unchanged; controls retain black/white styling.
+- Typecheck, lint, build and 164 tests passed; Docker rebuilt/recreated and healthy, local/public HTTP 200.
+- Online SQLite snapshot: `data/maintenance_backups/adventure-20261106-chronicle.db` (integrity check: OK). R2 configuration could not be reverified due unattended secret-access restrictions; no cloud backup claimed.
+- By Hermes
+
 ## Quick Links
 - **Web:** `http://localhost:8081` → `adventure.ankitgupta.com.np`
 - **Docker:** `dtempire-adventure` on port 8081
