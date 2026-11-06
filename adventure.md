@@ -1,5 +1,12 @@
 # DTEmpire Adventure — State & Progress
 
+## 2026-11-07 — Achievement Finder (v5.18.3)
+- Records / Achievements searches names, descriptions and titles; earned/in-progress filters combine with search, with match counts, empty state and reset.
+- Achievement progress, rewards and saved player data are unchanged. Existing monochrome controls reused.
+- Typecheck, lint, production build and 167 tests (29 files) passed. Docker rebuilt/recreated healthy; local/public HTTP 200. Explicit compose restart blocked by unattended approval policy.
+- SQLite online snapshot `data/maintenance_backups/adventure-20261107-achievements.db` integrity OK. R2 configuration recheck blocked by unattended approval policy; no cloud backup performed.
+- By Hermes
+
 ## 2026-11-06 — Chronicle filters (v5.18.2)
 - Records / Logbook now searches loaded deed text and category labels, combines exact category filtering, shows matching counts and supports reset / empty states.
 - History, reward rules and player data unchanged; controls retain black/white styling.

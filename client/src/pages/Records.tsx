@@ -3,6 +3,7 @@ import { GameCard } from "../components/GameCard.tsx";
 import { Bar, Button, Chip, Empty, Loading, PageHead, Panel, RarityChip, Tabs } from "../components/ui.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { filterLogbook } from "../lib/logbook.ts";
+import { filterAchievements, type AchievementFilter } from "../lib/achievements.ts";
 import { useAction, useData } from "../state/game.ts";
 import { regionRarity } from "./Adventure.tsx";
 
@@ -205,10 +206,13 @@ function BestiaryView() {
 }
 
 function AchievementsView() {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<AchievementFilter>("all");
   const { data, isPending } = useData<Achievements>(["achievements"], "/api/achievements");
   const setTitle = useAction<{ title: string | null }>("/api/profile", { invalidate: [["achievements"], ["titles"], ["me"]], success: "Title updated." });
   if (isPending || !data) return <Loading rows={4} />;
   const done = data.achievements.filter((a) => a.done).length;
+  const visible = filterAchievements(data.achievements, search, status);
   return (
     <div className="stack stack--lg">
       <Panel title="Titles">
@@ -220,8 +224,19 @@ function AchievementsView() {
         )}
       </Panel>
       <Panel title={`Achievements · ${done}/${data.achievements.length}`}>
+        <div className="row row--wrap" style={{ marginBottom: "var(--s-4)" }}>
+          <input className="input" aria-label="Search achievements" placeholder="Search names, rewards, titles…" value={search} onChange={e => setSearch(e.target.value)} />
+          <select className="input" aria-label="Filter achievement status" value={status} onChange={e => setStatus(e.target.value as AchievementFilter)}>
+            <option value="all">All achievements</option>
+            <option value="pending">In progress</option>
+            <option value="earned">Earned</option>
+          </select>
+          <Button size="sm" onClick={() => { setSearch(""); setStatus("all"); }}>Reset filters</Button>
+        </div>
+        <p className="faint" role="status">Showing {visible.length} of {data.achievements.length} achievements</p>
+        {visible.length === 0 && <Empty art="🔍" title="No achievements match">Try another search or reset the filters.</Empty>}
         <ul className="quest-list">
-          {data.achievements.map((a) => (
+          {visible.map((a) => (
             <li key={a.id} className={`quest${a.done ? " quest--done" : ""}`}>
               <span className="art quest__art" aria-hidden>{a.icon}</span>
               <div className="quest__body">
