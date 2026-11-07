@@ -39,6 +39,7 @@ import * as relics from "../game/relics.ts";
 import * as trans from "../game/transmutation.ts";
 import * as talents from "../game/talents.ts";
 import * as excavation from "../game/excavation.ts";
+import * as expeditions from "../game/expeditions.ts";
 import { combatStats } from "../game/stats.ts";
 import { getArcadeOverview, playMiniGame } from "../game/minigames.ts";
 import { getRaidOverview, startRealmRaidBattle } from "../game/realmRaids.ts";
@@ -1019,6 +1020,21 @@ export async function registerGameRoutes(app: FastifyInstance) {
 
   app.post("/api/talents/reset", async (req) => {
     return mutate(g, u(req), (p) => talents.resetTalents(g, p));
+  });
+
+  app.get('/api/expeditions', async (req) => g.db.tx(() => expeditions.expeditionsView(g, loadPlayer(g, u(req).id))));
+  app.post('/api/expeditions/start', async (req) => {
+    const { routeId, version } = parse(z.object({ routeId: z.string().min(1).max(60), version: z.number().int().nonnegative() }).strict(), req);
+    if (app.duels.roomFor(u(req).id)) throw new GameError('Finish your live duel first.', { code: 'in_battle', status: 409 });
+    return mutate(g, u(req), p => expeditions.startExpedition(g, p, routeId, version));
+  });
+  app.post('/api/expeditions/order', async (req) => {
+    const order = parse(z.object({ version: z.number().int().nonnegative(), runId: z.string().min(1).max(80), step: z.number().int().min(0).max(6), action: z.enum(['choose', 'return', 'abandon']), choiceId: z.string().max(40).optional() }).strict(), req);
+    return mutate(g, u(req), p => expeditions.orderExpedition(g, p, order));
+  });
+  app.post('/api/expeditions/upgrade', async (req) => {
+    const { upgrade, version } = parse(z.object({ upgrade: z.enum(['stores', 'bulwark', 'cartography']), version: z.number().int().nonnegative() }).strict(), req);
+    return mutate(g, u(req), p => expeditions.upgradeCamp(g, p, upgrade, version));
   });
 
   app.get('/api/excavation', async (req) => g.db.tx(() => excavation.excavationView(g, loadPlayer(g, u(req).id))));

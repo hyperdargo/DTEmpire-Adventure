@@ -46,6 +46,7 @@ export default function TownPage() {
     <>
       <PageHead title="Town">Work shifts, send scouts on expeditions while you're away, pray for blessings, and sleep off your wounds.</PageHead>
       <div className="town">
+        <Panel title="Imperial Expeditions"><p>Lead an active, choice-driven expedition from level 10 to the realm cap. Separate from idle scouts: manage supplies, recover intelligence and earn first-clear seals.</p><Link className="chip" to="/expeditions">Visit the expedition camp →</Link></Panel>
         <Panel title={<h2><Compass size={22} aria-hidden /> Expedition</h2>}>
           {exp ? (
             <div className="stack">

@@ -50,6 +50,7 @@ export class LiveDuels {
     const from = findPlayer(g, fromId);
     const to = findPlayer(g, toId);
     if (!from || !to) throw notFound("Player");
+    if (from.state.imperialExpeditions?.run || to.state.imperialExpeditions?.run) throw new GameError("Return from Imperial Expeditions before duelling.", { code: "in_expedition", status: 409 });
     const toIsBot = isBotUser(g, toId);
     if (from.level < DUEL_MIN_LEVEL || (!toIsBot && to.level < DUEL_MIN_LEVEL)) throw new GameError(`Both fighters must be level ${DUEL_MIN_LEVEL}+.`);
     if (!toIsBot && !g.hub.isOnline(toId)) throw new GameError(`${to.name} isn't online right now.`);
@@ -93,6 +94,7 @@ export class LiveDuels {
       return null;
     }
     if (this.#byUser.has(c.from) || this.#byUser.has(c.to)) throw new GameError("One of you is already in a live duel.");
+    if (findPlayer(this.g, c.from)?.state.imperialExpeditions?.run || findPlayer(this.g, c.to)?.state.imperialExpeditions?.run) throw new GameError("Return from Imperial Expeditions before duelling.", { code: "in_expedition", status: 409 });
     const state = createBattle({ seed: freshSeed(), player: snapshotFighter(this.g, c.from), enemy: snapshotFighter(this.g, c.to), canFlee: false, maxTurns: 30 });
     const room: Room = { id: randomId(), a: c.from, b: c.to, state, pending: {}, deadline: 0, timer: null, missed: { a: 0, b: 0 } };
     this.#rooms.set(room.id, room);

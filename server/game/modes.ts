@@ -55,6 +55,7 @@ export function dungeonView(p: Player) {
 }
 
 export function startRun(g: GameCtx, p: Player, fromFloor: number) {
+  assertCanStartBattle(g, p);
   if (p.level < 5) throw new GameError("The Dungeon opens at level 5.", { code: "level_locked" });
   if (runOf(p)) throw new GameError("You're already on a run.");
   const allowed = dungeonView(p).checkpoints;

@@ -93,7 +93,8 @@ export function getActiveBattle(g: GameCtx, userId: number): BattleRow | null {
   return r ? { id: r.id, userId: r.user_id, kind: r.kind as BattleKind, context: json(r.context, {}), state: json(r.state, {} as BattleState), status: r.status } : null;
 }
 
-export function assertCanStartBattle(g: GameCtx, p: Player, opts: { ignoreHp?: boolean; dungeon?: boolean } = {}) {
+export function assertCanStartBattle(g: GameCtx, p: Player, opts: { ignoreHp?: boolean; dungeon?: boolean; expedition?: boolean } = {}) {
+  if (!opts.expedition && p.state.imperialExpeditions?.run) throw new GameError("Return from your Imperial Expedition first.", { code: "in_expedition", status: 409 });
   if (getActiveBattle(g, p.userId)) throw new GameError("You're already in a battle.", { code: "in_battle", status: 409 });
   if (!opts.dungeon && (p.state as { dungeon?: unknown }).dungeon) {
     throw new GameError("You're in the middle of a Dungeon run. Leave the Dungeon first.", { code: "in_dungeon" });

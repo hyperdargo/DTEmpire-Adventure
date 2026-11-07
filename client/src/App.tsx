@@ -17,6 +17,7 @@ const BattlePage = lazy(() => import("./pages/Battle.tsx"));
 const AdventurePage = lazy(() => import("./pages/Adventure.tsx"));
 const TowerPage = lazy(() => import("./pages/Tower.tsx"));
 const DungeonPage = lazy(() => import("./pages/Dungeon.tsx"));
+const ExpeditionsPage = lazy(() => import("./pages/Expeditions.tsx"));
 const ExcavationPage = lazy(() => import("./pages/Excavation.tsx"));
 const AbyssPage = lazy(() => import("./pages/Abyss.tsx"));
 const ArenaPage = lazy(() => import("./pages/Arena.tsx"));
@@ -55,7 +56,7 @@ const SettingsPage = lazy(() => import("./pages/Settings.tsx"));
 const ProfilePage = lazy(() => import("./pages/Profile.tsx"));
 
 const TITLES: Record<string, string> = {
-  "/excavation": "Imperial Excavation", "/": "The Table", "/adventure": "Adventure", "/tower": "Tower of Ascension", "/dungeon": "Dungeon", "/abyss": "Endless Abyss", "/arena": "Arena",
+  "/expeditions": "Imperial Expeditions", "/excavation": "Imperial Excavation", "/": "The Table", "/adventure": "Adventure", "/tower": "Tower of Ascension", "/dungeon": "Dungeon", "/abyss": "Endless Abyss", "/arena": "Arena",
   "/raid": "World Boss", "/festival": "Festival", "/hero": "Hero", "/bag": "Bag", "/pets": "Pets", "/smithy": "Blacksmith", "/quests": "Quests",
   "/town": "Town", "/jobs": "Professions & Jobs", "/factions": "Imperial Factions", "/estate": "Estate & Housing", "/bank": "Royal Bank", "/guide": "Guide Book", "/market": "Market", "/merchant": "Grand Merchant", "/blackmarket": "Grand Merchant", "/auction": "Auction House", "/lucky": "Lucky Roll", "/chat": "Chat", "/guild": "Guild",
   "/friends": "Friends", "/trade": "Trades", "/ranks": "Leaderboards", "/records": "Records", "/mail": "Mail",
@@ -130,6 +131,7 @@ export function App() {
           <Route path="/adventure" element={<Page><AdventurePage /></Page>} />
           <Route path="/tower" element={<Page><TowerPage /></Page>} />
           <Route path="/dungeon" element={<Page><DungeonPage /></Page>} />
+          <Route path="/expeditions" element={<Page><ExpeditionsPage /></Page>} />
           <Route path="/excavation" element={<Page><ExcavationPage /></Page>} />
           <Route path="/abyss" element={<Page><AbyssPage /></Page>} />
           <Route path="/arena" element={<Page><ArenaPage /></Page>} />

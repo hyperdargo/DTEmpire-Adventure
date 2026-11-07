@@ -11,6 +11,7 @@ import { computeFactionBonuses } from "../../shared/data/factions.ts";
 import { computeRelicResonanceBonuses } from "../../shared/data/relics.ts";
 import { computeTalentBonuses, totalTalentPointsInvested, TALENTS_BY_ID } from "../../shared/data/talents.ts";
 import type { ExcavationState } from "../../shared/data/excavation.ts";
+import type { ExpeditionState } from "../../shared/data/expeditions.ts";
 import type { PlayerBankState } from "./bank.ts";
 import { json } from "../db/db.ts";
 import { GameError, notFound } from "../lib/errors.ts";
@@ -68,6 +69,7 @@ export interface PlayerState {
   relics?: Record<string, number>;
   talents?: Record<string, number>;
   excavation?: ExcavationState;
+  imperialExpeditions?: ExpeditionState;
 }
 
 export interface Player {
