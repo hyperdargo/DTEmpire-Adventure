@@ -411,6 +411,8 @@ const HEROIC_MILESTONES: { level: number; coins: number; stacks: Record<string, 
   { level: 400, coins: 3_500_000, stacks: { xp_scroll: 50, mystery_egg: 20, void_reforger: 15, skill_book: 15 }, title: "Immortal" },
   { level: 450, coins: 5_000_000, stacks: { xp_scroll: 60, mystery_egg: 25, void_reforger: 18, skill_book: 18 }, title: "Eternal" },
   { level: 500, coins: 10_000_000, stacks: { xp_scroll: 80, mystery_egg: 30, void_reforger: 25, skill_book: 25 }, title: "Transcendent" },
+  { level: 550, coins: 15_000_000, stacks: { xp_scroll: 100, mystery_egg: 40, void_reforger: 30, skill_book: 30 }, title: "Celestial" },
+  { level: 600, coins: 25_000_000, stacks: { xp_scroll: 120, mystery_egg: 50, void_reforger: 40, skill_book: 40 }, title: "Genesis" },
 ];
 
 /** Grants XP with buffs applied, handling level-ups, full heals, and milestone eggs. */

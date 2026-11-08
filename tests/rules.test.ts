@@ -8,7 +8,7 @@ import { BASE_SKILLS, SKILLS, SKILL_BY_NAME } from "../shared/data/skills.ts";
 import { combatantFromMonster, createBattle, resolveRound, simulateBattle } from "../shared/rules/combat.ts";
 import { itemStats, rollGear, sellPrice, upgradeCost } from "../shared/rules/items.ts";
 import { monsterStats } from "../shared/rules/monsters.ts";
-import { MAX_LEVEL, applyXp, xpToNext } from "../shared/rules/progression.ts";
+import { MAX_LEVEL, applyXp, totalXpForLevel, xpToNext } from "../shared/rules/progression.ts";
 import { createRng } from "../shared/rules/rng.ts";
 import { winRate } from "../scripts/balance-sim.ts";
 
@@ -17,9 +17,9 @@ describe("content integrity", () => {
     expect(CLASSES).toHaveLength(24);
     expect(BASE_SKILLS).toHaveLength(14);
     expect(SKILLS.length).toBeGreaterThanOrEqual(24);
-    expect(REGIONS).toHaveLength(40);
+    expect(REGIONS).toHaveLength(48);
     expect(STORY_CHAPTERS).toHaveLength(20);
-    expect(allMonsters()).toHaveLength(228);
+    expect(allMonsters()).toHaveLength(260);
   });
 
   it("has unique ids and valid references", () => {
@@ -50,7 +50,7 @@ describe("content integrity", () => {
 describe("progression", () => {
   it("levels through thresholds and caps at the max level", () => {
     expect(applyXp(1, 0, xpToNext(1))).toEqual({ level: 2, xp: 0, gained: 1 });
-    expect(applyXp(1, 0, 500_000_000).level).toBe(MAX_LEVEL);
+    expect(applyXp(1, 0, totalXpForLevel(MAX_LEVEL) + 1).level).toBe(MAX_LEVEL);
     expect(applyXp(MAX_LEVEL, 0, 999).gained).toBe(0);
   });
 });

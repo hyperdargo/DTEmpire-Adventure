@@ -11,6 +11,14 @@ export const FRONTIER_REGIONS: Region[] = [
   ['clockwork_heavens', 'Clockwork Heavens', 325, 349, 'Epoch Mechanist', 'The Unwound Oracle'],
   ['first_empire', 'First Empire', 350, 374, 'Origin Sentinel', 'The First Sovereign'],
   ['last_horizon', 'Last Horizon', 375, 400, 'Horizon Reaver', 'The Unwritten King'],
+  ['shattered_veil', 'The Shattered Veil', 400, 424, 'Veil Sentinel', 'The Torn Architect'],
+  ['celestial_forge', 'Celestial Forge', 425, 449, 'Forge Keeper', 'Ignis, The Star Hammer'],
+  ['eternal_tundra', 'Eternal Tundra', 450, 474, 'Frost Revenant', 'The Permafrost Titan'],
+  ['void_cradle', 'Void Cradle', 475, 499, 'Void Wraith', 'Nihilus, The Unborn'],
+  ['dream_nexus', 'Dream Nexus', 500, 524, 'Oneiric Guardian', 'Morpheus, The Dreamer King'],
+  ['primeval_core', 'Primeval Core', 525, 549, 'Core Warden', 'The Heartstone Colossus'],
+  ['aetheric_spire', 'Aetheric Spire', 550, 574, 'Aether Knight', 'Solara, The Radiant Sovereign'],
+  ['genesis_throne', 'Genesis Throne', 575, 600, 'Genesis Herald', 'Arkanos, The First and Last'],
 ].map(([id, name, min, max, foe, boss]) => ({
   id: String(id), name: String(name), minLevel: Number(min), maxLevel: Number(max), icon: '⚑',
   description: `Beyond the old creation gate. Defeat ten guardians to challenge ${boss}.`, bossUnlockKills: 10,
@@ -22,9 +30,9 @@ export const FRONTIER_REGIONS: Region[] = [
   boss: { id: `${id}_sovereign`, name: String(boss), icon: '♛', shape: { hp: 1.1, atk: 1.05, def: 1 } },
 }));
 
-export const FRONTIER_GEAR: GearTemplate[] = [200, 250, 300, 350, 400].flatMap(level => [
+export const FRONTIER_GEAR: GearTemplate[] = [200, 250, 300, 350, 400, 450, 500, 550, 600].flatMap(level => [
   ...(['sword', 'staff', 'bow', 'dagger', 'hammer'] as const).map(weaponType => ({
-    id: `frontier_${weaponType}_${level}`, name: `${level === 400 ? 'Origin' : level >= 300 ? 'Sovereign' : 'Marchwarden'} ${weaponType}`,
+    id: `frontier_${weaponType}_${level}`, name: `${level >= 550 ? 'Genesis' : level >= 400 ? 'Elysian' : level >= 300 ? 'Sovereign' : 'Marchwarden'} ${weaponType}`,
     icon: '⚔', slot: 'weapon' as const, weaponType, levelReq: level,
     desc: `${weaponType === 'hammer' ? 'Siege breaker' : weaponType === 'staff' ? 'Arcane conductor' : weaponType === 'bow' ? 'Long-range hunter' : weaponType === 'dagger' ? 'Close-range skirmisher' : 'Vanguard blade'} forged for the imperial frontier. Match your class affinity for its combat bonus.`,
   })),

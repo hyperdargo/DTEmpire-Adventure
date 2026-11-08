@@ -90,6 +90,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a("milestone_25", "First Steps", "🥉", "Reach Level 25.", "level", 25, 2_500),
   a("milestone_100", "Centurion", "🥈", "Reach Level 100.", "level", 100, 10_000),
   a("milestone_300", "Legendary Hero", "🥇", "Reach Level 300.", "level", 300, 50_000, "the Legendary"),
+  a("milestone_500", "Elysian Champion", "💎", "Reach Level 500.", "level", 500, 100_000, "the Elysian"),
+  a("milestone_600", "Genesis Ascendant", "👑", "Reach Level 600.", "level", 600, 250_000, "the Primordial"),
 ];
 
 // ── Bestiary mastery (original v4.7/4.8) ──────────────────────────────
