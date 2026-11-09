@@ -99,6 +99,7 @@ export function setLocked(g: GameCtx, userId: number, itemId: number, locked: bo
 }
 
 function assertDisposable(item: ItemRecord) {
+  if (item.sockets?.some(Boolean)) throw new GameError("Remove socketed gems before selling or salvaging gear.");
   if (item.equipped) throw new GameError("Unequip it first.");
   if (item.locked) throw new GameError("That item is locked. Unlock it first.");
 }
@@ -134,7 +135,7 @@ export function salvage(g: GameCtx, p: Player, itemId: number): Record<string, n
 export function bulkDispose(g: GameCtx, p: Player, mode: "sell" | "salvage", maxRarity: Rarity) {
   const rows = g.db.all("SELECT * FROM items WHERE owner_id = ? AND equipped = 0 AND locked = 0 AND escrow IS NULL AND base != '{}'", p.userId)
     .map((r) => itemFromRow(r as never))
-    .filter((i) => RARITY_INDEX[i.rarity] <= RARITY_INDEX[maxRarity]);
+    .filter((i) => RARITY_INDEX[i.rarity] <= RARITY_INDEX[maxRarity] && !i.sockets?.some(Boolean));
   let coins = 0;
   const mats: Record<string, number> = {};
   for (const item of rows) {

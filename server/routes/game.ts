@@ -20,6 +20,7 @@ import { act, autoResolve, battleView, forfeit, getActiveBattle } from "../game/
 import type { GameCtx } from "../game/context.ts";
 import * as daily from "../game/daily.ts";
 import * as eco from "../game/economy.ts";
+import * as gems from "../game/gems.ts";
 import * as events from "../game/events.ts";
 import * as abyss from "../game/abyss.ts";
 import * as hero from "../game/hero.ts";
@@ -333,6 +334,26 @@ export async function registerGameRoutes(app: FastifyInstance) {
       req
     );
     return mutate(g, u(req), (p) => eco.trainPet(g, p, petId, method, mode ?? "single"));
+  });
+
+  // ── Jeweler ──
+  app.get("/api/gems", async (req) => gems.gemsView(g, loadPlayer(g, u(req).id)));
+  app.post("/api/gems/punch", async (req) => mutate(g, u(req), (p) => gems.craftPunch(g, p)));
+  app.post("/api/gems/unlock", async (req) => {
+    const { itemId } = parse(z.object({ itemId: id }), req);
+    return mutate(g, u(req), (p) => gems.unlockSocket(g, p, itemId));
+  });
+  app.post("/api/gems/socket", async (req) => {
+    const { itemId, index, gemId } = parse(z.object({ itemId: id, index: z.number().int().min(0).max(1), gemId: z.string().max(60) }), req);
+    return mutate(g, u(req), (p) => gems.socketGem(g, p, itemId, index, gemId));
+  });
+  app.post("/api/gems/unsocket", async (req) => {
+    const { itemId, index } = parse(z.object({ itemId: id, index: z.number().int().min(0).max(1) }), req);
+    return mutate(g, u(req), (p) => gems.unsocketGem(g, p, itemId, index));
+  });
+  app.post("/api/gems/craft", async (req) => {
+    const { gemId } = parse(z.object({ gemId: z.string().max(60) }), req);
+    return mutate(g, u(req), (p) => gems.craftGem(g, p, gemId));
   });
 
   // ── Blacksmith ──

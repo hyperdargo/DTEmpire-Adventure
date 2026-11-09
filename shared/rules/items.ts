@@ -1,3 +1,4 @@
+import { GEM_BY_ID } from "../data/gems.ts";
 import { CONSUMABLE_BY_ID, GEAR, GEAR_BY_ID } from "../data/items.ts";
 import type { Affix, EquipSlot, GearTemplate, ItemKind, Rarity, StatBlock, StatKey } from "../data/types.ts";
 import type { Rng } from "./rng.ts";
@@ -14,6 +15,7 @@ export interface ItemRecord {
   /** Rolled base stats at +0. */
   base: StatBlock;
   affixes: Affix[];
+  sockets?: (string | null)[];
   equipped: boolean;
   locked: boolean;
 }
@@ -95,7 +97,7 @@ export function rollGear(rng: Rng, template: GearTemplate, ilvl: number, rarity:
 }
 
 /** Final stats of a gear piece, applying upgrades and budget-percent affixes. */
-export function itemStats(rec: Pick<ItemRecord, "base" | "affixes" | "upgrade">): StatBlock {
+export function itemStats(rec: Pick<ItemRecord, "base" | "affixes" | "upgrade" | "sockets">): StatBlock {
   const um = upgradeMult(rec.upgrade);
   const out: StatBlock = {};
   for (const [k, v] of Object.entries(rec.base) as [StatKey, number][]) {
@@ -108,6 +110,10 @@ export function itemStats(rec: Pick<ItemRecord, "base" | "affixes" | "upgrade">)
     } else {
       out[a.stat] = Math.round(((out[a.stat] ?? 0) + a.value) * 10) / 10;
     }
+  }
+  for (const id of rec.sockets ?? []) {
+    const gem = id ? GEM_BY_ID[id] : undefined;
+    if (gem) out[gem.stat] = (out[gem.stat] ?? 0) + gem.value;
   }
   return out;
 }

@@ -248,7 +248,11 @@ const eventConsumables: ConsumableTemplate[] = [
     desc: "A noble griffin egg infused with the clan's legacy. Hatches an epic or legendary companion." },
 ];
 
-export const CONSUMABLES: ConsumableTemplate[] = [...potions, ...materials, ...eggs, ...books, ...eventConsumables];
+import { GEM_CONSUMABLES } from "./gems.ts";
+
+export const CONSUMABLES: ConsumableTemplate[] = [...potions, ...materials, ...eggs, ...books, ...eventConsumables, ...GEM_CONSUMABLES,
+  { id: "jewelers_punch", name: "Jeweler's Punch", icon: "⚒", kind: "material", levelReq: 1, desc: "Unlocks one gear socket, up to two. Crafted at the Jeweler.", basePrice: 0, sellPrice: 100 },
+];
 export const CONSUMABLE_BY_ID: Record<string, ConsumableTemplate> = Object.fromEntries(CONSUMABLES.map((c) => [c.id, c]));
 
 export const MATERIAL_IDS = materials.map((m) => m.id);

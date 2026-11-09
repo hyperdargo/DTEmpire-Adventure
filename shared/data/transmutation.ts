@@ -12,7 +12,14 @@ export interface TransmutationRecipe {
   minLevel: number;
 }
 
+import { GEM_FAMILIES } from "./gems.ts";
+
 export const TRANSMUTATION_RECIPES: TransmutationRecipe[] = [
+  ...GEM_FAMILIES.map((f): TransmutationRecipe => ({
+    id: `crystallize_${f.id}`, name: `Crystallize Chipped ${f.name}`, desc: "Shape a mystic gem into a socketable crystal.",
+    icon: "◇", category: "ascend", fromMaterial: "mystic_gem", fromQty: 1,
+    toMaterial: `gem_${f.id}_1`, toQty: 1, coins: 500, minLevel: 1,
+  })),
   // ── Ascending Transmutations (Refining lower into higher) ──────────────────
   {
     id: "smelt_dragon_scales",

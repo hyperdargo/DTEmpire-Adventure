@@ -188,11 +188,11 @@ export function combinedBuffs(p: Player, now: number): Buffs {
   return out;
 }
 
-interface ItemRow { id: number; template_id: string; rarity: string; ilvl: number; upgrade: number; qty: number; base: string; affixes: string; equipped: number; locked: number }
+interface ItemRow { id: number; template_id: string; rarity: string; ilvl: number; upgrade: number; qty: number; base: string; affixes: string; sockets?: string; equipped: number; locked: number }
 
 export const itemFromRow = (r: ItemRow): ItemRecord => ({
   id: r.id, templateId: r.template_id, rarity: r.rarity as Rarity, ilvl: r.ilvl, upgrade: r.upgrade, qty: r.qty,
-  base: json(r.base, {}), affixes: json(r.affixes, []), equipped: !!r.equipped, locked: !!r.locked,
+  base: json(r.base, {}), affixes: json(r.affixes, []), sockets: json(r.sockets ?? "[]", []), equipped: !!r.equipped, locked: !!r.locked,
 });
 
 export function equippedItems(g: GameCtx, userId: number): ItemRecord[] {

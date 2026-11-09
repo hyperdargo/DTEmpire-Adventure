@@ -303,4 +303,5 @@ CREATE TABLE IF NOT EXISTS logbook (
 CREATE INDEX IF NOT EXISTS idx_logbook_user ON logbook(user_id, created_at DESC);
 `,
   },
+  { id: 5, name: "gear_gem_sockets", sql: `ALTER TABLE items ADD COLUMN sockets TEXT NOT NULL DEFAULT '[]';` },
 ];

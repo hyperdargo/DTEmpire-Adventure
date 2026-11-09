@@ -276,6 +276,7 @@ export function forge(g: GameCtx, p: Player, aId: number, bId: number) {
   if (!ga || !gb) throw new GameError("Only gear can be forged.");
   if (ga.slot !== gb.slot) throw new GameError("Both items must be for the same slot.");
   if (a.rarity !== b.rarity) throw new GameError("Both items must share a rarity.");
+  if (a.sockets?.some(Boolean) || b.sockets?.some(Boolean)) throw new GameError("Remove socketed gems before forging.");
   if (a.locked || b.locked || a.equipped || b.equipped) throw new GameError("Unlock and unequip both items first.");
   const rng = createRng(freshSeed());
   const rarity = forgeResultRarity(rng, a.rarity);
@@ -299,6 +300,7 @@ export function forgeUnique(g: GameCtx, p: Player, itemIds: number[]) {
   const ids = [...new Set(itemIds)];
   if (ids.length < 5) throw new GameError("Unique relic forging requires at least 5 Mythic gear pieces to combine.");
   const items = ids.map((id) => getOwnedItem(g, p.userId, id));
+  if (items.some((i) => i.sockets?.some(Boolean))) throw new GameError("Remove socketed gems before synthesizing.");
   if (items.some((i) => i.locked || i.equipped)) throw new GameError("Unlock and unequip all items before synthesizing.");
   const gears = items.map((i) => {
     const gear = GEAR_BY_ID[i.templateId];

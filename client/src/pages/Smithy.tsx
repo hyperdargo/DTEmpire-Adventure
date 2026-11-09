@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Jeweler from "./Jeweler.tsx";
 import { useSearchParams } from "react-router";
 import { CONSUMABLE_BY_ID, GEAR_BY_ID, type Recipe } from "../../../shared/data/items.ts";
 import type { ItemView } from "../../../shared/data/types.ts";
@@ -35,7 +36,7 @@ function MaterialList({ materials, have }: { materials: Record<string, number>; 
 
 export default function SmithyPage() {
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique" | "reforge" | "transmute">(params.get("item") ? "upgrade" : "craft");
+  const [tab, setTab] = useState<"upgrade" | "forge" | "craft" | "unique" | "reforge" | "transmute" | "gems">(params.get("item") ? "upgrade" : "craft");
   const { hero } = useHero();
   const inv = useData<{ items: ItemView[] }>(["inventory"], "/api/inventory");
   const smithy = useData<{ recipes: Recipe[]; upgradeCosts: Record<string, Cost> }>(["smithy"], "/api/smithy");
@@ -90,6 +91,7 @@ export default function SmithyPage() {
       </div>
       <Tabs label="Blacksmith" value={tab} onChange={setTab} options={[
         { value: "craft", label: "Craft" },
+        { value: "gems", label: "Jeweler / Gems" },
         { value: "upgrade", label: "Upgrade" },
         { value: "transmute", label: "⚗️ Transmute" },
         { value: "forge", label: "Forge" },
@@ -97,6 +99,7 @@ export default function SmithyPage() {
         { value: "reforge", label: `🧿 Void Reforge (${voidReforgers})` },
       ]} />
       <div style={{ marginTop: "var(--s-5)" }}>
+        {tab === "gems" && <Jeweler />}
         {tab === "upgrade" && (
           <div className="smithy-split">
             <Panel title="Choose gear">

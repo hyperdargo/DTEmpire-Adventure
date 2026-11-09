@@ -135,6 +135,7 @@ export interface ItemView {
   qty: number;
   stats: StatBlock;
   affixes: Affix[];
+  sockets?: (string | null)[];
   equipped: boolean;
   locked: boolean;
   weaponType?: WeaponType;

@@ -1,3 +1,4 @@
+import { GEM_FAMILIES } from "../data/gems.ts";
 import { CONSUMABLES } from "../data/items.ts";
 import type { Rarity } from "../data/types.ts";
 import { pickGearTemplate, rollGear, rollRarity } from "./items.ts";
@@ -119,6 +120,11 @@ export function rollVictoryLoot(
   const boss = !!opts.boss;
   const drops: LootDrop[] = [];
   const luckMult = 1 + luck / 100;
+  if (opts.source === "tower" && (opts.towerFloor ?? 0) % 10 === 0 && (opts.towerFloor ?? 0) > 0) {
+    drops.push({ kind: "stack", templateId: `gem_${rng.pick(GEM_FAMILIES).id}_1`, qty: 2 });
+  } else if (rng.chance(boss ? 18 : 4)) {
+    drops.push({ kind: "stack", templateId: `gem_${rng.pick(GEM_FAMILIES).id}_1`, qty: 1 });
+  } 
 
   if (opts.source === "tower") {
     const floor = opts.towerFloor ?? opts.level;

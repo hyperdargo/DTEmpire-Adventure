@@ -21,6 +21,7 @@ export function toItemView(rec: ItemRecord): ItemView {
     qty: rec.qty,
     stats,
     affixes: rec.affixes,
+    sockets: rec.sockets ?? [],
     equipped: rec.equipped,
     locked: rec.locked,
     ...(gear?.weaponType ? { weaponType: gear.weaponType } : {}),
