@@ -3,6 +3,7 @@ import { GameCard } from "../components/GameCard.tsx";
 import { Bar, Button, Chip, Empty, Loading, PageHead, Panel, RarityChip, Tabs } from "../components/ui.tsx";
 import { fmt, timeAgo } from "../lib/format.ts";
 import { filterLogbook } from "../lib/logbook.ts";
+import { filterTitles } from "../lib/titles.ts";
 import { filterAchievements, type AchievementFilter } from "../lib/achievements.ts";
 import { useAction, useData } from "../state/game.ts";
 import { regionRarity } from "./Adventure.tsx";
@@ -261,15 +262,11 @@ function TitlesView() {
   });
   const [filter, setFilter] = useState<"all" | "earned" | "locked">("all");
   const [category, setCategory] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   if (isPending || !data) return <Loading rows={4} />;
 
-  const filtered = (data.titles ?? []).filter((t) => {
-    if (filter === "earned" && !t.earned) return false;
-    if (filter === "locked" && t.earned) return false;
-    if (category !== "all" && t.category !== category) return false;
-    return true;
-  });
+  const filtered = filterTitles(data.titles ?? [], search, filter, category);
 
   return (
     <div className="stack stack--lg">
@@ -319,6 +316,13 @@ function TitlesView() {
           </select>
         </div>
       </div>
+      <div className="row row--wrap" style={{ gap: "var(--s-2)" }}>
+        <input className="input" type="search" aria-label="Search titles" placeholder="Search title, source or description…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        {(search || filter !== "all" || category !== "all") && (
+          <Button size="sm" onClick={() => { setSearch(""); setFilter("all"); setCategory("all"); }}>Reset filters</Button>
+        )}
+      </div>
+      <span className="faint" role="status">Showing {filtered.length} of {data.total} titles</span>
 
       <ul className="quest-list">
         {filtered.length === 0 ? (
@@ -326,7 +330,7 @@ function TitlesView() {
             <span className="art quest__art" aria-hidden>🔍</span>
             <div className="quest__body">
               <b>No titles match this filter</b>
-              <span className="faint">Try selecting a different filter or category to see other titles.</span>
+              <span className="faint">Try a different search, ownership filter or category, or reset filters.</span>
             </div>
           </li>
         ) : (
